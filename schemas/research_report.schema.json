@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/research_report.schema.json",
+  "title": "Evidence-bound monthly research report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "report_kind",
+    "as_of",
+    "mode",
+    "scope",
+    "sources",
+    "policy_context",
+    "executive_summary",
+    "portfolio_state",
+    "strategy_views",
+    "decision_summary",
+    "conflicts",
+    "counter_evidence",
+    "uncertainties",
+    "evidence_ledger",
+    "next_review",
+    "llm_contract",
+    "execution",
+    "reproducibility"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "report_id": {"type": "string", "minLength": 1},
+    "report_kind": {"const": "evidence_bound_monthly_research_report"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "mode": {"const": "research_only"},
+    "scope": {
+      "type": "object",
+      "required": ["external_market_news_used", "market_direction_prediction", "new_strategy_signal_calculated", "llm_may_explain_only"],
+      "properties": {
+        "external_market_news_used": {"const": false},
+        "market_direction_prediction": {"const": false},
+        "new_strategy_signal_calculated": {"const": false},
+        "llm_may_explain_only": {"const": true}
+      }
+    },
+    "sources": {"type": "object"},
+    "policy_context": {"type": "object"},
+    "executive_summary": {"type": "object"},
+    "portfolio_state": {"type": "object"},
+    "strategy_views": {"type": "array", "minItems": 4, "maxItems": 4},
+    "decision_summary": {"type": "object"},
+    "conflicts": {"type": "array"},
+    "counter_evidence": {"type": "array", "minItems": 1},
+    "uncertainties": {"type": "array", "minItems": 1},
+    "evidence_ledger": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["claim_id", "statement", "source", "evidence_status", "limitations"],
+        "properties": {
+          "claim_id": {"type": "string"},
+          "statement": {"type": "string"},
+          "source": {
+            "type": "object",
+            "required": ["artifact", "json_pointer", "value_sha256"]
+          },
+          "evidence_status": {"type": "string"},
+          "limitations": {"type": "array"}
+        }
+      }
+    },
+    "next_review": {"type": "object"},
+    "llm_contract": {"type": "object"},
+    "execution": {
+      "type": "object",
+      "required": ["advisory_only", "order_intent_generation_allowed", "real_trading_enabled", "orders"],
+      "properties": {
+        "advisory_only": {"const": true},
+        "order_intent_generation_allowed": {"const": false},
+        "real_trading_enabled": {"const": false},
+        "orders": {"type": "array", "maxItems": 0}
+      }
+    },
+    "reproducibility": {"type": "object"}
+  }
+}

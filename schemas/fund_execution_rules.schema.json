@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/fund_execution_rules.schema.json",
+  "title": "Versioned normalized execution rules for off-exchange funds",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "snapshot_id", "as_of", "status", "funds"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "as_of": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["provisional", "verified"]},
+    "funds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fund_code", "fund_name", "versions"],
+        "properties": {
+          "fund_code": {"type": "string", "pattern": "^[0-9]{6}$"},
+          "fund_name": {"type": "string", "minLength": 1},
+          "versions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "rule_version", "effective_from", "effective_to", "authority",
+                "source_documents", "subscription", "unknown_required_fields"
+              ],
+              "properties": {
+                "rule_version": {"type": "string", "minLength": 1},
+                "effective_from": {"type": "string", "format": "date"},
+                "effective_to": {"type": ["string", "null"], "format": "date"},
+                "authority": {"enum": ["reference_only", "official_verified"]},
+                "source_documents": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["url", "content_sha256", "retrieved_at"],
+                    "properties": {
+                      "url": {"type": "string", "format": "uri"},
+                      "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                      "retrieved_at": {"type": "string", "format": "date-time"}
+                    }
+                  }
+                },
+                "subscription": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "minimum_purchase_cny", "daily_purchase_limit", "cutoff_time",
+                    "confirmation_business_days", "nav_visibility_business_days",
+                    "purchase_fee_tiers", "share_precision", "share_rounding_mode",
+                    "calendar_id"
+                  ],
+                  "properties": {
+                    "minimum_purchase_cny": {"type": "string"},
+                    "daily_purchase_limit": {
+                      "type": "object",
+                      "required": ["kind", "amount_cny"],
+                      "properties": {
+                        "kind": {"enum": ["amount", "unlimited", "unknown"]},
+                        "amount_cny": {"type": ["string", "null"]}
+                      }
+                    },
+                    "cutoff_time": {"type": "string"},
+                    "confirmation_business_days": {"type": "integer", "minimum": 0},
+                    "nav_visibility_business_days": {"type": "integer", "minimum": 0},
+                    "purchase_fee_tiers": {"type": "array", "minItems": 1},
+                    "share_precision": {"type": "integer", "minimum": 0, "maximum": 8},
+                    "share_rounding_mode": {"enum": ["down", "half_up"]},
+                    "calendar_id": {"type": "string", "minLength": 1}
+                  }
+                },
+                "unknown_required_fields": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {"type": "string"}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

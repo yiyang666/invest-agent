@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "explanation_id": "grounded_explanation_2026_08_bootstrap_v1",
+  "acceptance_id": "grounded_explanation_acceptance_s5_2_2026_08_16",
+  "source_report": {
+    "path": "data/private/reports/phase-5-monthly-research-report-s5-1-2026-08-16.json",
+    "sha256": "805c806d88b1ad6f42ad1a40e3835fff1a1a1e1669ea0edf5b3240f0b26bf28c"
+  },
+  "required_section_ids": [
+    "executive_summary",
+    "portfolio_risk",
+    "strategy_interpretation",
+    "counter_evidence",
+    "next_review",
+    "safety_boundary"
+  ],
+  "required_strategy_ids": [
+    "dca_baseline",
+    "drawdown_budget_add",
+    "new_money_trend_rs",
+    "sleeve_drawdown_recovery"
+  ],
+  "allowed_numeric_literals": ["631"],
+  "prohibited_phrases": [
+    "建议买入",
+    "立即买入",
+    "立即加仓",
+    "必须加仓",
+    "执行申购",
+    "保证收益",
+    "稳赚",
+    "梭哈",
+    "满仓",
+    "抄底"
+  ],
+  "safety": {
+    "research_only": true,
+    "advisory_only": true,
+    "external_market_news_allowed": false,
+    "price_prediction_allowed": false,
+    "order_intent_generation_allowed": false,
+    "real_trading_enabled": false
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "strategy_id": "sleeve_drawdown_recovery",
+  "strategy_version": "1.0.0",
+  "status": "implemented",
+  "mode": "research_only",
+  "purpose": "研究科技成长袖套自身回撤时的受限新增资金配置，不替代组合级回撤预算策略。",
+  "inputs": {
+    "base_monthly_contribution_cny": "3000",
+    "maximum_monthly_contribution_cny": "5000",
+    "signal_nav_field": "accumulated_nav",
+    "review_frequency": "monthly",
+    "rolling_peak_observations": 126,
+    "minimum_observations": 127,
+    "eligible_sleeves": ["us_growth", "domestic_growth", "sh_hk_sz_passive_technology_satellite"]
+  },
+  "rules": {
+    "budget_tiers": [
+      {"drawdown_at_or_below": "-0.10", "additional_budget_cny": "500"},
+      {"drawdown_at_or_below": "-0.15", "additional_budget_cny": "1000"},
+      {"drawdown_at_or_below": "-0.20", "additional_budget_cny": "2000"}
+    ],
+    "allocation": {
+      "base": "631_target_gap",
+      "sleeve_addition": "equal_across_triggered_sleeves_subject_to_caps",
+      "overflow": "domestic_and_us_broad_cores_equal",
+      "selling_allowed": false
+    },
+    "risk": {
+      "portfolio_drawdown_veto_at_or_below": "-0.20",
+      "maximum_theme_weight": "0.30",
+      "maximum_single_fund_weight": "0.25",
+      "additional_budget_max_cny": "2000",
+      "leverage_allowed": false
+    }
+  },
+  "backtest_scenarios": {
+    "required_comparators": ["fixed_3000_631", "same_total_capital_evenly_timed_631", "same_monthly_cashflow_631_target_gap", "same_monthly_cashflow_broad_core_route"],
+    "parameter_selection_from_s3_5_allowed": false
+  },
+  "prohibitions": ["submit_real_orders", "exceed_theme_or_single_fund_caps", "use_emergency_fund", "sell_existing_positions", "count_correlated_funds_as_independent_cycles", "change_parameters_after_viewing_s3_6_results"]
+}

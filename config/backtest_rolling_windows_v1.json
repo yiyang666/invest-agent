@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "rolling_id": "phase4_c4_2_twelve_month_rolling_v1",
+  "purpose": "以12个月等长窗口、每3个月步进，检验v1.2定投基准在不同起止行情中的稳定性。",
+  "first_start_date": "2024-01-01",
+  "last_end_date": "2026-07-31",
+  "window_months": 12,
+  "step_months": 3,
+  "uniform_purchase_fee_rates": ["0", "0.0015"],
+  "fixed_assumptions": {
+    "monthly_contribution_cny": "3000",
+    "allocation": "20/20/10/10/30/10",
+    "execution": "limited_month_start_and_unlimited_5_15_25",
+    "window_overlap": true,
+    "selection_rule": "all_complete_windows_without_performance_filtering"
+  }
+}

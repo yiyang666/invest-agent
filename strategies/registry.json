@@ -1,0 +1,177 @@
+{
+  "$schema": "../schemas/strategy_registry.schema.json",
+  "schema_version": 3,
+  "registry_id": "phase4_strategy_registry_s4_4",
+  "as_of": "2026-08-16T23:59:59+08:00",
+  "mode": "research_only",
+  "terminology": {
+    "allocation_anchor_631": {
+      "definition": "60pct_long_term_assets_30pct_defensive_10pct_technology_satellite",
+      "kind": "long_term_policy_anchor",
+      "mandatory_execution_schedule": false
+    },
+    "dca_baseline@1.4.0": {
+      "definition": "allocation_anchor_631_plus_monthly_budget_target_gap_and_fund_routing_rules",
+      "kind": "comparison_benchmark_strategy"
+    },
+    "tactical_overlay": {
+      "definition": "versioned_rules_may_change_timing_or_new_money_routing_without_silently_redefining_the_anchor",
+      "may_deviate_from_631_during_execution": true,
+      "requires_matched_cashflow_comparator": true,
+      "risk_layer_has_veto": true
+    }
+  },
+  "decision_contract": {
+    "unregistered_strategy": "reject",
+    "version_match": "exact",
+    "spec_hash_match_required": true,
+    "required_signal_fields": [
+      "strategy_id",
+      "strategy_version",
+      "signal_as_of",
+      "data_cutoff",
+      "valid_until",
+      "data_quality",
+      "risk",
+      "evidence",
+      "payload"
+    ],
+    "accepted_data_quality_statuses": [
+      "strict_point_in_time",
+      "historical_visibility_assumed"
+    ],
+    "expired_signal": "reject",
+    "risk_veto": "reject",
+    "order_intent_generation_allowed": false
+  },
+  "strategies": [
+    {
+      "strategy_id": "dca_baseline",
+      "strategy_version": "1.4.0",
+      "role": "benchmark_and_personal_target",
+      "lifecycle_status": "implemented",
+      "mode": "research_only",
+      "spec": {
+        "path": "strategies/specs/dca_baseline_v1_4.json",
+        "sha256": "efb0792dca76946d70de294ed1ed40b4c50f257de223594ab670d1a8056c4a21"
+      },
+      "evidence": {
+        "status": "baseline_retained_pending_gates",
+        "disposition": "use_as_shared_research_benchmark_and_personal_target",
+        "primary_report_path": "docs/backtest/phase-4-risk-repair-candidates-c4-5.md",
+        "primary_report_sha256": "0b81c12a8ef08bd43895efa1e179c7c11b699de385afc5a41beb77701e853d9e",
+        "historical_visibility": "historical_visibility_assumed",
+        "prospective_oos": "frozen_waiting_for_future_observations"
+      },
+      "gates": {
+        "data_quality": "research_pass_strict_point_in_time_blocked",
+        "backtest": "research_complete_production_blocked",
+        "risk": "approximately_20pct_tolerance_review_boundary",
+        "production_approved": false,
+        "execution_enabled": false
+      },
+      "decision_permissions": {
+        "include_as_research_evidence": true,
+        "advisory_signal_allowed": true,
+        "target_allocation_authority": true,
+        "order_intent_generation_allowed": false
+      }
+    },
+    {
+      "strategy_id": "new_money_trend_rs",
+      "strategy_version": "1.0.0",
+      "role": "research_control",
+      "lifecycle_status": "implemented",
+      "mode": "research_only",
+      "spec": {
+        "path": "strategies/specs/new_money_trend_rs_v1.json",
+        "sha256": "00860dbeca4c17b2b1d5bd976aa2d189b85ce97c7afea260b6866a9cb76d9e41"
+      },
+      "evidence": {
+        "status": "not_promoted",
+        "disposition": "retain_as_risk_research_control_do_not_replace_631",
+        "primary_report_path": "docs/backtest/phase-4-trend-rs-robustness-s2-4.md",
+        "primary_report_sha256": "428481f84fa48dafb740c89609a3fa6980c0c731d1fbf12f6d53a73d72c150ee",
+        "historical_visibility": "historical_visibility_assumed",
+        "prospective_oos": "not_started"
+      },
+      "gates": {
+        "data_quality": "research_pass_strict_point_in_time_blocked",
+        "backtest": "robustness_complete_benchmark_underperformed",
+        "risk": "no_formal_veto_but_slow_bear_buffer_small",
+        "production_approved": false,
+        "execution_enabled": false
+      },
+      "decision_permissions": {
+        "include_as_research_evidence": true,
+        "advisory_signal_allowed": true,
+        "target_allocation_authority": false,
+        "order_intent_generation_allowed": false
+      }
+    },
+    {
+      "strategy_id": "drawdown_budget_add",
+      "strategy_version": "1.0.0",
+      "role": "research_control",
+      "lifecycle_status": "implemented",
+      "mode": "research_only",
+      "spec": {
+        "path": "strategies/specs/drawdown_budget_add_v1.json",
+        "sha256": "30c199db134787419728306fc3112c93f6301c806370a22c7fac5c3f3de3b204"
+      },
+      "evidence": {
+        "status": "evidence_insufficient",
+        "disposition": "retain_for_synthetic_and_proxy_stress_do_not_promote",
+        "primary_report_path": "docs/backtest/phase-4-drawdown-budget-robustness-s3-4.md",
+        "primary_report_sha256": "120b8d5335c66da327a6b3e6276cbc772bdc42de036e08e4776563da0330e215",
+        "historical_visibility": "historical_visibility_assumed",
+        "prospective_oos": "not_started"
+      },
+      "gates": {
+        "data_quality": "research_pass_strict_point_in_time_blocked",
+        "backtest": "primary_and_synthetic_safety_complete_economic_evidence_insufficient",
+        "risk": "portfolio_20pct_veto_implemented",
+        "production_approved": false,
+        "execution_enabled": false
+      },
+      "decision_permissions": {
+        "include_as_research_evidence": true,
+        "advisory_signal_allowed": true,
+        "target_allocation_authority": false,
+        "order_intent_generation_allowed": false
+      }
+    },
+    {
+      "strategy_id": "sleeve_drawdown_recovery",
+      "strategy_version": "1.0.0",
+      "role": "research_candidate",
+      "lifecycle_status": "implemented",
+      "mode": "research_only",
+      "spec": {
+        "path": "strategies/specs/sleeve_drawdown_recovery_v1.json",
+        "sha256": "d4e4edeaa13700840291a2fa963dec67fdee07c575033cf2f2ce773cd624cc40"
+      },
+      "evidence": {
+        "status": "promising_but_insufficient",
+        "disposition": "retain_for_future_validation_do_not_replace_631",
+        "primary_report_path": "docs/backtest/phase-4-sleeve-drawdown-execution-s3-6.md",
+        "primary_report_sha256": "3c0041d27799ebaa689c0a270c4fcf8d30e97cfc857a5622db421f55378643dd",
+        "historical_visibility": "historical_visibility_assumed",
+        "prospective_oos": "not_started"
+      },
+      "gates": {
+        "data_quality": "research_pass_strict_point_in_time_blocked",
+        "backtest": "five_way_comparison_complete_sample_insufficient",
+        "risk": "portfolio_veto_and_theme_single_fund_caps_implemented",
+        "production_approved": false,
+        "execution_enabled": false
+      },
+      "decision_permissions": {
+        "include_as_research_evidence": true,
+        "advisory_signal_allowed": true,
+        "target_allocation_authority": false,
+        "order_intent_generation_allowed": false
+      }
+    }
+  ]
+}

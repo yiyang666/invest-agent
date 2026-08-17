@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "comparison_id": "phase4_c4_5_minimum_risk_repair_v1",
+  "purpose": "在相同历史、费用、滚动窗口和压力条件下比较三套防御/卫星权重。",
+  "expected_profile_ids": [
+    "long_term_60_defensive_30_satellite_10",
+    "long_term_60_defensive_32_satellite_08",
+    "long_term_60_defensive_35_satellite_05"
+  ],
+  "stress_severity_factors": ["0.90", "1.00", "1.10"],
+  "selection_policy": {
+    "automatic_winner_selection": false,
+    "stress_limit_drawdown_pct": "20",
+    "preferred_stress_buffer_pct": "1",
+    "requires_user_policy_change": true
+  }
+}

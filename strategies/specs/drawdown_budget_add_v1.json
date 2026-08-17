@@ -1,0 +1,153 @@
+{
+  "$schema": "../../schemas/strategy_spec.schema.json",
+  "schema_version": 1,
+  "strategy_id": "drawdown_budget_add",
+  "strategy_version": "1.0.0",
+  "status": "implemented",
+  "mode": "research_only",
+  "purpose": "在不借款、不卖出、不动应急资金的前提下，把已确认的每月3000至5000元投资带拆成3000元基础定投与最多2000元回撤追加预算，并与631及现金流匹配对照公平比较。",
+  "inputs": {
+    "timezone": "Asia/Shanghai",
+    "data_source": "validated_local_store_only",
+    "provider_id": "akshare_eastmoney",
+    "signal_nav_field": "accumulated_nav",
+    "benchmark_strategy": "dca_baseline@1.4.0",
+    "base_monthly_contribution_cny": "3000",
+    "maximum_monthly_contribution_cny": "5000",
+    "maximum_monthly_additional_budget_cny": "2000",
+    "unused_additional_budget_treatment": "remains_outside_strategy_and_does_not_accumulate",
+    "benchmark_composite": {
+      "domestic_broad_core": {"fund_code": "110020", "weight": "0.20"},
+      "us_broad_core": {"fund_code": "050025", "weight": "0.20"},
+      "us_growth": {"fund_code": "539001", "weight": "0.10"},
+      "domestic_growth": {"fund_code": "019861", "weight": "0.10"},
+      "defensive": {"fund_code": "006932", "weight": "0.30"},
+      "sh_hk_sz_passive_technology_satellite": {"fund_code": "160646", "weight": "0.10"}
+    }
+  },
+  "rules": {
+    "review": {
+      "frequency": "monthly",
+      "calendar_day": 1,
+      "signal_cutoff": "previous_calendar_day",
+      "maximum_staleness_calendar_days": 10,
+      "insufficient_or_stale_signal": "base_contribution_only"
+    },
+    "drawdown_signal": {
+      "composite_method": "chain_fixed_631_weighted_returns_on_exact_common_nav_dates",
+      "common_date_rule": "all_six_funds_must_have_an_observation_on_the_same_nav_date",
+      "forward_fill": false,
+      "rolling_peak_observations": 126,
+      "minimum_composite_observations": 127,
+      "drawdown_formula": "latest_composite_level / maximum(last_126_composite_levels) - 1",
+      "same_day_unpublished_nav_allowed": false
+    },
+    "additional_budget_tiers": {
+      "evaluation_order": "risk_veto_first_then_most_severe_satisfied_threshold",
+      "thresholds": [
+        {"drawdown_at_or_below": "-0.05", "additional_budget_cny": "500"},
+        {"drawdown_at_or_below": "-0.10", "additional_budget_cny": "1000"},
+        {"drawdown_at_or_below": "-0.15", "additional_budget_cny": "2000"}
+      ]
+    },
+    "normal_state": {"drawdown_greater_than": "-0.05", "additional_budget_cny": "0"},
+    "risk_veto": {
+      "drawdown_at_or_below": "-0.20",
+      "additional_budget_cny_after_veto": "0",
+      "base_contribution_continues_in_research_backtest": true,
+      "manual_risk_review_required_before_any_real_additional_budget": true
+    },
+    "allocation": {
+      "base_contribution": "reuse_dca_baseline_v1_4_target_gap_allocation",
+      "additional_budget_destinations": {
+        "domestic_broad_core": "0.50",
+        "us_broad_core": "0.50"
+      },
+      "themes_receive_additional_budget": false,
+      "defensive_sleeve_is_not_sold_to_fund_additions": true,
+      "selling_allowed": false
+    },
+    "execution": {
+      "reuse_dca_v1_4_calendar_and_fund_routing": true,
+      "limited_funds_start_month_begin": true,
+      "unlimited_funds_use_5_15_25_tranches": true,
+      "carry_limited_orders_across_month_end": true
+    },
+    "comparison_gate": {
+      "fixed_cashflow_benchmark": "dca_baseline_631_monthly_3000",
+      "matched_cashflow_benchmark": "same_monthly_total_cashflow_allocated_by_dca_baseline_631_target_gaps",
+      "raw_final_value_without_contribution_disclosure_is_prohibited": true,
+      "primary_rate_metrics": ["time_weighted_return", "xirr", "annualized_return", "maximum_drawdown", "annualized_volatility"]
+    },
+    "evidence_gate": {
+      "report_trigger_months_by_tier": true,
+      "report_independent_drawdown_episodes_by_tier": true,
+      "post_trigger_horizons_months": [3, 6, 12],
+      "incomplete_forward_horizons_are_excluded": true,
+      "untriggered_tier_status": "historically_unobserved",
+      "observed_but_sparse_status": "observed_insufficient_for_validation",
+      "historical_visibility_assumed_maximum_status": "historical_diagnostic_only",
+      "synthetic_stress_can_validate": ["budget_cap", "risk_veto", "cash_nonnegative", "routing_invariants"],
+      "synthetic_stress_cannot_validate": ["future_return", "economic_profitability", "recovery_probability"],
+      "proxy_history_requires_basis_risk_disclosure": true
+    }
+  },
+  "prohibitions": [
+    "borrow_or_use_leverage",
+    "use_emergency_fund",
+    "carry_unused_additional_budget_into_future_months",
+    "add_more_than_2000_cny_in_one_month",
+    "contribute_more_than_5000_cny_in_one_month",
+    "add_to_single_theme_or_weakest_fund",
+    "sell_existing_holdings_to_fund_additions",
+    "use_same_day_unpublished_nav",
+    "forward_fill_missing_nav",
+    "continue_automatic_additional_budget_at_or_below_20pct_drawdown",
+    "compare_raw_final_value_without_cashflow_normalization",
+    "change_tiers_after_viewing_primary_backtest",
+    "submit_real_orders"
+  ],
+  "backtest_scenarios": {
+    "primary_period": "2024-01-01_to_2026-07-31",
+    "fee_pressure_rate": "0.0015",
+    "required_comparators": ["fixed_3000_631", "matched_cashflow_631"],
+    "required_sensitivity": ["monthly_budget_band", "purchase_fee", "drawdown_threshold_neighbors", "rolling_peak_neighbors", "synthetic_stress"]
+  },
+  "required_outputs": [
+    "monthly_drawdown_signal_ledger",
+    "composite_effective_nav_dates",
+    "additional_budget_tier_and_veto_reason",
+    "base_and_additional_contribution_breakdown",
+    "matched_cashflow_benchmark",
+    "time_weighted_return",
+    "xirr",
+    "maximum_drawdown",
+    "fees",
+    "cash_drag",
+    "tier_trigger_coverage_and_evidence_status",
+    "independent_drawdown_episode_counts",
+    "complete_post_trigger_3_6_12_month_outcomes",
+    "data_scenario_and_strategy_hashes"
+  ],
+  "acceptance_tests": [
+    "signal_uses_only_exact_common_accumulated_nav_dates_at_or_before_cutoff",
+    "missing_nav_is_not_forward_filled",
+    "insufficient_or_stale_data_produces_base_only",
+    "monthly_total_is_between_3000_and_5000",
+    "monthly_additional_budget_never_exceeds_2000",
+    "drawdown_at_or_below_20pct_vetoes_additional_budget",
+    "additional_budget_only_routes_to_two_broad_core_sleeves",
+    "no_sell_events",
+    "matched_cashflow_comparator_has_identical_monthly_contributions",
+    "untriggered_tiers_are_marked_historically_unobserved_not_passed",
+    "synthetic_paths_do_not_claim_economic_validation",
+    "same_inputs_produce_byte_equivalent_results"
+  ],
+  "known_blockers": [
+    "historical_visibility_is_assumed_for_backfilled_nav",
+    "common_history_is_short_due_to_019861_inception",
+    "official_qdii_calendar_and_channel_rules_incomplete",
+    "historical_20pct_veto_may_require_synthetic_or_longer_samples",
+    "prospective_out_of_sample_observation_incomplete"
+  ]
+}

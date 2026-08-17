@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "rolling_id": "phase4_c4_5_candidate_twelve_month_rolling_v1",
+  "purpose": "以12个月窗口、3个月步进和0.15%统一申购费比较风险修复候选。",
+  "first_start_date": "2024-01-01",
+  "last_end_date": "2026-07-31",
+  "window_months": 12,
+  "step_months": 3,
+  "uniform_purchase_fee_rates": ["0.0015"],
+  "fixed_assumptions": {"monthly_contribution_cny":"3000","execution":"limited_month_start_and_unlimited_5_15_25","selection_rule":"all_complete_windows_without_performance_filtering"}
+}

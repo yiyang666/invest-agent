@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/portfolio_snapshot.schema.json",
+  "title": "Public Portfolio Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "as_of",
+    "source",
+    "batch_id",
+    "quality_status",
+    "cash",
+    "cash_weight",
+    "total_fund_value",
+    "total_assets",
+    "positions",
+    "quality_issues"
+  ],
+  "properties": {
+    "as_of": { "type": "string", "format": "date-time" },
+    "source": { "type": "string", "minLength": 1 },
+    "batch_id": { "type": "string", "minLength": 1 },
+    "quality_status": { "enum": ["pass", "partial", "fail"] },
+    "cash": { "type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$" },
+    "cash_weight": { "type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$" },
+    "total_fund_value": { "type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$" },
+    "total_assets": { "type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$" },
+    "positions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fund_code", "shares", "market_value", "weight"],
+        "properties": {
+          "fund_code": { "type": "string", "pattern": "^[0-9]{6}$" },
+          "fund_name": { "type": ["string", "null"] },
+          "shares": { "type": "string" },
+          "market_value": { "type": "string" },
+          "weight": { "type": "string" },
+          "nav_date": { "type": ["string", "null"], "format": "date" }
+        }
+      }
+    },
+    "quality_issues": { "type": "array" }
+  }
+}

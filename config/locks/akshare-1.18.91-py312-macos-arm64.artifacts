@@ -1,0 +1,27 @@
+# Additive artifact lock for the existing .conda-env baseline.
+# Platform: CPython 3.12 / macOS arm64
+# Source index: https://pypi.org/simple
+# Installation is performed from verified local artifacts with --no-deps.
+
+0f7f5622ed1b2c6cee85038402c32c7cdb244e1677106fdaec732f1dbcc1f077  akshare-1.18.91-py3-none-any.whl
+d6f88de62e1d4e38ecb1077eb9724cd0eff29d2a08ca16a401e9b9e93f117cf9  beautifulsoup4-4.15.0-py3-none-any.whl
+f81b3b8f3d4e343550fa4baa0e479bba9f2d29ce9c2e9b51d1ce1718d7442fcf  cffi-2.1.1-cp312-cp312-macosx_11_0_arm64.whl
+edd5f6e8f122157f4d2351b0b5e48e6a1c0677a2064da71451bb30ef57af19ba  curl_cffi-0.16.0-cp310-abi3-macosx_11_0_arm64.whl
+f47fe6fdbd2edd623ecfe36875d37aba411624e2670dd395dddae1358689bb3c  decorator-5.3.1-py3-none-any.whl
+7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa  et_xmlfile-2.0.0-py3-none-any.whl
+0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d  html5lib-1.1-py2.py3-none-any.whl
+d87ef2bcbcded68ee96bc34c1809b69457ecec9b0c4dd471658a12bd391002d1  jsonpath-0.82.2.tar.gz
+104c09bda8d2a562824c0e319d0768ce26a779b7601e0931d33b09b53c392ef7  lxml-6.1.1-cp312-cp312-macosx_10_13_universal2.whl
+56cc6965a1665a50d8d613bc43aa83b4cec6b1f09acc69dc4c2845dacb201463  mini_racer-0.14.1-py3-none-macosx_11_0_arm64.whl
+6e8172ddfcf5cf74b811d372b570b83c60bd2de87a6fbfbebdadb4a9bd9c6cbb  numpy-2.5.2-cp312-cp312-macosx_14_0_arm64.whl
+5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2  openpyxl-3.1.5-py2.py3-none-any.whl
+c2e26bb46934b8a2ca0c3de1d3d606fc5f6746584791b2db264d58cf370e08dc  pandas-3.0.5-cp312-cp312-macosx_11_0_arm64.whl
+b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992  pycparser-3.0-py3-none-any.whl
+a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427  python_dateutil-2.9.0.post0-py2.py3-none-any.whl
+4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274  six-1.17.0-py2.py3-none-any.whl
+8089a26fd974ca7a1f30276d3d8492ab266ab15af581642dfe8aa162e0c1c823  soupsieve-2.9.2-py3-none-any.whl
+f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3  tabulate-0.10.0-py3-none-any.whl
+7f585706bfddbdebf89daac705b2dfcc16890130727d3197ca62c732b4310953  tqdm-4.70.0-py3-none-any.whl
+481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8  typing_extensions-4.16.0-py3-none-any.whl
+a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78  webencodings-0.5.1-py2.py3-none-any.whl
+ea762c3d29f4cca48d82df517b6d89fbce4db3107f9d78713e48cd321d5c9aa9  xlrd-2.0.2-py2.py3-none-any.whl

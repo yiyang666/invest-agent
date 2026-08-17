@@ -1,0 +1,168 @@
+schema_version: 1
+status: provisional
+review_date: 2026-11-15
+
+system_mode: advisory_only
+
+investor_profile:
+  life_stage: early_career
+  experience_note: graduated_about_one_year_ago
+  risk_willingness: moderate
+  risk_capacity: limited_to_moderate
+  leverage_allowed: false
+
+objective:
+  primary: steady_growth_and_capital_accumulation
+  horizon_years: 5
+  liquidity_priority: high
+  allocation_anchor: allocation_anchor_631
+  comparison_benchmark: dca_baseline@1.4.0
+  benchmark_interpretation: allocation_anchor_is_not_a_mandatory_execution_schedule
+  current_fund_assets_cny: 6000
+  contribution:
+    cadence: monthly_stepwise
+    current_band_cny:
+      minimum: 3000
+      maximum: 5000
+    future_step_bands_cny:
+      - minimum: 5000
+        maximum: 8000
+        activation: explicit_user_update
+    flexible: true
+    band_changes_require_user_update: true
+
+liquidity:
+  external_emergency_fund_management: out_of_scope_by_user_request
+  post_expense_monthly_surplus_context_cny: 8000
+  defensive_allocation_target_pct: 30
+
+universe:
+  instrument_type: off_exchange_funds
+  approach: core_satellite
+  allowed_fund_types:
+    - broad_market_index
+    - diversified_equity
+    - balanced_or_hybrid
+    - bond
+    - money_market
+    - approved_sector_theme_as_satellite
+  excluded_fund_types:
+    - leveraged
+    - inverse
+    - unapproved_derivative_or_structured
+  excluded_sectors: []
+
+allocation:
+  min_core_weight_pct: 60
+  max_high_volatility_satellite_weight_pct: 10
+  min_liquidity_or_defensive_weight_pct: 15
+  provisional_liquidity_or_defensive_weight_pct: 30
+  selected_research_target:
+    id: long_term_60_defensive_30_satellite_10
+    long_term_assets_pct:
+      domestic_broad_core: 20
+      us_broad_core: 20
+      us_growth: 10
+      domestic_growth: 10
+    defensive_pct: 30
+    sh_hk_sz_passive_technology_satellite_pct: 10
+    selected_routes:
+      domestic_broad_core: "110020"
+      us_broad_core: "050025"
+      us_growth: "539001"
+      domestic_growth: "019861"
+      sh_hk_sz_passive_technology_satellite: "160646"
+      defensive: "006932"
+    defensive_route_status: selected_research_route
+  benchmark_and_personal_target_aligned: true
+  tactical_overlay_policy:
+    allowed: true
+    examples:
+      - core_fixed_dca_with_satellite_drawdown_additions
+      - matched_cashflow_dynamic_new_money_allocation
+    requirements:
+      - versioned_strategy_spec
+      - fair_matched_cashflow_comparator
+      - portfolio_risk_veto
+      - theme_and_single_fund_caps
+    note: tactical_execution_may_deviate_from_631_while_631_remains_the_long_term_anchor
+  superseded_repair_candidate:
+    id: long_term_60_defensive_35_satellite_05
+    status: rejected_by_user_to_preserve_simple_631_baseline
+  candidate_selection_status: personal_target_631_reconfirmed_pending_oos_and_product_rule_gates
+
+risk:
+  target_max_portfolio_drawdown_pct: 15
+  stress_limit_portfolio_drawdown_pct: 20
+  user_reconfirmed_stress_tolerance_date: 2026-08-16
+  stress_tolerance_interpretation: approximately_20_pct_not_a_return_target
+  max_single_fund_weight_pct: 25
+  max_theme_weight_pct: 30
+  min_holding_days: 30
+  preferred_holding_days: 90
+  max_active_rebalances_per_month: 2
+  review_after_real_drawdown_pct: 10
+  note: drawdown_limits_are_risk_budgets_not_guarantees
+
+decision:
+  require_strategy_registry: true
+  require_backtest_gate: true
+  require_risk_pass: true
+  require_human_approval: true
+  approval_scope: exact_single_order
+  approval_expires_minutes: 15
+  key_field_change_invalidates_approval: true
+
+execution:
+  real_trading_enabled: false
+  allowed_actions:
+    - analyze
+    - propose
+    - read_holdings
+    - read_orders
+  mutation_permissions:
+    purchase: false
+    redeem: false
+    revoke: false
+  auto_retry_mutations: false
+  reconcile_unknown_before_retry: true
+  allow_auto_update_third_party_tools: false
+
+integrations:
+  thsfund:
+    project_local_install_approved: true
+    isolated_python_install_approved: true
+    sdk_version: 0.2.0
+    environment_manager: miniconda
+    environment_path: .conda-env
+    python_version: "3.12"
+    conda_channel: conda-forge
+    authentication_approved: true
+    authentication_completed: true
+    authentication_completed_date: 2026-08-15
+    device_identifier_consent: true
+    consent_recorded_date: 2026-08-15
+    credentials_path: ~/.aijijin/credentials.json
+    initial_capability_mode: read_only
+
+data:
+  timezone: Asia/Shanghai
+  store_history: local_redacted_history_allowed
+  snapshot_processing_mode: persist_redacted_only
+  history_consent_date: 2026-08-15
+  redact_accounts: true
+  commit_private_data_to_git: false
+  allow_web_scraping_as_production_source: false
+  production_market_data_source: local_validated_fund_store
+  preferred_collection_sources:
+    - akshare_ths
+    - akshare_eastmoney
+    - penghua_official_nav
+  optional_paid_validation_source: tushare_pro
+  remote_collectors_may_serve_backtests_directly: false
+  require_secondary_source_validation: true
+
+reporting:
+  daily_time: TODO
+  weekly_time: TODO
+  channels: []

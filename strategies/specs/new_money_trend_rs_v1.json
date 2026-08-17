@@ -1,0 +1,30 @@
+{
+  "$schema":"../../schemas/strategy_spec.schema.json",
+  "schema_version":1,
+  "strategy_id":"new_money_trend_rs",
+  "strategy_version":"1.0.0",
+  "status":"implemented",
+  "mode":"research_only",
+  "purpose":"在不卖出现有份额的前提下，只对631中30%的成长与科技月度新增资金应用绝对趋势和相对强弱排序，并与631定投基准比较。",
+  "inputs":{
+    "timezone":"Asia/Shanghai","data_source":"validated_local_store_only","provider_id":"akshare_eastmoney","signal_nav_field":"accumulated_nav",
+    "benchmark_strategy":"dca_baseline@1.4.0","monthly_contribution_cny":3000,
+    "fixed_new_money_weights":{"domestic_broad_core":"0.20","us_broad_core":"0.20","defensive":"0.30"},
+    "tactical_new_money_weight":"0.30",
+    "tactical_candidates":{"us_growth":"539001","domestic_growth":"019861","sh_hk_sz_passive_technology_satellite":"160646"},
+    "fallback_sleeve":"defensive"
+  },
+  "rules":{
+    "review":{"frequency":"monthly","calendar_day":1,"signal_cutoff":"previous_calendar_day","non_open_day_rule":"use_latest_already_visible_observation","maximum_staleness_calendar_days":10},
+    "eligibility":{"minimum_observations":127,"medium_return_calendar_days":91,"slow_return_calendar_days":182,"slow_average_observations":126,"requires_positive_slow_return":true,"requires_nav_above_slow_average":true,"missing_or_stale_candidate":"ineligible"},
+    "relative_strength":{"score":"0.5 * trailing_91_calendar_day_return + 0.5 * trailing_182_calendar_day_return","descending_rank":true,"tie_breaker":"fund_code_ascending"},
+    "new_money_allocation":{"eligible_slots":2,"weight_per_selected_candidate":"0.15","unfilled_slot_to_fallback":"0.15","existing_holdings_are_not_sold":true,"fixed_sleeves_are_not_ranked":true,"maximum_selected_candidate_new_money_weight":"0.15"},
+    "execution":{"reuse_dca_v1_4_calendar_and_fund_routing":true,"limited_funds_start_month_begin":true,"unlimited_funds_use_5_15_25_tranches":true,"selling_allowed":false},
+    "risk_boundary":{"total_growth_and_technology_new_money_cap":"0.30","single_tactical_candidate_new_money_cap":"0.15","borrowing_or_leverage":false,"policy_limits_are_external_vetoes":true}
+  },
+  "prohibitions":["use_same_day_unpublished_nav","use_unit_nav_without_explicit_distribution_adjustment_for_momentum","forward_fill_missing_nav","rank_ineligible_or_stale_candidate","allocate_more_than_two_tactical_candidates","put_all_tactical_cash_into_one_winner","sell_existing_holdings_for_rotation","change_parameters_after_viewing_backtest_results","submit_real_orders"],
+  "backtest_scenarios":{"comparison":"dca_baseline@1.4.0","signal_windows_calendar_days":[91,182],"slow_average_observations":126,"selected_slots":2,"parameter_sensitivity_reserved_for_after_primary_run":true},
+  "required_outputs":["monthly_signal_ledger","effective_nav_dates","candidate_eligibility_reasons","relative_strength_scores","new_money_allocations","benchmark_relative_return","maximum_drawdown","xirr","fees","cash_drag","data_and_strategy_hashes"],
+  "acceptance_tests":["signal_uses_only_data_at_or_before_cutoff","accumulated_nav_is_used_for_momentum","missing_history_becomes_ineligible_not_forward_filled","scores_have_deterministic_tie_break","selected_candidate_count_never_exceeds_two","tactical_new_money_never_exceeds_30pct","no_sell_events","same_inputs_produce_byte_equivalent_results"],
+  "known_blockers":["redemption_engine_not_required_because_v1_is_new_money_only","historical_visibility_is_assumed_for_backfilled_nav","common_history_is_short_due_to_019861_inception","official_qdii_calendar_and_channel_rules_incomplete","prospective_out_of_sample_observation_incomplete"]
+}

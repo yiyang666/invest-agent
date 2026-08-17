@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "pack_id": "monthly_research_decision_2026_08_bootstrap",
+  "pack_kind": "bootstrap_mid_cycle_research",
+  "as_of": "2026-08-16T23:59:59+08:00",
+  "signal_review_date": "2026-08-01",
+  "signal_valid_until": "2026-08-31T23:59:59+08:00",
+  "market_data_as_of": "2026-08-15",
+  "provider_id": "akshare_eastmoney",
+  "nav_field": "accumulated_nav",
+  "database_path": "data/private/invest_agent.sqlite3",
+  "snapshot_path": "data/private/portfolio_snapshots/thsfund-20260815T153750+0800.json",
+  "registry_path": "strategies/registry.json",
+  "monthly_contribution_preview_cny": "3000",
+  "quality_limits": {
+    "maximum_snapshot_age_calendar_days": 3,
+    "maximum_market_data_age_calendar_days": 3
+  },
+  "target_routes": {
+    "domestic_broad_core": "110020",
+    "us_broad_core": "050025",
+    "us_growth": "539001",
+    "domestic_growth": "019861",
+    "defensive": "006932",
+    "sh_hk_sz_passive_technology_satellite": "160646"
+  },
+  "target_weights": {
+    "domestic_broad_core": "0.20",
+    "us_broad_core": "0.20",
+    "us_growth": "0.10",
+    "domestic_growth": "0.10",
+    "defensive": "0.30",
+    "sh_hk_sz_passive_technology_satellite": "0.10"
+  },
+  "current_position_role_mapping": {
+    "000043": "us_growth",
+    "016452": "us_growth",
+    "026211": "domestic_growth",
+    "014408": "legacy_active_other",
+    "019087": "legacy_theme_other"
+  },
+  "risk_limits": {
+    "target_drawdown_pct": "15",
+    "stress_drawdown_pct": "20",
+    "maximum_single_fund_weight_pct": "25",
+    "maximum_theme_weight_pct": "30"
+  },
+  "safety": {
+    "research_only": true,
+    "advisory_only": true,
+    "mid_cycle_pack_may_generate_new_schedule": false,
+    "selling_allowed": false,
+    "order_intent_generation_allowed": false,
+    "real_trading_enabled": false
+  }
+}

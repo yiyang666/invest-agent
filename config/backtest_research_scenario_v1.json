@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "scenario_id": "phase4_dca_profile_comparison_2023_2026_v1",
+  "classification": "counterfactual_research_assumption",
+  "purpose": "在相同基金代理、现金流和显式执行假设下，对比6-2-2、5.5-2-2.5与5-2-3的相对路径；不声称复原爱基金历史真实成交。",
+  "provider_id": "akshare_eastmoney",
+  "period": {
+    "start_date": "2023-01-05",
+    "end_date": "2026-08-14"
+  },
+  "monthly_contribution_cny": "3000",
+  "calendar_day": 5,
+  "allocation_profiles": [
+    {
+      "id": "core_60_defensive_20_satellite_20",
+      "weights": {"core": "0.60", "defensive": "0.20", "satellite": "0.20"}
+    },
+    {
+      "id": "core_55_defensive_20_satellite_25",
+      "weights": {"core": "0.55", "defensive": "0.20", "satellite": "0.25"}
+    },
+    {
+      "id": "core_50_defensive_20_satellite_30",
+      "weights": {"core": "0.50", "defensive": "0.20", "satellite": "0.30"}
+    }
+  ],
+  "routes": [
+    {
+      "sleeve": "core",
+      "fund_code": "110020",
+      "role": "沪深300核心代理",
+      "minimum_order_cny": "10",
+      "daily_cap_cny": null,
+      "purchase_fee_rate": "0",
+      "share_precision": 2,
+      "share_rounding_mode": "down",
+      "rule_version": "research_assumption_zero_fee_unlimited_v1",
+      "rule_effective_date": "2023-01-01",
+      "assumption_authority": "counterfactual_research_assumption"
+    },
+    {
+      "sleeve": "defensive",
+      "fund_code": "070009",
+      "role": "超短债防御代理",
+      "minimum_order_cny": "10",
+      "daily_cap_cny": null,
+      "purchase_fee_rate": "0",
+      "share_precision": 2,
+      "share_rounding_mode": "down",
+      "rule_version": "research_assumption_zero_fee_unlimited_v1",
+      "rule_effective_date": "2023-01-01",
+      "assumption_authority": "counterfactual_research_assumption"
+    },
+    {
+      "sleeve": "satellite",
+      "fund_code": "014408",
+      "role": "机器人制造高波动卫星代理",
+      "minimum_order_cny": "10",
+      "daily_cap_cny": null,
+      "purchase_fee_rate": "0",
+      "share_precision": 2,
+      "share_rounding_mode": "down",
+      "rule_version": "research_assumption_zero_fee_unlimited_v1",
+      "rule_effective_date": "2023-01-01",
+      "assumption_authority": "counterfactual_research_assumption"
+    }
+  ],
+  "nav_assumption": {
+    "field": "unit_nav",
+    "visibility_rule": "next_fund_nav_date",
+    "forward_fill": false
+  },
+  "subscription_assumption": {
+    "precommitted_before_cutoff": true,
+    "confirmation_rule": "nav_visible_date"
+  },
+  "distribution_assumption": {
+    "election": "cash",
+    "payment_date_rule": "next_fund_nav_date",
+    "cash_precision": 2,
+    "cash_rounding_mode": "half_up"
+  },
+  "official_rule_gate": {
+    "status": "blocked",
+    "reason": "爱基金历史渠道费率、最低金额、动态限额、确认周期和历史开放日历未完成官方核验；本场景规则不得用于正式回测发布。"
+  }
+}

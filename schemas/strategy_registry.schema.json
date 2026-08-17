@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/strategy_registry.schema.json",
+  "title": "Strategy registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_id", "as_of", "mode", "terminology", "decision_contract", "strategies"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": 3},
+    "registry_id": {"type": "string", "minLength": 1},
+    "as_of": {"type": "string", "format": "date-time"},
+    "mode": {"const": "research_only"},
+    "terminology": {
+      "type": "object",
+      "required": ["allocation_anchor_631", "dca_baseline@1.4.0", "tactical_overlay"]
+    },
+    "decision_contract": {
+      "type": "object",
+      "required": ["unregistered_strategy", "version_match", "spec_hash_match_required", "required_signal_fields", "accepted_data_quality_statuses", "expired_signal", "risk_veto", "order_intent_generation_allowed"]
+    },
+    "strategies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["strategy_id", "strategy_version", "role", "lifecycle_status", "mode", "spec", "evidence", "gates", "decision_permissions"],
+        "properties": {
+          "strategy_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]+$"},
+          "strategy_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+          "role": {"enum": ["benchmark_and_personal_target", "research_control", "research_candidate"]},
+          "lifecycle_status": {"enum": ["implemented", "validated", "retired"]},
+          "mode": {"const": "research_only"},
+          "spec": {"type": "object"},
+          "evidence": {"type": "object"},
+          "gates": {"type": "object"},
+          "decision_permissions": {"type": "object"}
+        }
+      }
+    }
+  }
+}

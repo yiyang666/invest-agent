@@ -1,0 +1,29 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.venv/
+.venv*/
+.conda-env/
+.conda-data-env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Credentials and sensitive local state
+.aijijin/
+credentials.json
+**/credentials.json
+*.token
+*.secret
+
+# Downloaded third-party runtime artifacts
+.agents/skills/thsfund/
+vendor-downloads/
+
+# Local/raw financial data
+data/raw/
+data/private/
+data/imports/

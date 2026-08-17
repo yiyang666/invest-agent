@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "protocol_id": "dca_baseline_v1_2_prospective_oos_v1",
+  "status": "superseded_before_observation_start",
+  "frozen_at": "2026-08-16T23:59:59+08:00",
+  "mode": "research_only",
+  "candidate": {
+    "strategy_id": "dca_baseline",
+    "strategy_version": "1.2.0",
+    "strategy_spec_path": "strategies/specs/dca_baseline_v1_2.json",
+    "strategy_spec_file_sha256": "a87e536984d33b4ca2318c49e265c2b03b18bce4bcee2c8139382d26e02d98c2",
+    "scenario_path": "config/backtest_research_scenario_v5.json",
+    "scenario_file_sha256": "72be0bb798a0529f89132e54cc6c0f9ff6ea988df622bf4d2c688f35669da39b",
+    "investment_policy_file_sha256": "cc8263eacdf3d4863c143ee7d40484a40dbe6504dce22845df4b68360f65926b",
+    "monthly_contribution_cny": "3000",
+    "uniform_purchase_fee_rate": "0.0015",
+    "routes": {
+      "domestic_broad_core": "110020",
+      "us_broad_core": "050025",
+      "us_growth": "539001",
+      "domestic_growth": "019861",
+      "defensive": "006932",
+      "sh_hk_sz_passive_technology_satellite": "160646"
+    }
+  },
+  "evaluation": {
+    "earliest_eligible_observation_date": "2026-08-17",
+    "minimum_complete_months": 12,
+    "interim_review_frequency_months": 3,
+    "interim_reviews_are_descriptive_only": true,
+    "eligible_visibility": ["strict_point_in_time"],
+    "append_only_results": true,
+    "parameter_changes_reset_candidate_and_clock": true,
+    "historical_2024_2026_windows": "diagnostic_only_not_out_of_sample"
+  },
+  "gates": {
+    "required": [
+      "all_six_routes_have_complete_eligible_observations",
+      "same_inputs_produce_identical_results",
+      "no_leverage_no_sell_no_real_orders",
+      "no_negative_cash_or_unreconciled_events",
+      "maximum_drawdown_does_not_breach_policy_stress_limit"
+    ],
+    "review_if_maximum_drawdown_pct_below": -15,
+    "fail_if_maximum_drawdown_pct_below": -20,
+    "return_threshold": null,
+    "return_threshold_reason": "投资政策中的正式比较基准尚未冻结；禁止事后选择有利基准或最低收益线。"
+  },
+  "current_result": {
+    "status": "superseded_by_dca_baseline_v1_3",
+    "eligible_complete_months": 0,
+    "gate_passed": false
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "matrix_id": "phase4_six_sleeve_c3_1_cross_month_queue_2024_2026_v2",
+  "purpose": "在006932已锁定后，以跨月限购队列重新检验月供与扣款日敏感性。",
+  "monthly_contribution_cny": ["3000", "4000", "5000"],
+  "calendar_days": [5, 15, 25],
+  "defensive_routes": [
+    {
+      "fund_code": "006932",
+      "role": "政策性金融债防御主路由",
+      "rule_version": "research_assumption_zero_fee_unlimited_v4"
+    }
+  ],
+  "scenario_overrides": {
+    "purpose": "以006932为防御主路由，限购基金待投金额跨月排队直至完成或研究窗口结束。",
+    "subscription_assumption": {
+      "precommitted_before_cutoff": true,
+      "confirmation_rule": "nav_visible_date",
+      "carry_unfilled_across_month_end": true,
+      "reserved_cash_counts_toward_target_sleeve": true
+    }
+  },
+  "fixed_assumptions": {
+    "allocation": "20/20/10/10/30/10",
+    "qdii_daily_cap_cny": "100",
+    "purchase_fee_rate": "0",
+    "nav_visibility": "next_fund_nav_date",
+    "forward_fill": false,
+    "queue_expiry": "research_horizon_end"
+  }
+}

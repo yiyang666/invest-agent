@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/monthly_decision_pack.schema.json",
+  "title": "Monthly research decision package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pack_id", "pack_kind", "as_of", "mode", "source_snapshot", "data_quality", "current_portfolio", "strategy_decision_input", "research_conclusion", "execution"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "pack_id": {"type": "string"},
+    "pack_kind": {"type": "string"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "mode": {"const": "research_only"},
+    "source_snapshot": {"type": "object"},
+    "data_quality": {"type": "object"},
+    "current_portfolio": {"type": "object"},
+    "strategy_decision_input": {"type": "object"},
+    "research_conclusion": {"type": "object"},
+    "execution": {
+      "type": "object",
+      "required": ["advisory_only", "selling_allowed", "order_intent_generation_allowed", "real_trading_enabled"],
+      "properties": {
+        "advisory_only": {"const": true},
+        "selling_allowed": {"const": false},
+        "order_intent_generation_allowed": {"const": false},
+        "real_trading_enabled": {"const": false}
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "matrix_id": "phase4_six_sleeve_c3_2024_2026_v1",
+  "purpose": "检验60%长期资产、30%防御、10%被动科技卫星结构对月供、扣款日和防御代理的敏感性。",
+  "monthly_contribution_cny": ["3000", "4000", "5000"],
+  "calendar_days": [5, 15, 25],
+  "defensive_routes": [
+    {
+      "fund_code": "006932",
+      "role": "政策性金融债防御代理",
+      "rule_version": "research_assumption_zero_fee_unlimited_v3"
+    },
+    {
+      "fund_code": "070009",
+      "role": "超短债防御代理",
+      "rule_version": "research_assumption_zero_fee_unlimited_v3"
+    }
+  ],
+  "fixed_assumptions": {
+    "allocation": "20/20/10/10/30/10",
+    "qdii_daily_cap_cny": "100",
+    "purchase_fee_rate": "0",
+    "nav_visibility": "next_fund_nav_date",
+    "forward_fill": false
+  }
+}

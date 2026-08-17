@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "robustness_id": "phase4_s2_4_new_money_trend_rs_robustness_v1",
+  "purpose": "冻结主参数后检验月供、申购费用、邻近信号窗口、复核日与期末真实暴露压力，不从邻域结果中挑选新最优参数。",
+  "primary_variant_id": "primary_91_182_avg126_day01",
+  "economic_grid": {
+    "monthly_contribution_cny": ["3000", "4000", "5000"],
+    "uniform_purchase_fee_rates": ["0", "0.0015", "0.005", "0.015"]
+  },
+  "signal_variants": [
+    {
+      "variant_id": "primary_91_182_avg126_day01",
+      "calendar_day": 1,
+      "signal_parameters": {"minimum_observations": 127, "medium_return_days": 91, "slow_return_days": 182, "slow_average_observations": 126, "maximum_staleness_days": 10}
+    },
+    {
+      "variant_id": "shorter_84_168_avg126_day01",
+      "calendar_day": 1,
+      "signal_parameters": {"minimum_observations": 127, "medium_return_days": 84, "slow_return_days": 168, "slow_average_observations": 126, "maximum_staleness_days": 10}
+    },
+    {
+      "variant_id": "longer_98_196_avg126_day01",
+      "calendar_day": 1,
+      "signal_parameters": {"minimum_observations": 127, "medium_return_days": 98, "slow_return_days": 196, "slow_average_observations": 126, "maximum_staleness_days": 10}
+    },
+    {
+      "variant_id": "faster_average_91_182_avg120_day01",
+      "calendar_day": 1,
+      "signal_parameters": {"minimum_observations": 121, "medium_return_days": 91, "slow_return_days": 182, "slow_average_observations": 120, "maximum_staleness_days": 10}
+    },
+    {
+      "variant_id": "slower_average_91_182_avg132_day01",
+      "calendar_day": 1,
+      "signal_parameters": {"minimum_observations": 133, "medium_return_days": 91, "slow_return_days": 182, "slow_average_observations": 132, "maximum_staleness_days": 10}
+    },
+    {
+      "variant_id": "primary_91_182_avg126_day05",
+      "calendar_day": 5,
+      "signal_parameters": {"minimum_observations": 127, "medium_return_days": 91, "slow_return_days": 182, "slow_average_observations": 126, "maximum_staleness_days": 10}
+    }
+  ],
+  "interpretation_rules": {
+    "primary_parameters_remain_frozen": true,
+    "neighbor_variant_winner_selection_allowed": false,
+    "historical_visibility_assumed_means_research_only": true,
+    "stress_probability_claimed": false
+  }
+}

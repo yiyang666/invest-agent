@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "replay_id": "phase4_decision_replay_s4_3",
+  "as_of": "2026-08-16T23:59:59+08:00",
+  "source_pack_path": "data/private/reports/phase-4-monthly-research-decision-pack-s4-2-2026-08-16.json",
+  "registry_path": "strategies/registry.json",
+  "expected_scenarios": [
+    "control_pack_safe",
+    "snapshot_quality_fail",
+    "snapshot_stale",
+    "snapshot_from_future",
+    "market_data_stale",
+    "unreviewed_position_role",
+    "unregistered_strategy",
+    "strategy_version_mismatch",
+    "expired_signal",
+    "future_signal",
+    "data_quality_fail",
+    "risk_veto",
+    "invalid_evidence_hash",
+    "spec_hash_drift",
+    "execution_flag_tampering",
+    "future_registry",
+    "strategy_conflict_preserves_single_baseline_authority",
+    "output_execution_invariants"
+  ],
+  "required_result": "all_expected_scenarios_pass",
+  "safety": {
+    "research_only": true,
+    "mutate_copies_only": true,
+    "network_allowed": false,
+    "order_intent_generation_allowed": false,
+    "real_trading_enabled": false
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "pipeline_id": "monthly_research_pipeline_v1",
+  "run_id": "monthly_research_pipeline_2026_08_bootstrap",
+  "as_of": "2026-08-16T23:59:59+08:00",
+  "source_configs": {
+    "monthly_decision": {
+      "path": "config/monthly_decision_pack_v1.json",
+      "sha256": "04f1b67f7de64a2c867cee6271a0f47f1a6649284ddb37fd768ea84a9985e3fd"
+    },
+    "research_report": {
+      "path": "config/research_report_v1.json",
+      "sha256": "641a2296ccc62c9b3524d3780499e3b74cc047f82b7c29e647e751877b35244a"
+    },
+    "research_explanation": {
+      "path": "config/research_explanation_acceptance_v1.json",
+      "sha256": "2166b71366fbed3455e059c28d781dafbfb5a97824720f8bf0ee450b83275647"
+    }
+  },
+  "artifact_paths": {
+    "decision_pack_json": "data/private/reports/phase-4-monthly-research-decision-pack-s4-2-2026-08-16.json",
+    "research_report_json": "data/private/reports/phase-5-monthly-research-report-s5-1-2026-08-16.json",
+    "research_report_markdown": "data/private/reports/phase-5-monthly-research-report-s5-1-2026-08-16.md",
+    "grounded_explanation_json": "data/private/reports/phase-5-grounded-explanation-s5-2-2026-08-16.json",
+    "grounded_explanation_markdown": "data/private/reports/phase-5-grounded-explanation-s5-2-2026-08-16.md",
+    "explanation_acceptance_json": "data/private/reports/phase-5-grounded-explanation-acceptance-s5-2-2026-08-16.json"
+  },
+  "manifest_path": "data/private/reports/phase-5-monthly-research-pipeline-s5-3-2026-08-16.json",
+  "safety": {
+    "research_only": true,
+    "advisory_only": true,
+    "network_allowed": false,
+    "automatic_schedule_enabled": false,
+    "order_intent_generation_allowed": false,
+    "real_trading_enabled": false
+  }
+}

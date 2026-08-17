@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/monthly_research_pipeline_manifest.schema.json",
+  "title": "Monthly research pipeline manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pipeline_id",
+    "run_id",
+    "as_of",
+    "mode",
+    "publication_semantics",
+    "source_configs",
+    "stages",
+    "artifacts",
+    "summary",
+    "execution",
+    "reproducibility"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "pipeline_id": {"const": "monthly_research_pipeline_v1"},
+    "run_id": {"type": "string", "minLength": 1},
+    "as_of": {"type": "string", "format": "date-time"},
+    "mode": {"const": "research_only"},
+    "publication_semantics": {"const": "manifest_last_all_stages_must_pass"},
+    "source_configs": {"type": "object"},
+    "stages": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["stage_id", "status", "inputs", "outputs"],
+        "properties": {"status": {"const": "passed"}}
+      }
+    },
+    "artifacts": {"type": "object", "minProperties": 6, "maxProperties": 6},
+    "summary": {
+      "type": "object",
+      "required": ["stages_total", "stages_passed", "stages_failed", "publication_gate", "monthly_portfolio_review_generated", "new_real_time_investment_decision"],
+      "properties": {
+        "stages_total": {"const": 4},
+        "stages_passed": {"const": 4},
+        "stages_failed": {"const": 0},
+        "publication_gate": {"const": "passed"},
+        "monthly_portfolio_review_generated": {"const": true},
+        "new_real_time_investment_decision": {"const": false}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "required": ["network_used", "automatic_schedule_used", "order_intent_generation_allowed", "real_trading_enabled", "orders"],
+      "properties": {
+        "network_used": {"const": false},
+        "automatic_schedule_used": {"const": false},
+        "order_intent_generation_allowed": {"const": false},
+        "real_trading_enabled": {"const": false},
+        "orders": {"type": "array", "maxItems": 0}
+      }
+    },
+    "reproducibility": {"type": "object"}
+  }
+}

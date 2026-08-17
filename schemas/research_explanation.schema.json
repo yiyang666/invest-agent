@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/research_explanation.schema.json",
+  "title": "Grounded natural-language research explanation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "explanation_id",
+    "as_of",
+    "mode",
+    "source_report",
+    "scope",
+    "sections",
+    "covered_strategy_ids",
+    "acknowledged_counter_evidence",
+    "acknowledged_uncertainties",
+    "execution",
+    "reproducibility"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "explanation_id": {"type": "string", "minLength": 1},
+    "as_of": {"type": "string", "format": "date-time"},
+    "mode": {"const": "research_only"},
+    "source_report": {
+      "type": "object",
+      "required": ["path", "sha256", "report_id", "evidence_bundle_sha256"]
+    },
+    "scope": {
+      "type": "object",
+      "required": ["external_market_news_used", "market_direction_prediction", "new_numeric_calculation", "explanation_only"],
+      "properties": {
+        "external_market_news_used": {"const": false},
+        "market_direction_prediction": {"const": false},
+        "new_numeric_calculation": {"const": false},
+        "explanation_only": {"const": true}
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["section_id", "title", "assertions"],
+        "properties": {
+          "section_id": {"type": "string"},
+          "title": {"type": "string"},
+          "assertions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["assertion_id", "text", "claim_ids", "citations", "numeric_facts"]
+            }
+          }
+        }
+      }
+    },
+    "covered_strategy_ids": {"type": "array", "minItems": 4, "maxItems": 4},
+    "acknowledged_counter_evidence": {"type": "array", "minItems": 1},
+    "acknowledged_uncertainties": {"type": "array", "minItems": 1},
+    "execution": {
+      "type": "object",
+      "required": ["advisory_only", "order_intent_generation_allowed", "real_trading_enabled", "orders"],
+      "properties": {
+        "advisory_only": {"const": true},
+        "order_intent_generation_allowed": {"const": false},
+        "real_trading_enabled": {"const": false},
+        "orders": {"type": "array", "maxItems": 0}
+      }
+    },
+    "reproducibility": {"type": "object"}
+  }
+}

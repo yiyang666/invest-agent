@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "matrix_id": "phase4_c4_1_uniform_purchase_fee_2024_2026_v1",
+  "purpose": "固定3000元月供和v1.2执行路径，仅改变所有路由的统一前端申购费率，以测量费用侵蚀。",
+  "monthly_contribution_cny": ["3000"],
+  "calendar_days": [1],
+  "defensive_routes": [
+    {
+      "fund_code": "006932",
+      "role": "政策性金融债防御主路由",
+      "rule_version": "research_assumption_zero_fee_unlimited_v5"
+    }
+  ],
+  "uniform_purchase_fee_rates": ["0", "0.0015", "0.005", "0.015"],
+  "scenario_overrides": {
+    "purpose": "费用敏感性：统一申购费率反事实压力测试。"
+  },
+  "fixed_assumptions": {
+    "allocation": "20/20/10/10/30/10",
+    "monthly_contribution_cny": "3000",
+    "execution": "limited_month_start_and_unlimited_5_15_25",
+    "fee_scope": "front_end_purchase_fee_only",
+    "management_custody_and_sales_service_fees": "already_reflected_in_nav",
+    "redemption_fee": "not_applicable_buy_only_horizon",
+    "historical_channel_fee_claim": false
+  }
+}

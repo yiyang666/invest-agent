@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "report_id": "monthly_research_report_2026_08_bootstrap_v1",
+  "sources": {
+    "decision_pack": {
+      "path": "data/private/reports/phase-4-monthly-research-decision-pack-s4-2-2026-08-16.json",
+      "sha256": "f589af07ea78b64022f07243323a33d753ccd4fddc74636fdf457c364fff2881"
+    },
+    "investment_policy": {
+      "path": "config/investment_policy.yaml",
+      "sha256": "5f23504d0a46aa9022c1311e46ad5354dc2fefa6f052f6b537edb602df74db48"
+    },
+    "strategy_registry": {
+      "path": "strategies/registry.json",
+      "sha256": "78a1108f923438676ed115d42afda3d6cc436bbfc40332a5e6ae88e4786c60fd"
+    },
+    "oos_protocol": {
+      "path": "config/oos_evaluation_protocol_v4.json",
+      "sha256": "42523ab3c95815096ed346287f48f869b8c8cac14343687b5351015aa01721c9"
+    }
+  },
+  "policy_context": {
+    "allocation_anchor": "allocation_anchor_631",
+    "comparison_benchmark": "dca_baseline@1.4.0",
+    "target_drawdown_pct": "15",
+    "stress_drawdown_pct": "20"
+  },
+  "safety": {
+    "research_only": true,
+    "advisory_only": true,
+    "external_market_news_allowed": false,
+    "price_prediction_allowed": false,
+    "llm_numeric_calculation_allowed": false,
+    "order_intent_generation_allowed": false,
+    "real_trading_enabled": false
+  }
+}

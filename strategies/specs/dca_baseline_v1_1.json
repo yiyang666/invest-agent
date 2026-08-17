@@ -1,0 +1,87 @@
+{
+  "$schema": "../../schemas/strategy_spec.schema.json",
+  "schema_version": 1,
+  "strategy_id": "dca_baseline",
+  "strategy_version": "1.1.0",
+  "status": "implemented",
+  "mode": "research_only",
+  "purpose": "以固定资金流和目标权重建立无择时基准；限购袖套的已分配待投现金允许跨月排队，并占用该袖套目标权重。",
+  "inputs": {
+    "timezone": "Asia/Shanghai",
+    "data_source": "validated_local_store_only",
+    "nav_field": "unit_nav",
+    "contribution_cny": {"canonical": 3000, "sensitivity": [4000, 5000]},
+    "schedule": {
+      "calendar_day": 5,
+      "frequency": "monthly",
+      "non_open_day_rule": "next_instrument_eligible_open_day"
+    },
+    "allocation": "20/20/10/10/30/10",
+    "defensive_route": "006932"
+  },
+  "rules": {
+    "signal": {
+      "type": "precommitted_calendar_plan",
+      "depends_on_market_state": false,
+      "depends_on_nav_or_return": false,
+      "generated_once_per_calendar_month": true
+    },
+    "cash_flow": {
+      "borrowing_or_leverage": false,
+      "uninvested_amount": "remain_as_cash",
+      "carry_unfilled_order_across_month_end": true,
+      "reserved_cash_counts_toward_its_sleeve": true
+    },
+    "buy_only_allocation": {
+      "selling_allowed": false,
+      "allocation_rule": "new cash fills current target gaps after invested value and reserved pending cash",
+      "overweight_sleeve_new_money": 0
+    },
+    "instrument_routing": {
+      "daily_cap_rule": "aggregate fund-date capacity across current and previously scheduled allocations",
+      "queue_rule": "FIFO schedule across later eligible fund dates until filled or research horizon ends",
+      "automatic_fund_substitution": false
+    },
+    "risk_boundary": {
+      "policy_limits_are_external_vetoes": true,
+      "scheduled_contribution_is_not_an_active_rebalance": true
+    }
+  },
+  "prohibitions": [
+    "use_same_day_unpublished_nav",
+    "forward_fill_missing_nav",
+    "borrow_cash",
+    "sell_to_restore_target_weights",
+    "silently_discard_reserved_queue_at_month_end",
+    "replace_unavailable_fund_without_versioned_mapping_change",
+    "submit_real_orders"
+  ],
+  "backtest_scenarios": {
+    "contribution_cny": [3000, 4000, 5000],
+    "calendar_day_sensitivity": [5, 15, 25],
+    "defensive_fund_code": "006932",
+    "queue_modes": ["cross_month_reserved_cash"]
+  },
+  "required_outputs": [
+    "time_weighted_return",
+    "xirr",
+    "annualized_volatility",
+    "maximum_drawdown_and_recovery",
+    "cash_drag",
+    "cross_month_scheduled_cash",
+    "scenario_end_unfilled_cash",
+    "data_rule_strategy_and_code_hashes"
+  ],
+  "acceptance_tests": [
+    "same_inputs_produce_byte_equivalent_results",
+    "fund_date_daily_cap_includes_prior_reservations",
+    "reserved_future_cash_is_attributed_to_its_target_sleeve",
+    "unfilled_queue_survives_calendar_month_boundary",
+    "no_negative_cash_and_no_sell_events"
+  ],
+  "known_blockers": [
+    "exact_historical_channel_fee_and_limit_rules_incomplete",
+    "fund_specific_confirmation_and_qdii_calendar_rules_incomplete",
+    "strict_point_in_time_history_is_not_available_for_backfilled_nav"
+  ]
+}

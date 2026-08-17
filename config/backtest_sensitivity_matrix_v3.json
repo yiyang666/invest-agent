@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "matrix_id": "phase4_six_sleeve_c3_2_monthly_tranches_2024_2026_v3",
+  "purpose": "检验月初限购队列与非限购5/15/25三等份统一执行路径在3000至5000元月供下的表现。",
+  "monthly_contribution_cny": ["3000", "4000", "5000"],
+  "calendar_days": [1],
+  "defensive_routes": [{"fund_code":"006932","role":"政策性金融债防御主路由","rule_version":"research_assumption_zero_fee_unlimited_v5"}],
+  "scenario_overrides": {
+    "purpose": "月初冻结预算；限购基金月初优先，非限购基金按5/15/25三等份。",
+    "subscription_assumption": {
+      "precommitted_before_cutoff": true,
+      "confirmation_rule": "nav_visible_date",
+      "carry_unfilled_across_month_end": true,
+      "reserved_cash_counts_toward_target_sleeve": true,
+      "unlimited_fund_tranche_calendar_days": [5,15,25]
+    }
+  },
+  "fixed_assumptions": {"allocation":"20/20/10/10/30/10","qdii_daily_cap_cny":"100","purchase_fee_rate":"0","nav_visibility":"next_fund_nav_date","forward_fill":false,"queue_expiry":"research_horizon_end"}
+}

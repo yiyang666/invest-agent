@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/strategy_spec.schema.json",
+  "title": "Versioned strategy specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "strategy_id",
+    "strategy_version",
+    "status",
+    "mode",
+    "purpose",
+    "inputs",
+    "rules",
+    "prohibitions",
+    "backtest_scenarios",
+    "required_outputs",
+    "acceptance_tests",
+    "known_blockers"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": 1},
+    "strategy_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]+$"},
+    "strategy_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "status": {"enum": ["draft", "specified", "implemented", "validated", "retired"]},
+    "mode": {"enum": ["research_only", "advisory_only", "production"]},
+    "purpose": {"type": "string", "minLength": 1},
+    "inputs": {"type": "object"},
+    "rules": {"type": "object"},
+    "prohibitions": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "backtest_scenarios": {"type": "object"},
+    "required_outputs": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "acceptance_tests": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "known_blockers": {"type": "array", "items": {"type": "string"}}
+  }
+}

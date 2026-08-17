@@ -1,0 +1,55 @@
+schema_version: 1
+status: draft
+
+system_mode: advisory_only
+
+objective:
+  primary: TODO
+  horizon_years: null
+  benchmark: TODO
+  contribution:
+    cadence: TODO
+    amount_cny: null
+
+universe:
+  instrument_type: off_exchange_funds
+  allowed_fund_types: []
+  excluded_fund_types: []
+  excluded_sectors: []
+
+risk:
+  target_max_portfolio_drawdown_pct: null
+  stress_limit_portfolio_drawdown_pct: null
+  max_single_fund_weight_pct: null
+  max_theme_weight_pct: null
+  min_cash_reserve_cny: null
+  min_holding_days: null
+  max_rebalances_per_month: null
+
+decision:
+  require_strategy_registry: true
+  require_backtest_gate: true
+  require_risk_pass: true
+  require_human_approval: true
+  approval_scope: exact_single_order
+  approval_expires_minutes: 15
+
+execution:
+  real_trading_enabled: false
+  allowed_actions:
+    - analyze
+    - propose
+  auto_retry_mutations: false
+  reconcile_unknown_before_retry: true
+  allow_auto_update_third_party_tools: false
+
+data:
+  timezone: Asia/Shanghai
+  store_history: TODO
+  redact_accounts: true
+  commit_private_data_to_git: false
+
+reporting:
+  daily_time: TODO
+  weekly_time: TODO
+  channels: []

@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "robustness_id": "phase4_s3_4_drawdown_budget_robustness_v1",
+  "purpose": "验证极端回撤下的预算与风控不变量，检查邻近参数脆弱性，并用本地较长历史的降维代理补充熊市档位覆盖；不据此优化参数或证明收益。",
+  "primary_variant_id": "primary_window126_thresholds_5_10_15",
+  "synthetic_drawdowns": ["-0.15", "-0.20", "-0.25"],
+  "signal_variants": [
+    {
+      "variant_id": "primary_window126_thresholds_5_10_15",
+      "is_primary": true,
+      "signal_parameters": {"rolling_peak_observations": 126, "minimum_composite_observations": 127, "maximum_staleness_days": 10, "first_threshold": "-0.05", "second_threshold": "-0.10", "third_threshold": "-0.15", "risk_veto_threshold": "-0.20"}
+    },
+    {
+      "variant_id": "shorter_window105_thresholds_5_10_15",
+      "signal_parameters": {"rolling_peak_observations": 105, "minimum_composite_observations": 106, "maximum_staleness_days": 10, "first_threshold": "-0.05", "second_threshold": "-0.10", "third_threshold": "-0.15", "risk_veto_threshold": "-0.20"}
+    },
+    {
+      "variant_id": "longer_window147_thresholds_5_10_15",
+      "signal_parameters": {"rolling_peak_observations": 147, "minimum_composite_observations": 148, "maximum_staleness_days": 10, "first_threshold": "-0.05", "second_threshold": "-0.10", "third_threshold": "-0.15", "risk_veto_threshold": "-0.20"}
+    },
+    {
+      "variant_id": "window126_earlier_thresholds_4_9_14",
+      "signal_parameters": {"rolling_peak_observations": 126, "minimum_composite_observations": 127, "maximum_staleness_days": 10, "first_threshold": "-0.04", "second_threshold": "-0.09", "third_threshold": "-0.14", "risk_veto_threshold": "-0.20"}
+    },
+    {
+      "variant_id": "window126_later_thresholds_6_11_16",
+      "signal_parameters": {"rolling_peak_observations": 126, "minimum_composite_observations": 127, "maximum_staleness_days": 10, "first_threshold": "-0.06", "second_threshold": "-0.11", "third_threshold": "-0.16", "risk_veto_threshold": "-0.20"}
+    }
+  ],
+  "long_history_proxy": {
+    "proxy_id": "reduced_631_core_defensive_proxy_2019_2026",
+    "review_start_date": "2019-09-01",
+    "end_date": "2026-07-31",
+    "funds": {"domestic_broad_core": "110020", "us_broad_core": "050025", "defensive": "006932"},
+    "raw_weights": {"domestic_broad_core": "20", "us_broad_core": "20", "defensive": "30"},
+    "basis_risk": [
+      "仅保留有2019年以来共同历史的国内宽基、美国宽基和防御仓，并按原631可用权重重新归一。",
+      "缺少纳指、科创100和沪港深科技共30%成长/科技暴露，可能低估完整组合的回撤与档位触发频率。",
+      "代理只用于观察历史档位案例，不替代完整631组合回测，也不用于参数选择。"
+    ]
+  },
+  "interpretation_rules": {
+    "primary_parameters_remain_frozen": true,
+    "neighbor_variant_winner_selection_allowed": false,
+    "synthetic_paths_validate_safety_only": true,
+    "synthetic_paths_validate_profitability": false,
+    "proxy_history_is_diagnostic_only": true,
+    "historical_visibility_assumed_means_research_only": true
+  }
+}

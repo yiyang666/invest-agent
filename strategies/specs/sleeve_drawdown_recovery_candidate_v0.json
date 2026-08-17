@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "strategy_id": "sleeve_drawdown_recovery_candidate",
+  "strategy_version": "0.1.0",
+  "status": "hypothesis_only",
+  "mode": "research_only",
+  "purpose": "研究科技成长袖套自身深回撤后的新增资金配置价值；不替代组合级回撤预算策略，不构成真实申购规则。",
+  "eligible_sleeves": ["us_growth", "domestic_growth", "sh_hk_sz_passive_technology_satellite"],
+  "signal_hypothesis": {
+    "nav_field": "accumulated_nav",
+    "review_frequency": "monthly",
+    "rolling_peak_observations": 126,
+    "candidate_thresholds": ["-0.10", "-0.15", "-0.20", "-0.30"],
+    "threshold_status": "not_selected_pending_execution_backtest",
+    "forward_fill_allowed": false
+  },
+  "portfolio_safety_gates": {
+    "monthly_total_contribution_min_cny": "3000",
+    "monthly_total_contribution_max_cny": "5000",
+    "additional_budget_max_cny": "2000",
+    "portfolio_drawdown_veto_at_or_below": "-0.20",
+    "maximum_theme_weight_pct": 30,
+    "maximum_single_fund_weight_pct": 25,
+    "selling_allowed": false,
+    "leverage_allowed": false,
+    "emergency_fund_allowed": false
+  },
+  "required_comparators": [
+    "fixed_3000_631",
+    "same_total_capital_evenly_timed_631",
+    "same_monthly_cashflow_631_target_gap",
+    "same_monthly_cashflow_broad_core_route"
+  ],
+  "evidence_gate": {
+    "historical_event_panel_required": true,
+    "off_exchange_execution_backtest_required": true,
+    "fees_limits_confirmation_and_cash_drag_required": true,
+    "prospective_out_of_sample_required": true,
+    "correlated_funds_cannot_be_counted_as_independent_events": true,
+    "active_fund_style_drift_disclosure_required": true
+  },
+  "decision": {
+    "implemented": false,
+    "approved": false,
+    "real_order_submission_available": false,
+    "parameter_optimization_allowed_from_s3_5_panel": false
+  }
+}

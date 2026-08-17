@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/decision_input.schema.json",
+  "title": "Research-only unified decision input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "as_of", "mode", "registry", "accepted_signals", "rejected_signals", "execution"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "as_of": {"type": "string", "format": "date-time"},
+    "mode": {"const": "research_only"},
+    "registry": {"type": "object"},
+    "accepted_signals": {"type": "array"},
+    "rejected_signals": {"type": "array"},
+    "execution": {
+      "type": "object",
+      "required": ["advisory_only", "order_intent_generation_allowed", "real_trading_enabled"],
+      "properties": {
+        "advisory_only": {"const": true},
+        "order_intent_generation_allowed": {"const": false},
+        "real_trading_enabled": {"const": false}
+      }
+    }
+  }
+}

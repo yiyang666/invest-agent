@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "scenario_id": "phase4_six_sleeve_passive_satellite_baseline_2024_2026_v3",
+  "classification": "counterfactual_research_assumption",
+  "purpose": "以160646被动沪港深科技龙头指数建立稳定、透明、可复现的六袖套规则基准；主动基金不进入当前基准研究。",
+  "provider_id": "akshare_eastmoney",
+  "period": {
+    "start_date": "2024-01-05",
+    "end_date": "2026-08-14"
+  },
+  "monthly_contribution_cny": "3000",
+  "calendar_day": 5,
+  "allocation_profiles": [
+    {
+      "id": "long_term_60_defensive_30_passive_satellite_10",
+      "weights": {
+        "domestic_broad_core": "0.20",
+        "us_broad_core": "0.20",
+        "us_growth": "0.10",
+        "domestic_growth": "0.10",
+        "defensive": "0.30",
+        "sh_hk_sz_passive_technology_satellite": "0.10"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "sleeve": "domestic_broad_core",
+      "fund_code": "110020",
+      "role": "沪深300国内宽基代理",
+      "minimum_order_cny": "10",
+      "daily_cap_cny": null,
+      "purchase_fee_rate": "0",
+      "share_precision": 2,
+      "share_rounding_mode": "down",
+      "rule_version": "research_assumption_zero_fee_unlimited_v3",
+      "rule_effective_date": "2024-01-01",
+      "assumption_authority": "counterfactual_research_assumption"
+    },
+    {
+      "sleeve": "us_broad_core",
+      "fund_code": "050025",
+      "role": "标普500美国宽基代理",
+      "minimum_order_cny": "10",
+      "daily_cap_cny": "100",
+      "purchase_fee_rate": "0",
+      "share_precision": 2,
+      "share_rounding_mode": "down",
+      "rule_version": "research_assumption_channel_cap_100_zero_fee_v3",
+      "rule_effective_date": "2024-01-01",
+      "assumption_authority": "counterfactual_research_assumption"
+    },
+    {
+      "sleeve": "us_growth",
+      "fund_code": "539001",
+      "role": "纳斯达克100美国成长代理",
+      "minimum_order_cny": "10",
+      "daily_cap_cny": "100",
+      "purchase_fee_rate": "0",
+      "share_precision": 2,
+      "share_rounding_mode": "down",
+      "rule_version": "research_assumption_channel_cap_100_zero_fee_v3",
+      "rule_effective_date": "2024-01-01",
+      "assumption_authority": "counterfactual_research_assumption"
+    },
+    {
+      "sleeve": "domestic_growth",
+      "fund_code": "019861",
+      "role": "科创100国内成长代理",
+      "minimum_order_cny": "10",
+      "daily_cap_cny": null,
+      "purchase_fee_rate": "0",
+      "share_precision": 2,
+      "share_rounding_mode": "down",
+      "rule_version": "research_assumption_zero_fee_unlimited_v3",
+      "rule_effective_date": "2024-01-01",
+      "assumption_authority": "counterfactual_research_assumption"
+    },
+    {
+      "sleeve": "defensive",
+      "fund_code": "070009",
+      "role": "超短债防御代理",
+      "minimum_order_cny": "10",
+      "daily_cap_cny": null,
+      "purchase_fee_rate": "0",
+      "share_precision": 2,
+      "share_rounding_mode": "down",
+      "rule_version": "research_assumption_zero_fee_unlimited_v3",
+      "rule_effective_date": "2024-01-01",
+      "assumption_authority": "counterfactual_research_assumption"
+    },
+    {
+      "sleeve": "sh_hk_sz_passive_technology_satellite",
+      "fund_code": "160646",
+      "role": "中证沪港深科技龙头指数被动卫星基准",
+      "minimum_order_cny": "10",
+      "daily_cap_cny": null,
+      "purchase_fee_rate": "0",
+      "share_precision": 2,
+      "share_rounding_mode": "down",
+      "rule_version": "research_assumption_zero_fee_unlimited_v3",
+      "rule_effective_date": "2024-01-01",
+      "assumption_authority": "counterfactual_research_assumption"
+    }
+  ],
+  "nav_assumption": {
+    "field": "unit_nav",
+    "visibility_rule": "next_fund_nav_date",
+    "forward_fill": false
+  },
+  "subscription_assumption": {
+    "precommitted_before_cutoff": true,
+    "confirmation_rule": "nav_visible_date"
+  },
+  "distribution_assumption": {
+    "election": "cash",
+    "payment_date_rule": "next_fund_nav_date",
+    "cash_precision": 2,
+    "cash_rounding_mode": "half_up"
+  },
+  "official_rule_gate": {
+    "status": "blocked",
+    "reason": "爱基金历史渠道费率、最低金额、动态限额、确认周期和历史开放日历未完成官方核验；160646净值已由鹏华官网完成双源数值核验，但历史公告可见时点、基金规模与存续风险仍需持续监控。"
+  }
+}

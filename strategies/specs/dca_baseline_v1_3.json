@@ -1,0 +1,45 @@
+{
+  "$schema": "../../schemas/strategy_spec.schema.json",
+  "schema_version": 1,
+  "strategy_id": "dca_baseline",
+  "strategy_version": "1.3.0",
+  "status": "implemented",
+  "mode": "research_only",
+  "purpose": "以60%长期资产、35%防御、5%科技卫星作为个人政策基准；月初冻结预算，限购基金优先跨月排队，非限购基金按5/15/25三等份执行。",
+  "inputs": {
+    "timezone": "Asia/Shanghai",
+    "data_source": "validated_local_store_only",
+    "nav_field": "unit_nav",
+    "contribution_cny": {"canonical": 3000, "sensitivity": [4000, 5000]},
+    "schedule": {"budget_freeze_calendar_day":1,"limited_fund_start_calendar_day":1,"unlimited_fund_tranche_calendar_days":[5,15,25],"non_open_day_rule":"next_instrument_eligible_open_day"},
+    "allocation": "20/20/10/10/35/5",
+    "allocation_role": "personal_policy_baseline",
+    "historical_reference_allocation": "20/20/10/10/30/10",
+    "defensive_route": "006932"
+  },
+  "rules": {
+    "signal": {"type":"precommitted_monthly_plan","depends_on_market_state":false,"depends_on_nav_or_return":false,"generated_once_per_calendar_month":true},
+    "cash_flow": {"borrowing_or_leverage":false,"uninvested_amount":"remain_as_cash","carry_unfilled_order_across_month_end":true,"reserved_cash_counts_toward_its_sleeve":true},
+    "buy_only_allocation": {"selling_allowed":false,"allocation_rule":"new cash fills current target gaps after invested value and reserved pending cash","overweight_sleeve_new_money":0},
+    "instrument_routing": {
+      "limited_route_rule":"start on first eligible date from month start, consume aggregate daily capacity, and queue FIFO across month boundaries",
+      "unlimited_route_rule":"split each monthly allocation into three executable tranches targeted at calendar days 5, 15, and 25",
+      "tranche_rounding_rule":"first tranches round down to cents and final tranche receives the remainder",
+      "missing_terminal_tranche_rule":"remain reserved rather than front-load into an earlier tranche",
+      "automatic_fund_substitution":false
+    },
+    "risk_boundary": {
+      "policy_limits_are_external_vetoes":true,
+      "scheduled_contribution_is_not_an_active_rebalance":true,
+      "target_maximum_drawdown_pct":15,
+      "stress_limit_drawdown_pct":20,
+      "standard_synthetic_stress_result_pct":-18.625964780515623,
+      "enhanced_110pct_stress_requires_review":true
+    }
+  },
+  "prohibitions": ["use_same_day_unpublished_nav","forward_fill_missing_nav","borrow_cash","sell_to_restore_target_weights","average_independent_backtest_metrics_as_if_they_were_one_portfolio","replace_unavailable_fund_without_versioned_mapping_change","submit_real_orders"],
+  "backtest_scenarios": {"contribution_cny":[3000,4000,5000],"budget_freeze_calendar_day":1,"unlimited_fund_tranche_calendar_days":[5,15,25],"defensive_fund_code":"006932","queue_modes":["cross_month_reserved_cash"],"uniform_purchase_fee_stress_rate":"0.0015"},
+  "required_outputs": ["time_weighted_return","xirr","annualized_volatility","maximum_drawdown_and_recovery","cash_drag","cross_month_scheduled_cash","scenario_end_unfilled_cash","data_rule_strategy_and_code_hashes"],
+  "acceptance_tests": ["same_inputs_produce_byte_equivalent_results","limited_fund_date_daily_cap_includes_prior_reservations","unlimited_fund_monthly_allocation_splits_into_three_executable_tranches","missing_terminal_tranche_is_not_front_loaded","reserved_future_cash_is_attributed_to_its_target_sleeve","standard_synthetic_stress_does_not_breach_20pct_limit","no_negative_cash_and_no_sell_events"],
+  "known_blockers": ["prospective_out_of_sample_observation_incomplete","exact_historical_channel_fee_and_limit_rules_incomplete","fund_specific_confirmation_and_qdii_calendar_rules_incomplete","strict_point_in_time_history_is_not_available_for_backfilled_nav"]
+}

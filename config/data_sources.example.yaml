@@ -1,0 +1,132 @@
+schema_version: 1
+
+rules:
+  allow_web_scraping_as_production_source: false
+  serve_backtests_from_validated_local_store_only: true
+  require_as_of_timestamp: true
+  require_batch_id: true
+  require_provenance: true
+  reject_future_observations: true
+
+providers:
+  local_validated_fund_store:
+    enabled: true
+    role: production_serving_source
+    adapter_status: operational_for_nav_and_fund_metadata
+    storage: sqlite_with_immutable_raw_batches
+    git_commit_allowed: false
+    require_quality_gate: true
+  akshare_ths:
+    enabled: true
+    role: metadata_and_daily_cross_check_collector
+    adapter_status: metadata_and_explicit_date_daily_crosscheck_implemented
+    upstream_domains:
+      - fund.10jqka.com.cn
+    interfaces:
+      - fund_info_ths
+      - fund_etf_category_ths
+    network_mode: scheduled_low_frequency_only
+    allow_in_inference_path: false
+    persist_before_use: true
+    raw_before_normalization: true
+    provider_ids:
+      - akshare_ths_metadata
+      - akshare_ths_daily
+    historical_backfill_role: none
+    known_limit: daily_snapshot_interface_does_not_cover_every_fund_date
+    reviewed_version: "1.18.91"
+    reviewed_commit: 8bfe862bb69364ae40646618ca9f54b19593ff3f
+  akshare_eastmoney:
+    enabled: true
+    role: historical_backfill_and_holdings_collector
+    adapter_status: nav_history_implemented_current_funds_backfilled
+    upstream_domains:
+      - eastmoney.com
+    interfaces:
+      - fund_name_em
+      - fund_open_fund_info_em
+      - fund_portfolio_hold_em
+      - fund_purchase_em
+    network_mode: scheduled_low_frequency_only
+    allow_in_inference_path: false
+    persist_before_use: true
+    reviewed_version: "1.18.91"
+    reviewed_commit: 8bfe862bb69364ae40646618ca9f54b19593ff3f
+    known_risk: upstream_history_request_has_no_explicit_timeout
+    project_adapter_timeout_seconds: 20
+    raw_before_normalization: true
+    remote_javascript_execution_allowed: false
+  penghua_official_nav:
+    enabled: true
+    role: official_penghua_nav_validator
+    adapter_status: nav_history_implemented
+    upstream_domains:
+      - www.phfund.com.cn
+    interfaces:
+      - fundDetail/getNavList
+    network_mode: scheduled_low_frequency_only
+    allow_in_inference_path: false
+    persist_before_use: true
+    raw_before_normalization: true
+    authentication_required: false
+    page_size: 100
+    known_limit: historical_rows_do_not_expose_original_announcement_timestamp
+  tushare_pro:
+    enabled: false
+    role: optional_paid_validator_and_upgrade
+    adapter_status: planned
+    entitlement: token_and_2000_points_required
+    credentials_from_environment_only: true
+  jqdata:
+    enabled: false
+    role: secondary_validation
+    entitlement: trial_or_paid_account_required
+  supermind:
+    enabled: false
+    role: cloud_external_backtest_and_nav_validation
+    adapter_status: cloud_probe_pending
+    cloud_runtime_account_required: true
+    local_sdk_entitlement: institutional_application_required
+    local_data_export_entitlement: required
+    allow_bulk_download_without_written_permission: false
+    candidate_interfaces:
+      - get_extras
+      - get_all_securities
+      - get_security_info
+      - get_hold_detail
+    allow_live_trading: false
+  ifind:
+    enabled: false
+    role: future_institutional_upgrade
+    adapter_status: planned
+    entitlement: required
+    credentials_from_environment_only: true
+  authorized_csv_nav:
+    enabled: true
+    adapter: invest_agent.data.providers.LocalCsvNavProvider
+    allowed_input: official_or_authorized_export_only
+
+backtest_libraries:
+  internal_engine:
+    role: production_source_of_truth
+  xalpha:
+    enabled: false
+    role: reference_oracle_and_rapid_research
+    allow_builtin_web_fetchers: false
+    require_conformance_tests: true
+  cjquant_otc_backtest_engine:
+    enabled: false
+    status: experimental_adapter_candidate
+    repository: https://github.com/imbue-bit/cjquant.git
+    license: GPL-3.0
+    role: isolated_offline_batch_reference
+    forbid_modules:
+      - cjquant.execution
+    require_conformance_tests: true
+    require_license_review_before_distribution: true
+  finclaw:
+    enabled: false
+    repository: https://github.com/aifinlab/FinClaw.git
+    license: Apache-2.0
+    role: design_reference_and_selective_code_donor
+    install_whole_project: false

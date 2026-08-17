@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "protocol_id": "dca_baseline_v1_3_prospective_oos_v2",
+  "status": "superseded_before_eligible_observations_by_v1_4_631_reconfirmation",
+  "frozen_at": "2026-08-16T23:59:59+08:00",
+  "mode": "research_only",
+  "candidate": {
+    "strategy_id": "dca_baseline",
+    "strategy_version": "1.3.0",
+    "strategy_spec_path": "strategies/specs/dca_baseline_v1_3.json",
+    "strategy_spec_file_sha256": "ea16d0eba5bfb1daff922c82680e4e337827921ebe2724302415801ee9af9365",
+    "scenario_path": "config/backtest_research_scenario_v7.json",
+    "scenario_file_sha256": "c7f762df284b4b9132a94b0cf43797910d2ff1be1a4812f820cf565bca12b42a",
+    "investment_policy_file_sha256": "9620a0bd4f289cff9f2460e6f17c0e8435d22fb36f288d542b9ae2e73c778e12",
+    "allocation": "20/20/10/10/35/5",
+    "monthly_contribution_cny": "3000",
+    "uniform_purchase_fee_rate": "0.0015",
+    "routes": {"domestic_broad_core":"110020","us_broad_core":"050025","us_growth":"539001","domestic_growth":"019861","defensive":"006932","sh_hk_sz_passive_technology_satellite":"160646"}
+  },
+  "evaluation": {
+    "earliest_eligible_observation_date": "2026-08-17",
+    "minimum_complete_months": 12,
+    "interim_review_frequency_months": 3,
+    "interim_reviews_are_descriptive_only": true,
+    "eligible_visibility": ["strict_point_in_time"],
+    "append_only_results": true,
+    "parameter_changes_reset_candidate_and_clock": true,
+    "historical_2024_2026_windows": "diagnostic_only_not_out_of_sample"
+  },
+  "gates": {
+    "required": ["all_six_routes_have_complete_eligible_observations","same_inputs_produce_identical_results","no_leverage_no_sell_no_real_orders","no_negative_cash_or_unreconciled_events","maximum_drawdown_does_not_breach_policy_stress_limit"],
+    "review_if_maximum_drawdown_pct_below": -15,
+    "fail_if_maximum_drawdown_pct_below": -20,
+    "return_threshold": null,
+    "return_threshold_reason": "正式比较基准收益门槛尚未独立冻结，禁止事后选择有利阈值。"
+  },
+  "current_result": {"status":"not_started_future_data_unavailable","eligible_complete_months":0,"gate_passed":false}
+}

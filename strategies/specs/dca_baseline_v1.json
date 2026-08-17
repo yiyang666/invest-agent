@@ -1,0 +1,132 @@
+{
+  "$schema": "../../schemas/strategy_spec.schema.json",
+  "schema_version": 1,
+  "strategy_id": "dca_baseline",
+  "strategy_version": "1.0.0",
+  "status": "implemented",
+  "mode": "research_only",
+  "purpose": "为所有主动择时、轮动和回撤加仓策略提供同资金流、同基金池、同目标配置的无择时基准。",
+  "inputs": {
+    "timezone": "Asia/Shanghai",
+    "data_source": "validated_local_store_only",
+    "nav_field": "accumulated_nav",
+    "contribution_cny": {
+      "canonical": 3000,
+      "sensitivity": [4000, 5000],
+      "future_bands_require_explicit_policy_update": true
+    },
+    "schedule": {
+      "calendar_day": 5,
+      "planned_local_time": "10:00:00",
+      "frequency": "monthly",
+      "non_open_day_rule": "next_instrument_eligible_open_day"
+    },
+    "allocation_profiles": [
+      {"id": "core_60_defensive_20_satellite_20", "core_pct": 60, "defensive_pct": 20, "satellite_pct": 20},
+      {"id": "core_55_defensive_20_satellite_25", "core_pct": 55, "defensive_pct": 20, "satellite_pct": 25},
+      {"id": "core_50_defensive_20_satellite_30", "core_pct": 50, "defensive_pct": 20, "satellite_pct": 30}
+    ],
+    "runtime_requirements": [
+      "one_allocation_profile_id",
+      "versioned_role_to_fund_mapping",
+      "fixed_fund_priority_within_each_shared_sleeve",
+      "versioned_product_and_channel_rules"
+    ]
+  },
+  "rules": {
+    "signal": {
+      "type": "precommitted_calendar_plan",
+      "depends_on_market_state": false,
+      "depends_on_nav_or_return": false,
+      "generated_once_per_calendar_month": true
+    },
+    "cash_flow": {
+      "gross_monthly_budget_includes_purchase_fees": true,
+      "borrowing_or_leverage": false,
+      "uninvested_amount": "remain_as_cash",
+      "carry_unfilled_order_across_month_end": false
+    },
+    "buy_only_allocation": {
+      "selling_allowed": false,
+      "post_contribution_target_value_formula": "target_weight * (pre_contribution_portfolio_value + monthly_contribution)",
+      "positive_gap_formula": "max(0, post_contribution_target_value - current_sleeve_value)",
+      "allocation_rule": "distribute_budget_proportionally_across_positive_gaps; if all gaps are zero, use target weights",
+      "overweight_sleeve_new_money": 0,
+      "rounding_residual": "remain_as_cash"
+    },
+    "instrument_routing": {
+      "shared_sleeve_rule": "shared_target_weight_and_fixed_priority_queue",
+      "daily_cap_rule": "split_remaining_gross_amount_over_later_eligible_days_without_exceeding_historical_cap",
+      "minimum_order_rule": "accumulate_until_minimum_is_met_or_leave_cash_at_month_end",
+      "suspended_or_closed_rule": "defer_within_same_month_then_leave_cash",
+      "automatic_fund_substitution": false
+    },
+    "off_exchange_execution": {
+      "pre_cutoff_planned_order_uses_eligible_open_day_nav": true,
+      "each_fund_uses_own_calendar": true,
+      "qdii_delay_is_fund_specific": true,
+      "submission_confirmation_and_cash_availability_are_separate_events": true,
+      "fees_and_share_rounding_use_effective_rule_version": true
+    },
+    "risk_boundary": {
+      "policy_limits_are_external_vetoes": true,
+      "scheduled_contribution_is_not_an_active_rebalance": true,
+      "strategy_cannot_override_single_fund_theme_or_satellite_limits": true
+    }
+  },
+  "prohibitions": [
+    "use_same_day_unpublished_nav",
+    "forward_fill_missing_nav",
+    "borrow_cash",
+    "sell_to_restore_target_weights",
+    "chase_or_pause_based_on_recent_return",
+    "replace_unavailable_fund_without_versioned_mapping_change",
+    "submit_real_orders"
+  ],
+  "backtest_scenarios": {
+    "contribution_cny": [3000, 4000, 5000],
+    "calendar_day_sensitivity": [1, 5, 15],
+    "allocation_profile_ids": [
+      "core_60_defensive_20_satellite_20",
+      "core_55_defensive_20_satellite_25",
+      "core_50_defensive_20_satellite_30"
+    ],
+    "channel_limit_scenarios": [
+      "historical_channel_observed",
+      "historical_manager_announced",
+      "no_purchase_limit_counterfactual"
+    ],
+    "comparison_fairness": "challenger_and_baseline_share_cash_flows_universe_allocation_profile_product_rules_and_test_window"
+  },
+  "required_outputs": [
+    "time_weighted_return",
+    "xirr",
+    "annualized_return",
+    "annualized_volatility",
+    "maximum_drawdown_and_recovery",
+    "fees",
+    "cash_drag",
+    "invested_ratio",
+    "rejected_deferred_and_truncated_orders",
+    "monthly_contribution_reconciliation",
+    "simulated_order_event_ledger",
+    "data_batch_rule_strategy_and_code_versions"
+  ],
+  "acceptance_tests": [
+    "same_inputs_produce_byte_equivalent_decisions",
+    "no_signal_uses_nav_published_after_signal_time",
+    "monthly_gross_orders_never_exceed_contribution_plus_carried_cash",
+    "no_negative_cash_and_no_sell_events",
+    "fund_daily_caps_minimums_calendars_and_cutoffs_are_respected",
+    "unfilled_month_end_orders_become_cash_not_future_hidden_orders",
+    "shared_sleeve_funds_do_not_duplicate_target_weight",
+    "all_order_events_are_reconciled_to_monthly_cash_flow"
+  ],
+  "known_blockers": [
+    "core_and_defensive_candidate_funds_not_selected",
+    "exact_historical_channel_fee_and_limit_rules_incomplete",
+    "dividend_cash_flow_and_share_event_validation_incomplete",
+    "fund_specific_confirmation_and_qdii_calendar_rules_incomplete",
+    "strict_point_in_time_history_is_not_available_for_backfilled_nav"
+  ]
+}

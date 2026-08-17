@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "audit_id": "phase4_closure_audit_2026_08_16",
+  "as_of": "2026-08-16T23:59:59+08:00",
+  "required_artifacts": [
+    {"path": "config/investment_policy.yaml", "sha256": "5f23504d0a46aa9022c1311e46ad5354dc2fefa6f052f6b537edb602df74db48"},
+    {"path": "strategies/registry.json", "sha256": "78a1108f923438676ed115d42afda3d6cc436bbfc40332a5e6ae88e4786c60fd"},
+    {"path": "strategies/specs/dca_baseline_v1_4.json", "sha256": "efb0792dca76946d70de294ed1ed40b4c50f257de223594ab670d1a8056c4a21"},
+    {"path": "config/backtest_research_scenario_v8.json", "sha256": "1faebdbbcd64df68d844ac211f30606579803ef6e68d3af72cfe60e46549bab3"},
+    {"path": "config/oos_evaluation_protocol_v4.json", "sha256": "42523ab3c95815096ed346287f48f869b8c8cac14343687b5351015aa01721c9"},
+    {"path": "data/private/reports/phase-4-monthly-research-decision-pack-s4-2-2026-08-16.json", "sha256": "f589af07ea78b64022f07243323a33d753ccd4fddc74636fdf457c364fff2881"},
+    {"path": "data/private/reports/phase-4-decision-replay-acceptance-s4-3-2026-08-16.json", "sha256": "06f46059c35fceed9394d2d70a5714fdf3e211348b696e24a5956b4a718ff6f3"}
+  ],
+  "product_rule_snapshots": [
+    "data/private/rules/candidate-execution-rules-2026-08-15.json",
+    "data/private/rules/product-rules-2026-08-15.json",
+    "data/private/rules/product-rules-core-growth-2026-08-16.json"
+  ],
+  "expected": {
+    "registered_strategies": 4,
+    "registry_schema_version": 3,
+    "decision_replay_scenarios": 18,
+    "allocation_anchor": "allocation_anchor_631",
+    "comparison_benchmark": "dca_baseline@1.4.0",
+    "official_rule_gate": "blocked",
+    "oos_gate_passed": false,
+    "production_approved": false,
+    "execution_enabled": false
+  },
+  "safety": {
+    "research_only": true,
+    "advisory_only": true,
+    "network_allowed": false,
+    "order_intent_generation_allowed": false,
+    "real_trading_enabled": false
+  }
+}

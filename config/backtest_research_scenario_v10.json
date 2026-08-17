@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "scenario_id": "phase4_drawdown_budget_add_dual_benchmark_2024_2026_v10",
+  "classification": "counterfactual_research_assumption",
+  "purpose": "回撤预算加仓与逐月现金流完全匹配的631目标缺口分配进行公平对照。固定3000元631由独立v8报告提供。",
+  "provider_id": "akshare_eastmoney",
+  "period": {"start_date": "2024-01-01", "end_date": "2026-07-31"},
+  "monthly_contribution_cny": "3000",
+  "calendar_day": 1,
+  "allocation_engine": {
+    "mode": "drawdown_budget_add",
+    "signal_nav_field": "accumulated_nav",
+    "composite_funds": {
+      "domestic_broad_core": "110020",
+      "us_broad_core": "050025",
+      "us_growth": "539001",
+      "domestic_growth": "019861",
+      "defensive": "006932",
+      "sh_hk_sz_passive_technology_satellite": "160646"
+    },
+    "composite_weights": {
+      "domestic_broad_core": "0.20",
+      "us_broad_core": "0.20",
+      "us_growth": "0.10",
+      "domestic_growth": "0.10",
+      "defensive": "0.30",
+      "sh_hk_sz_passive_technology_satellite": "0.10"
+    }
+  },
+  "allocation_profiles": [
+    {
+      "id": "drawdown_add_broad_cores",
+      "allocation_variant": "drawdown_add",
+      "weights": {"domestic_broad_core": "0.20", "us_broad_core": "0.20", "us_growth": "0.10", "domestic_growth": "0.10", "defensive": "0.30", "sh_hk_sz_passive_technology_satellite": "0.10"}
+    },
+    {
+      "id": "matched_cashflow_631_target_gap",
+      "allocation_variant": "matched_cashflow_631",
+      "weights": {"domestic_broad_core": "0.20", "us_broad_core": "0.20", "us_growth": "0.10", "domestic_growth": "0.10", "defensive": "0.30", "sh_hk_sz_passive_technology_satellite": "0.10"}
+    }
+  ],
+  "routes": [
+    {"sleeve": "domestic_broad_core", "fund_code": "110020", "role": "沪深300国内宽基代理", "minimum_order_cny": "10", "daily_cap_cny": null, "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "research_assumption_uniform_fee_0p0015_v10", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_broad_core", "fund_code": "050025", "role": "标普500美国宽基代理", "minimum_order_cny": "10", "daily_cap_cny": "100", "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "research_assumption_cap_100_uniform_fee_0p0015_v10", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_growth", "fund_code": "539001", "role": "纳斯达克100美国成长代理", "minimum_order_cny": "10", "daily_cap_cny": "100", "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "research_assumption_cap_100_uniform_fee_0p0015_v10", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "domestic_growth", "fund_code": "019861", "role": "科创100国内成长代理", "minimum_order_cny": "10", "daily_cap_cny": null, "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "research_assumption_uniform_fee_0p0015_v10", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "defensive", "fund_code": "006932", "role": "0-3年政策性金融债防御主路由", "minimum_order_cny": "10", "daily_cap_cny": null, "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "research_assumption_uniform_fee_0p0015_v10", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "sh_hk_sz_passive_technology_satellite", "fund_code": "160646", "role": "中证沪港深科技龙头指数被动卫星基准", "minimum_order_cny": "10", "daily_cap_cny": null, "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "research_assumption_uniform_fee_0p0015_v10", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"}
+  ],
+  "nav_assumption": {"field": "unit_nav", "visibility_rule": "next_fund_nav_date", "forward_fill": false},
+  "subscription_assumption": {"precommitted_before_cutoff": true, "confirmation_rule": "nav_visible_date", "carry_unfilled_across_month_end": true, "reserved_cash_counts_toward_target_sleeve": true, "unlimited_fund_tranche_calendar_days": [5, 15, 25]},
+  "distribution_assumption": {"election": "cash", "payment_date_rule": "next_fund_nav_date", "cash_precision": 2, "cash_rounding_mode": "half_up"},
+  "official_rule_gate": {"status": "blocked", "reason": "档位历史覆盖、严格可见时点、真实渠道规则与前瞻样本外未完成；回撤加仓研究不能用于真实下单。"}
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fund Metric Calc"
+  short_description: "Calculate local fund risk, correlation, and market state"
+  default_prompt: "Use $fund-metric-calc to calculate reproducible fund metrics or explainable market state from the validated local store."

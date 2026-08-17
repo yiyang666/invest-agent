@@ -1,0 +1,4 @@
+interface:
+  display_name: "基金数据采集"
+  short_description: "Archive, validate, and publish local fund data"
+  default_prompt: "Use $fund-data-collect to collect and validate an immutable local fund-data batch."

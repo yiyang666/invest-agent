@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "stress_id": "phase4_c4_4_six_sleeve_synthetic_stress_v1",
+  "purpose": "以确定性、非概率化的袖套冲击路径检验15%目标回撤和20%压力上限。",
+  "probability_model": "none_non_probabilistic_scenarios",
+  "target_drawdown_pct": "15",
+  "stress_limit_drawdown_pct": "20",
+  "scenarios": [
+    {
+      "scenario_id": "equity_correction",
+      "label": "权益快速回调",
+      "steps": [
+        {
+          "step_id": "instant_shock",
+          "sleeve_returns": {
+            "domestic_broad_core": "-0.15",
+            "us_broad_core": "-0.15",
+            "us_growth": "-0.20",
+            "domestic_growth": "-0.20",
+            "defensive": "0.01",
+            "sh_hk_sz_passive_technology_satellite": "-0.25"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "technology_crash",
+      "label": "科技成长深跌",
+      "steps": [
+        {
+          "step_id": "instant_shock",
+          "sleeve_returns": {
+            "domestic_broad_core": "-0.10",
+            "us_broad_core": "-0.15",
+            "us_growth": "-0.45",
+            "domestic_growth": "-0.45",
+            "defensive": "0",
+            "sh_hk_sz_passive_technology_satellite": "-0.50"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "stocks_and_bonds_fall_together",
+      "label": "股债同跌",
+      "steps": [
+        {
+          "step_id": "instant_shock",
+          "sleeve_returns": {
+            "domestic_broad_core": "-0.20",
+            "us_broad_core": "-0.20",
+            "us_growth": "-0.20",
+            "domestic_growth": "-0.20",
+            "defensive": "-0.07",
+            "sh_hk_sz_passive_technology_satellite": "-0.20"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "slow_equity_bear",
+      "label": "五阶段缓慢熊市",
+      "steps": [
+        {"step_id":"quarter_1","sleeve_returns":{"domestic_broad_core":"-0.06","us_broad_core":"-0.06","us_growth":"-0.08","domestic_growth":"-0.08","defensive":"0.005","sh_hk_sz_passive_technology_satellite":"-0.10"}},
+        {"step_id":"quarter_2","sleeve_returns":{"domestic_broad_core":"-0.06","us_broad_core":"-0.06","us_growth":"-0.08","domestic_growth":"-0.08","defensive":"0.005","sh_hk_sz_passive_technology_satellite":"-0.10"}},
+        {"step_id":"quarter_3","sleeve_returns":{"domestic_broad_core":"-0.06","us_broad_core":"-0.06","us_growth":"-0.08","domestic_growth":"-0.08","defensive":"0.005","sh_hk_sz_passive_technology_satellite":"-0.10"}},
+        {"step_id":"quarter_4","sleeve_returns":{"domestic_broad_core":"-0.06","us_broad_core":"-0.06","us_growth":"-0.08","domestic_growth":"-0.08","defensive":"0.005","sh_hk_sz_passive_technology_satellite":"-0.10"}},
+        {"step_id":"quarter_5","sleeve_returns":{"domestic_broad_core":"-0.06","us_broad_core":"-0.06","us_growth":"-0.08","domestic_growth":"-0.08","defensive":"0.005","sh_hk_sz_passive_technology_satellite":"-0.10"}}
+      ]
+    }
+  ],
+  "limitations": [
+    "不赋予情景发生概率",
+    "不包含压力期新增定投资金",
+    "不假设再平衡或择时减仓",
+    "使用目标权重而非某日真实账户权重",
+    "不替代历史回测或前瞻样本外验证"
+  ]
+}

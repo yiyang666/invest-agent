@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/fund_product_rules.schema.json",
+  "title": "Versioned off-exchange fund product-rule snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "snapshot_id", "as_of", "status", "source_batches", "funds"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "snapshot_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["provisional", "verified"]},
+    "source_batches": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["batch_id", "provider_id", "content_sha256"],
+        "properties": {
+          "batch_id": {"type": "string"},
+          "provider_id": {"type": "string"},
+          "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "funds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/fundRule"}
+    }
+  },
+  "$defs": {
+    "evidenceValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "authority", "source_field"],
+      "properties": {
+        "value": {"type": ["string", "null"]},
+        "authority": {"enum": ["reference_only", "official_verified"]},
+        "source_field": {"type": ["string", "null"]},
+        "effective_from": {"type": ["string", "null"], "format": "date"},
+        "notes": {"type": ["string", "null"]}
+      }
+    },
+    "fundRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fund_code",
+        "fund_name",
+        "fund_type",
+        "rule_status",
+        "source_url",
+        "fees",
+        "minimum_initial_purchase",
+        "purchase_cutoff_time",
+        "purchase_confirmation_business_days",
+        "redemption_confirmation_business_days",
+        "redemption_settlement_business_days",
+        "purchase_limit",
+        "calendar",
+        "unknown_fields"
+      ],
+      "properties": {
+        "fund_code": {"type": "string", "pattern": "^[0-9]{6}$"},
+        "fund_name": {"type": "string", "minLength": 1},
+        "fund_type": {"type": "string", "minLength": 1},
+        "rule_status": {"enum": ["provisional", "official_verified"]},
+        "source_url": {"type": "string", "format": "uri"},
+        "fees": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["management_annual", "custodian_annual", "sales_service_annual", "max_purchase", "max_redemption"],
+          "properties": {
+            "management_annual": {"$ref": "#/$defs/evidenceValue"},
+            "custodian_annual": {"$ref": "#/$defs/evidenceValue"},
+            "sales_service_annual": {"$ref": "#/$defs/evidenceValue"},
+            "max_purchase": {"$ref": "#/$defs/evidenceValue"},
+            "max_redemption": {"$ref": "#/$defs/evidenceValue"}
+          }
+        },
+        "minimum_initial_purchase": {"$ref": "#/$defs/evidenceValue"},
+        "purchase_cutoff_time": {"$ref": "#/$defs/evidenceValue"},
+        "purchase_confirmation_business_days": {"$ref": "#/$defs/evidenceValue"},
+        "redemption_confirmation_business_days": {"$ref": "#/$defs/evidenceValue"},
+        "redemption_settlement_business_days": {"$ref": "#/$defs/evidenceValue"},
+        "purchase_limit": {"$ref": "#/$defs/evidenceValue"},
+        "calendar": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "authority", "notes"],
+          "properties": {
+            "kind": {"enum": ["domestic", "qdii", "unknown"]},
+            "authority": {"enum": ["inferred_reference_only", "official_verified"]},
+            "notes": {"type": ["string", "null"]}
+          }
+        },
+        "unknown_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string"}
+        }
+      }
+    }
+  }
+}
