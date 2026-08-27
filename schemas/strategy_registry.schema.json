@@ -13,7 +13,7 @@
     "mode": {"const": "research_only"},
     "terminology": {
       "type": "object",
-      "required": ["allocation_anchor_631", "dca_baseline@1.4.0", "tactical_overlay"]
+      "required": ["allocation_anchor_631", "dca_baseline@1.5.0", "tactical_overlay"]
     },
     "decision_contract": {
       "type": "object",

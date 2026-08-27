@@ -27,6 +27,7 @@ TARGET_SLEEVES = (
     "domestic_broad_core",
     "domestic_growth",
     "sh_hk_sz_passive_technology_satellite",
+    "uk_broad_core",
     "us_broad_core",
     "us_growth",
 )
@@ -133,7 +134,7 @@ def _signal_envelope(
     }
 
 
-def _require_target_authority(decision_input: Mapping[str, Any]) -> None:
+def _require_target_authority(decision_input: Mapping[str, Any]) -> Mapping[str, Any]:
     accepted = decision_input.get("accepted_signals")
     if not isinstance(accepted, list):
         raise ValueError("decision input accepted_signals must be a list")
@@ -142,11 +143,11 @@ def _require_target_authority(decision_input: Mapping[str, Any]) -> None:
         for item in accepted
         if isinstance(item, Mapping) and item.get("target_allocation_authority") is True
     ]
-    if len(accepted_authorities) != 1 or (
-        accepted_authorities[0].get("strategy_id"),
-        accepted_authorities[0].get("strategy_version"),
-    ) != ("dca_baseline", "1.4.0"):
-        raise ValueError("accepted dca_baseline@1.4.0 target authority is required")
+    if len(accepted_authorities) != 1 or accepted_authorities[0].get(
+        "strategy_id"
+    ) != "dca_baseline":
+        raise ValueError("accepted dca_baseline target authority is required")
+    return accepted_authorities[0]
 
 
 def _current_sleeves(
@@ -255,7 +256,7 @@ def build_monthly_research_decision_pack(
     routes = {str(k): str(v) for k, v in config["target_routes"].items()}
     target_weights = {str(k): Decimal(str(v)) for k, v in config["target_weights"].items()}
     if set(routes) != set(TARGET_SLEEVES) or set(target_weights) != set(TARGET_SLEEVES):
-        raise ValueError("target routes and weights must contain the six frozen 631 sleeves")
+        raise ValueError("target routes and weights must contain the seven frozen 631 sleeves")
     if sum(target_weights.values(), Decimal("0")) != Decimal("1"):
         raise ValueError("target weights must sum exactly to one")
 
@@ -295,8 +296,17 @@ def build_monthly_research_decision_pack(
         portfolio_series=portfolio_series,
         portfolio_weights=target_weights,
     )
+    registry = load_strategy_registry(registry_path)
+    baseline_authorities = [
+        item
+        for item in registry["strategies"]
+        if item["decision_permissions"]["target_allocation_authority"] is True
+    ]
+    if len(baseline_authorities) != 1 or baseline_authorities[0]["strategy_id"] != "dca_baseline":
+        raise ValueError("strategy registry requires one dca_baseline target authority")
+    baseline_version = str(baseline_authorities[0]["strategy_version"])
     baseline = {
-        "model_version": "dca_baseline_monthly_signal_v1_4",
+        "model_version": "dca_baseline_monthly_signal_v" + baseline_version.replace(".", "_"),
         "review_date": review_date.isoformat(),
         "signal_cutoff_date": (review_date - timedelta(days=1)).isoformat(),
         "target_weights": {key: str(value) for key, value in sorted(target_weights.items())},
@@ -312,7 +322,7 @@ def build_monthly_research_decision_pack(
     signals = [
         _signal_envelope(
             strategy_id="dca_baseline",
-            version="1.4.0",
+            version=baseline_version,
             review_date=review_date,
             valid_until=str(config["signal_valid_until"]),
             payload=baseline,
@@ -347,7 +357,6 @@ def build_monthly_research_decision_pack(
             risk_reasons=[str(sleeve_drawdown["reason"])],
         ),
     ]
-    registry = load_strategy_registry(registry_path)
     decision_input = build_decision_input(
         registry,
         workspace_root=workspace_root,
@@ -361,7 +370,7 @@ def build_monthly_research_decision_pack(
     baseline_spec_hash = next(
         item["spec"]["sha256"]
         for item in registry["strategies"]
-        if item["strategy_id"] == "dca_baseline" and item["strategy_version"] == "1.4.0"
+        if item["strategy_id"] == "dca_baseline" and item["strategy_version"] == baseline_version
     )
     preview = build_monthly_allocation(
         planned_date=as_of.date(),
@@ -372,7 +381,7 @@ def build_monthly_research_decision_pack(
         strategy_spec_sha256=baseline_spec_hash,
     ).to_dict()
     preview["strategy_id"] = "dca_baseline"
-    preview["strategy_version"] = "1.4.0"
+    preview["strategy_version"] = baseline_version
     preview["preview_only"] = True
     preview["scheduled_purchase_dates"] = []
     preview["reason"] = "mid_cycle_diagnostic_only_not_a_monthly_schedule"

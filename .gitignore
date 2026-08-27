@@ -19,11 +19,30 @@ credentials.json
 *.token
 *.secret
 
-# Downloaded third-party runtime artifacts
-.agents/skills/thsfund/
-vendor-downloads/
+# Reviewed project-local third-party Skill is versioned; temporary downloads are not.
+.agents/skills/thsfund/vendor-downloads/
 
-# Local/raw financial data
-data/raw/
-data/private/
-data/imports/
+# Local financial data and generated evidence. The repository contains schemas
+# and sanitized examples only; real batches, snapshots, databases and reports
+# never enter Git.
+data/
+
+# Databases, journals and runtime output in case a tool is pointed elsewhere.
+*.sqlite
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.db
+*.db-shm
+*.db-wal
+*.log
+*.pid
+
+# Private keys and certificate bundles.
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Machine-specific scheduler instances. Commit only the .plist.example template.
+config/launchd/*.plist

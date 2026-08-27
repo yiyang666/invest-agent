@@ -1,0 +1,11 @@
+{
+  "extends": "backtest_hierarchical_a2_v1.json",
+  "overrides": {
+    "scenario_id": "hierarchical_risk_budget_valuation_a2_satellite_traffic_light_bond_gold_sensitivity_v1",
+    "research_stage": "A2_satellite_traffic_light_bond_gold_2_to_1_sensitivity",
+    "purpose": "预注册诊断敏感性：保持A2红绿灯状态、阈值、基金池、现金流和只买不卖语义不变，仅把卫星释放权重按债券与黄金2:1加入有效目标；不因结果较好自动替换A2现金主版本。",
+    "allocation_engine": {
+      "released_weight_destination": "bond_gold_2_to_1"
+    }
+  }
+}

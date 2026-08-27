@@ -97,6 +97,24 @@ class StrategySpecTests(unittest.TestCase):
         )
         self.assertIn("submit_real_orders", spec["prohibitions"])
 
+    def test_dca_v1_5_uses_executable_route_pool_and_019861(self) -> None:
+        spec = json.loads(
+            (ROOT / "strategies/specs/dca_baseline_v1_5.json").read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(spec["strategy_version"], "1.5.0")
+        self.assertEqual(spec["inputs"]["allocation"], "20/10/10/10/10/30/10")
+        self.assertEqual(spec["inputs"]["domestic_growth_long_history_proxy"], "019861")
+        self.assertEqual(
+            spec["inputs"]["allocation_role"],
+            "research_benchmark_and_personal_target",
+        )
+        self.assertTrue(spec["rules"]["instrument_routing"]["multiple_routes_per_sleeve"])
+        self.assertTrue(
+            spec["rules"]["risk_boundary"]["baseline_remains_valid_when_stress_requires_review"]
+        )
+        self.assertIn("submit_real_orders", spec["prohibitions"])
+
     def test_new_money_trend_rs_v1_is_bounded_and_has_no_sell_path(self) -> None:
         spec = json.loads(
             (ROOT / "strategies/specs/new_money_trend_rs_v1.json").read_text(encoding="utf-8")

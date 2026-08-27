@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "scenario_id": "executable_route_pool_631_candidate_2024_2026_v11",
+  "classification": "counterfactual_research_assumption",
+  "purpose": "用当前可购买基金池重建631候选；当前费率和限额应用到历史市场路径，仅用于研究，不声称复原历史渠道规则。",
+  "provider_id": "akshare_eastmoney",
+  "period": {"start_date": "2024-01-01", "end_date": "2026-07-31"},
+  "monthly_contribution_cny": "3000",
+  "calendar_day": 1,
+  "allocation_profiles": [
+    {
+      "id": "long_term_60_defensive_30_satellite_10_executable_candidate",
+      "weights": {
+        "domestic_broad_core": "0.20",
+        "us_broad_core": "0.10",
+        "uk_broad_core": "0.10",
+        "us_growth": "0.10",
+        "domestic_growth": "0.10",
+        "defensive": "0.30",
+        "sh_hk_sz_passive_technology_satellite": "0.10"
+      }
+    }
+  ],
+  "routes": [
+    {"sleeve": "domestic_broad_core", "fund_code": "110020", "priority": 1, "role": "沪深300国内宽基代理", "minimum_order_cny": "10", "daily_cap_cny": null, "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "research_assumption_uniform_fee_0p0015_v11", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_broad_core", "fund_code": "017641", "priority": 1, "role": "标准标普500人民币A主路线", "minimum_order_cny": "10", "daily_cap_cny": "10", "shared_daily_cap_group": "cifm_sp500_a_c_combined_daily_purchase", "shared_daily_cap_cny": "10", "purchase_fee_rate": "0.0012", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_v11", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_broad_core", "fund_code": "019305", "priority": 2, "role": "标准标普500人民币C同日互斥替代", "minimum_order_cny": "10", "daily_cap_cny": "10", "shared_daily_cap_group": "cifm_sp500_a_c_combined_daily_purchase", "shared_daily_cap_cny": "10", "purchase_fee_rate": "0", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_v11", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_broad_core", "fund_code": "096001", "priority": 3, "role": "标普500等权补充路线", "minimum_order_cny": "10", "daily_cap_cny": "10", "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_v11", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_broad_core", "fund_code": "519981", "priority": 4, "role": "标普100等权增强后备路线", "minimum_order_cny": "1", "daily_cap_cny": "10", "purchase_fee_rate": "0.0014", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_v11", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "uk_broad_core", "fund_code": "539003", "priority": 1, "role": "富时100英国宽基路线", "minimum_order_cny": "1", "daily_cap_cny": "5000", "purchase_fee_rate": "0.0012", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_v11", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_growth", "fund_code": "000043", "priority": 1, "role": "美国成长可购买路线", "minimum_order_cny": "1", "daily_cap_cny": "100", "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_v11", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "domestic_growth", "fund_code": "019861", "priority": 1, "role": "国内成长长历史实施代理；全市场成长另做短窗敏感性", "minimum_order_cny": "10", "daily_cap_cny": null, "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "research_assumption_uniform_fee_0p0015_v11", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "defensive", "fund_code": "006932", "priority": 1, "role": "0-3年政策性金融债防御主路线", "minimum_order_cny": "10", "daily_cap_cny": null, "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "research_assumption_uniform_fee_0p0015_v11", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "sh_hk_sz_passive_technology_satellite", "fund_code": "160646", "priority": 1, "role": "中证沪港深科技龙头指数被动卫星基准", "minimum_order_cny": "10", "daily_cap_cny": null, "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "research_assumption_uniform_fee_0p0015_v11", "rule_effective_date": "2024-01-01", "assumption_authority": "counterfactual_research_assumption"}
+  ],
+  "nav_assumption": {"field": "unit_nav", "visibility_rule": "next_fund_nav_date", "forward_fill": false},
+  "subscription_assumption": {"precommitted_before_cutoff": true, "confirmation_rule": "nav_visible_date", "carry_unfilled_across_month_end": true, "reserved_cash_counts_toward_target_sleeve": true, "unlimited_fund_tranche_calendar_days": [5, 15, 25]},
+  "distribution_assumption": {"election": "cash", "payment_date_rule": "next_fund_nav_date", "cash_precision": 2, "cash_rounding_mode": "half_up"},
+  "official_rule_gate": {"status": "blocked", "reason": "当前限额用于历史路径属于反事实；国内全市场成长代理历史不足；严格时点与前瞻样本外仍未完成。"}
+}

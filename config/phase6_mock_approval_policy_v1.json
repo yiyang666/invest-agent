@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "policy_id": "phase6_mock_approval_policy_v1",
+  "mode": "mock_only",
+  "approval_expiry_minutes": 15,
+  "one_time_approval": true,
+  "key_change_invalidates_approval": true,
+  "unknown_state_requires_reconciliation": true,
+  "required_order_fields": [
+    "fund_code",
+    "fund_name",
+    "action",
+    "amount_cny",
+    "shares",
+    "order_reference",
+    "scheduled_date",
+    "source_evidence_sha256",
+    "route_rule_version",
+    "account_alias",
+    "estimated_fee_cny",
+    "expected_result"
+  ],
+  "draft_gate": {
+    "required_source_mode": "research_only",
+    "required_schedule_status": "mock_schedule_frozen",
+    "allowed_risk_postures": ["within_current_research_limits"],
+    "preview_only_must_be_false": true,
+    "scheduled_purchase_dates_required": true,
+    "source_execution_orders_must_be_empty": true
+  },
+  "persistence": {
+    "backend": "sqlite_private",
+    "process_restart_safe": true,
+    "atomic_one_time_consume": true,
+    "credentials_allowed": false
+  },
+  "safety": {
+    "advisory_only": true,
+    "real_adapter_allowed": false,
+    "network_allowed": false,
+    "automatic_retry_allowed": false,
+    "real_trading_enabled": false
+  }
+}

@@ -52,9 +52,27 @@ def load_nav_series(
     if as_of is not None:
         clauses.append("observation.nav_date <= ?")
         parameters.append(as_of.isoformat())
-    where_sql = " AND ".join(clauses)
     connection = _connect(database)
     try:
+        boundary_table = connection.execute(
+            """
+            SELECT 1 FROM sqlite_master
+            WHERE type = 'table' AND name = 'fund_history_boundaries'
+            """
+        ).fetchone()
+        if boundary_table is not None:
+            boundary = connection.execute(
+                """
+                SELECT current_contract_start_date
+                FROM fund_history_boundaries
+                WHERE fund_code = ?
+                """,
+                (fund_code,),
+            ).fetchone()
+            if boundary is not None:
+                clauses.append("observation.nav_date >= ?")
+                parameters.append(boundary["current_contract_start_date"])
+        where_sql = " AND ".join(clauses)
         rows = connection.execute(
             f"""
             WITH ranked AS (

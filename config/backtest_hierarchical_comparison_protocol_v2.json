@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "protocol_id": "hierarchical_risk_budget_valuation_same_universe_comparison_v2",
+  "status": "frozen_before_same_universe_performance_run",
+  "frozen_date": "2026-08-27",
+  "strategy_id": "hierarchical_risk_budget_valuation",
+  "strategy_version": "0.2.0",
+  "supersedes": "hierarchical_risk_budget_valuation_same_universe_comparison_v1",
+  "amendment_reason": "v1可执行性审计显示，机械复制631的跨月旧队列和5/15/25分批会与424基金池中的日限额及100元最低申购额发生结构性冲突，产生22.03%平均现金拖累。当前A1没有市场信号，只使用固定424战略权重、月度目标缺口和可执行路由，因此将A1重新归类为同资产基础DCA主对照；v1场景降为执行敏感性。",
+  "external_anchor": {
+    "strategy": "dca_baseline@1.5.0",
+    "role": "policy_and_total_outcome_reference",
+    "required": true
+  },
+  "primary_same_universe_control": {
+    "scenario_id": "hierarchical_risk_budget_valuation_a1_fixed_40_20_40_v1",
+    "reclassified_name": "424_dca_baseline",
+    "role": "primary_strategy_effectiveness_control",
+    "monthly_contribution_cny": "3000",
+    "allocation_engine_mode": "revalidated_target_gap",
+    "carry_unfilled_across_month_end": false,
+    "unlimited_fund_tranche_calendar_days": [5],
+    "market_signal_used": false
+  },
+  "allowed_candidate_scenario_ids": [
+    "hierarchical_risk_budget_valuation_a2_satellite_traffic_light_cash_v1"
+  ],
+  "execution_sensitivity_controls": [
+    {
+      "scenario_id": "hierarchical_risk_budget_valuation_424_dca_baseline_v1",
+      "role": "strict_631_queue_transplant_sensitivity_not_primary_control",
+      "observed_average_cash_drag_pct": 22.03110544591143,
+      "reason": "用于证明执行语义不能脱离基金最低金额和限额结构机械移植，不用于评价市场信号。"
+    }
+  ],
+  "required_invariants": {
+    "identical_route_payloads": true,
+    "identical_strategic_sleeve_weights": true,
+    "identical_provider": true,
+    "identical_period": true,
+    "identical_calendar_day": true,
+    "identical_monthly_external_cashflows": true,
+    "same_initial_state": "zero_holdings_zero_cash",
+    "same_strategy_spec_bytes": true,
+    "no_real_orders": true
+  },
+  "causal_questions": {
+    "424_dca_vs_631": "424资产池、战略配置和适配后的路由执行整体差异；不归因于高级信号。",
+    "a2_vs_424_dca": "卫星红绿灯相对同资产、同路线、同目标缺口基础DCA的独立增量。",
+    "future_full_strategy_vs_424_dca": "后续完整高级规则相对同资产基础DCA的累计增量。"
+  },
+  "excluded_controls": [
+    {
+      "control_id": "424_fixed_split_dca",
+      "reason": "用户明确认为意义不大；不纳入当前实验族。"
+    }
+  ],
+  "interpretation_limits": [
+    "short_window_only",
+    "counterfactual_execution",
+    "current_channel_rules_applied_to_history",
+    "a1_vs_631_is_total_policy_outcome_not_signal_attribution",
+    "strict_631_queue_transplant_is_execution_sensitivity_only",
+    "no_promotion_without_complete_discovery_and_robustness_gates"
+  ]
+}

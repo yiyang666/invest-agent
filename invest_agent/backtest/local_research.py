@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from bisect import bisect_right
 from calendar import monthrange
+from copy import deepcopy
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 import hashlib
@@ -37,6 +38,10 @@ from invest_agent.strategies.drawdown_add import (
 from invest_agent.strategies.sleeve_drawdown import (
     build_sleeve_drawdown_allocation,
     build_sleeve_drawdown_signal,
+)
+from invest_agent.strategies.satellite_traffic_light import (
+    build_satellite_traffic_light_signal,
+    build_state_adjusted_target_gap_allocation,
 )
 
 from .subscription_engine import (
@@ -121,24 +126,44 @@ def _validate_scenario(payload: Mapping[str, object]) -> None:
         raise ValueError("at least one route is required")
     sleeves: set[str] = set()
     funds: set[str] = set()
+    route_priorities: set[tuple[str, int]] = set()
+    shared_caps: dict[str, Decimal] = {}
     for route in routes:
         if not isinstance(route, Mapping):
             raise ValueError("route must be an object")
         sleeve = str(route.get("sleeve", ""))
         fund_code = str(route.get("fund_code", ""))
-        if not sleeve or sleeve in sleeves:
-            raise ValueError("v1 requires exactly one unique route per sleeve")
+        if not sleeve:
+            raise ValueError("route sleeve is required")
         if len(fund_code) != 6 or not fund_code.isdigit() or fund_code in funds:
             raise ValueError("route fund codes must be unique six-digit values")
         sleeves.add(sleeve)
         funds.add(fund_code)
+        priority = int(route.get("priority", 1))
+        if priority <= 0 or (sleeve, priority) in route_priorities:
+            raise ValueError("route priorities must be positive and unique within a sleeve")
+        route_priorities.add((sleeve, priority))
         if Decimal(str(route.get("minimum_order_cny"))) <= 0:
             raise ValueError("minimum order must be positive")
         cap = route.get("daily_cap_cny")
         if cap is not None and Decimal(str(cap)) <= 0:
             raise ValueError("daily cap must be positive")
-        if Decimal(str(route.get("purchase_fee_rate"))) < 0:
-            raise ValueError("purchase fee rate cannot be negative")
+        fee_rate = Decimal(str(route.get("purchase_fee_rate")))
+        if fee_rate < 0 or fee_rate > 1:
+            raise ValueError("purchase fee rate must be between zero and one")
+        shared_group = route.get("shared_daily_cap_group")
+        shared_cap = route.get("shared_daily_cap_cny")
+        if bool(shared_group) != (shared_cap is not None):
+            raise ValueError("shared daily cap group and amount must be declared together")
+        if shared_group:
+            parsed_shared_cap = Decimal(str(shared_cap))
+            if parsed_shared_cap <= 0:
+                raise ValueError("shared daily cap must be positive")
+            prior_shared_cap = shared_caps.setdefault(
+                str(shared_group), parsed_shared_cap
+            )
+            if prior_shared_cap != parsed_shared_cap:
+                raise ValueError("shared daily cap group must use one consistent cap")
         if str(route.get("assumption_authority")) != RESEARCH_CLASSIFICATION:
             raise ValueError("every route must be a counterfactual research assumption")
     for profile in profiles:
@@ -151,11 +176,21 @@ def _validate_scenario(payload: Mapping[str, object]) -> None:
     allocation_mode = str(allocation_engine.get("mode", "target_gap"))
     if allocation_mode not in {
         "target_gap",
+        "revalidated_target_gap",
         "new_money_trend_rs",
         "drawdown_budget_add",
         "sleeve_drawdown_recovery",
+        "satellite_traffic_light",
     }:
         raise ValueError("unsupported allocation engine mode")
+    if allocation_mode not in {
+        "target_gap",
+        "revalidated_target_gap",
+        "satellite_traffic_light",
+    } and len(routes) != len(sleeves):
+        raise ValueError(
+            "multi-route sleeves currently support target-gap and satellite traffic-light research only"
+        )
     if allocation_mode == "new_money_trend_rs":
         candidates = allocation_engine.get("tactical_candidates")
         if not isinstance(candidates, Mapping) or not candidates:
@@ -184,6 +219,53 @@ def _validate_scenario(payload: Mapping[str, object]) -> None:
             raise ValueError("trend signal_parameters contain unsupported keys")
         if any(int(value) <= 0 for value in signal_parameters.values()):
             raise ValueError("trend signal parameters must be positive integers")
+    if allocation_mode == "satellite_traffic_light":
+        satellite_funds = allocation_engine.get("satellite_funds")
+        expected_satellites = {
+            "global_technology_satellite",
+            "semiconductor_satellite",
+            "robotics_satellite",
+            "biotechnology_satellite",
+        }
+        if not isinstance(satellite_funds, Mapping) or set(satellite_funds) != expected_satellites:
+            raise ValueError("satellite traffic-light requires the four frozen theme sleeves")
+        route_by_sleeve = {
+            str(route["sleeve"]): str(route["fund_code"])
+            for route in routes
+            if str(route["sleeve"]) in expected_satellites
+        }
+        if any(
+            route_by_sleeve.get(str(sleeve)) != str(code)
+            for sleeve, code in satellite_funds.items()
+        ):
+            raise ValueError("satellite traffic-light funds must match configured routes")
+        if allocation_engine.get("signal_nav_field") != "accumulated_nav":
+            raise ValueError("satellite traffic-light requires accumulated_nav signals")
+        if allocation_engine.get("released_weight_destination") not in {
+            "cash",
+            "bond_gold_2_to_1",
+        }:
+            raise ValueError("satellite released-weight destination is unsupported")
+        signal_parameters = allocation_engine.get("signal_parameters", {})
+        if not isinstance(signal_parameters, Mapping):
+            raise ValueError("satellite signal_parameters must be an object")
+        allowed_parameters = {
+            "long_average_observations",
+            "momentum_lookback_observations",
+            "minimum_observations",
+            "maximum_staleness_days",
+        }
+        if set(signal_parameters) - allowed_parameters:
+            raise ValueError("satellite signal_parameters contain unsupported keys")
+        if any(int(value) <= 0 for value in signal_parameters.values()):
+            raise ValueError("satellite signal parameters must be positive integers")
+        minimum = int(signal_parameters.get("minimum_observations", 201))
+        required = max(
+            int(signal_parameters.get("long_average_observations", 200)),
+            int(signal_parameters.get("momentum_lookback_observations", 126)) + 1,
+        )
+        if minimum < required:
+            raise ValueError("satellite minimum observations do not cover signal windows")
     if allocation_mode == "drawdown_budget_add":
         composite_funds = allocation_engine.get("composite_funds")
         composite_weights = allocation_engine.get("composite_weights")
@@ -255,10 +337,47 @@ def _validate_scenario(payload: Mapping[str, object]) -> None:
         raise ValueError("unsupported distribution payment-date assumption")
 
 
-def load_research_scenario(path: str | Path) -> dict[str, object]:
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+def _deep_merge_mapping(
+    base: Mapping[str, object], overrides: Mapping[str, object]
+) -> dict[str, object]:
+    result = deepcopy(dict(base))
+    for key, value in overrides.items():
+        prior = result.get(key)
+        if isinstance(prior, Mapping) and isinstance(value, Mapping):
+            result[key] = _deep_merge_mapping(prior, value)
+        else:
+            result[key] = deepcopy(value)
+    return result
+
+
+def _load_scenario_payload(path: Path, seen: set[Path]) -> dict[str, object]:
+    resolved = path.resolve()
+    if resolved in seen:
+        raise ValueError("research scenario overlay cycle detected")
+    seen.add(resolved)
+    payload = json.loads(resolved.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("research scenario must be a JSON object")
+    if "extends" in payload:
+        if set(payload) != {"extends", "overrides"}:
+            raise ValueError("scenario overlay may contain only extends and overrides")
+        reference = Path(str(payload["extends"]))
+        if reference.is_absolute() or reference.name != str(reference):
+            raise ValueError("scenario overlay must reference one file in the same directory")
+        base_path = (resolved.parent / reference).resolve()
+        if base_path.parent != resolved.parent:
+            raise ValueError("scenario overlay must stay in the same directory")
+        overrides = payload.get("overrides")
+        if not isinstance(overrides, Mapping):
+            raise ValueError("scenario overlay overrides must be an object")
+        base = _load_scenario_payload(base_path, seen)
+        payload = _deep_merge_mapping(base, overrides)
+    seen.remove(resolved)
+    return payload
+
+
+def load_research_scenario(path: str | Path) -> dict[str, object]:
+    payload = _load_scenario_payload(Path(path), set())
     _validate_scenario(payload)
     return payload
 
@@ -480,6 +599,51 @@ def _current_values(
     return total, values
 
 
+def _current_position_cash_state(
+    valuations: Mapping[str, object],
+    *,
+    fund_to_sleeve: Mapping[str, str],
+    sleeves: Sequence[str],
+) -> tuple[Decimal, dict[str, Decimal], Decimal, Decimal]:
+    ordered_sleeves = tuple(sorted(sleeves))
+    daily = valuations.get("daily_valuations")
+    if not isinstance(daily, list) or not daily:
+        return (
+            Decimal("0"),
+            {sleeve: Decimal("0") for sleeve in ordered_sleeves},
+            Decimal("0"),
+            Decimal("0"),
+        )
+    latest = daily[-1]
+    if not isinstance(latest, Mapping):
+        raise ValueError("daily valuation entry must be an object")
+    values = {sleeve: Decimal("0") for sleeve in ordered_sleeves}
+    for position in latest.get("positions", []):
+        code = str(position["fund_code"])
+        values[fund_to_sleeve[code]] += Decimal(str(position["market_value_cny"]))
+    values = {
+        sleeve: value.quantize(CENT, rounding=ROUND_HALF_UP)
+        for sleeve, value in values.items()
+    }
+    available_cash = Decimal(str(latest["available_cash_cny"])).quantize(
+        CENT, rounding=ROUND_HALF_UP
+    )
+    nondeployable_cash = (
+        Decimal(str(latest["pending_subscription_cash_cny"]))
+        + Decimal(str(latest["distribution_receivable_cny"]))
+    ).quantize(CENT, rounding=ROUND_HALF_UP)
+    total = Decimal(str(latest["total_value_cny"])).quantize(
+        CENT, rounding=ROUND_HALF_UP
+    )
+    difference = total - (
+        sum(values.values(), Decimal("0")) + available_cash + nondeployable_cash
+    )
+    available_cash += difference
+    if available_cash < 0:
+        raise ValueError("position and cash state does not reconcile")
+    return total, values, available_cash, nondeployable_cash
+
+
 def _xirr(contributions: Sequence[CashContribution], terminal_date: date, terminal: Decimal) -> float | None:
     if not contributions or terminal <= 0:
         return None
@@ -653,6 +817,7 @@ def run_local_dca_research(
     trend_candidate_series: dict[str, tuple[str, Sequence[NavPoint]]] = {}
     drawdown_signal_series: dict[str, tuple[str, Sequence[NavPoint]]] = {}
     sleeve_candidate_series: dict[str, tuple[str, Sequence[NavPoint]]] = {}
+    satellite_signal_series: dict[str, tuple[str, Sequence[NavPoint]]] = {}
     if allocation_mode == "new_money_trend_rs":
         tactical_candidates = allocation_engine["tactical_candidates"]
         assert isinstance(tactical_candidates, Mapping)
@@ -697,6 +862,22 @@ def run_local_dca_research(
             str(sleeve): drawdown_signal_series[str(sleeve)]
             for sleeve in candidate_funds
         }
+    if allocation_mode == "satellite_traffic_light":
+        satellite_funds = allocation_engine["satellite_funds"]
+        assert isinstance(satellite_funds, Mapping)
+        satellite_signal_series = {
+            str(sleeve): (
+                str(fund_code),
+                load_nav_series(
+                    database,
+                    fund_code=str(fund_code),
+                    provider_id=provider_id,
+                    as_of=end,
+                    nav_field="accumulated_nav",
+                ),
+            )
+            for sleeve, fund_code in satellite_funds.items()
+        }
     distribution_assumption = scenario["distribution_assumption"]
     assert isinstance(distribution_assumption, Mapping)
     distributions = _load_cash_distributions(
@@ -711,7 +892,10 @@ def run_local_dca_research(
     strategy_hash = hashlib.sha256(strategy_spec_bytes).hexdigest()
     scenario_hash = _canonical_sha256(scenario)
     planned_dates = _month_plans(start, end, int(scenario["calendar_day"]))
-    route_by_sleeve = {str(item["sleeve"]): item for item in routes_payload}
+    routes_by_sleeve: dict[str, list[Mapping[str, object]]] = {}
+    for item in routes_payload:
+        routes_by_sleeve.setdefault(str(item["sleeve"]), []).append(item)
+    route_by_fund = {str(item["fund_code"]): item for item in routes_payload}
     fund_to_sleeve = {
         str(item["fund_code"]): str(item["sleeve"]) for item in routes_payload
     }
@@ -809,6 +993,28 @@ def run_local_dca_research(
                 )
                 weights = profile_weights
                 monthly_signal_ledger.append(signal)
+            elif allocation_mode == "satellite_traffic_light":
+                raw_signal_parameters = allocation_engine.get(
+                    "signal_parameters", {}
+                )
+                assert isinstance(raw_signal_parameters, Mapping)
+                signal = build_satellite_traffic_light_signal(
+                    review_date=planned,
+                    satellite_series=satellite_signal_series,
+                    strategic_weights=profile_weights,
+                    released_weight_destination=str(
+                        allocation_engine["released_weight_destination"]
+                    ),
+                    **{
+                        str(key): int(value)
+                        for key, value in raw_signal_parameters.items()
+                    },
+                )
+                weights = {
+                    key: Decimal(str(value))
+                    for key, value in signal["effective_target_weights"].items()
+                }
+                monthly_signal_ledger.append(signal)
             else:
                 weights = profile_weights
             if executions or contributions:
@@ -821,21 +1027,42 @@ def run_local_dca_research(
                     navs=navs,
                     distributions=distributions,
                 )
-                future_reserved_by_sleeve = {sleeve: Decimal("0") for sleeve in sleeves}
-                for execution in executions:
-                    if execution.submit_date >= planned:
-                        future_reserved_by_sleeve[fund_to_sleeve[execution.fund_code]] += (
-                            execution.gross_amount_cny
-                        )
-                pre_value, current_values = _current_values(
-                    prior_valuations,
-                    fund_to_sleeve=fund_to_sleeve,
-                    target_weights=weights,
-                    reserved_cash_by_sleeve=future_reserved_by_sleeve,
-                )
+                if allocation_mode in {
+                    "revalidated_target_gap",
+                    "satellite_traffic_light",
+                }:
+                    (
+                        pre_value,
+                        current_values,
+                        prior_available_cash,
+                        nondeployable_cash,
+                    ) = _current_position_cash_state(
+                        prior_valuations,
+                        fund_to_sleeve=fund_to_sleeve,
+                        sleeves=sleeves,
+                    )
+                else:
+                    future_reserved_by_sleeve = {
+                        sleeve: Decimal("0") for sleeve in sleeves
+                    }
+                    for execution in executions:
+                        if execution.submit_date >= planned:
+                            future_reserved_by_sleeve[
+                                fund_to_sleeve[execution.fund_code]
+                            ] += execution.gross_amount_cny
+                    pre_value, current_values = _current_values(
+                        prior_valuations,
+                        fund_to_sleeve=fund_to_sleeve,
+                        target_weights=weights,
+                        reserved_cash_by_sleeve=future_reserved_by_sleeve,
+                    )
+                    prior_available_cash = Decimal("0")
+                    nondeployable_cash = Decimal("0")
             else:
                 pre_value = Decimal("0")
                 current_values = {sleeve: Decimal("0") for sleeve in sleeves}
+                prior_available_cash = Decimal("0")
+                nondeployable_cash = Decimal("0")
             raw_schedule = scenario.get("monthly_contribution_schedule_cny")
             if raw_schedule is not None:
                 assert isinstance(raw_schedule, Mapping)
@@ -867,6 +1094,20 @@ def run_local_dca_research(
                     new_money_weights=weights,
                     strategy_spec_sha256=strategy_hash,
                     remainder_sleeve=str(allocation_engine["fallback_sleeve"]),
+                )
+            elif allocation_mode in {
+                "revalidated_target_gap",
+                "satellite_traffic_light",
+            }:
+                allocation = build_state_adjusted_target_gap_allocation(
+                    planned_date=planned,
+                    pre_contribution_portfolio_value_cny=pre_value,
+                    monthly_contribution_cny=contribution.amount_cny,
+                    current_position_values_cny=current_values,
+                    prior_available_cash_cny=prior_available_cash,
+                    nondeployable_cash_cny=nondeployable_cash,
+                    effective_target_weights=weights,
+                    strategy_spec_sha256=strategy_hash,
                 )
             elif allocation_mode == "drawdown_budget_add" and profile.get(
                 "allocation_variant"
@@ -921,61 +1162,71 @@ def run_local_dca_research(
                 monthrange(planned.year, planned.month)[1],
             )
             for sleeve in sleeves:
-                item = route_by_sleeve[sleeve]
-                code = str(item["fund_code"])
-                all_eligible = tuple(
-                    point.nav_date
-                    for point in series[code]
-                    if planned <= point.nav_date
-                    <= routing_end
-                    and point.nav_date in visible_by_code_nav_date[code]
-                )
-                cap_value = item.get("daily_cap_cny")
-                if cap_value is None and unlimited_tranche_days:
-                    eligible_list: list[date] = []
-                    for tranche_day in unlimited_tranche_days:
-                        target = date(
-                            planned.year,
-                            planned.month,
-                            min(
-                                tranche_day,
-                                monthrange(planned.year, planned.month)[1],
+                for item in routes_by_sleeve[sleeve]:
+                    code = str(item["fund_code"])
+                    all_eligible = tuple(
+                        point.nav_date
+                        for point in series[code]
+                        if planned <= point.nav_date
+                        <= routing_end
+                        and point.nav_date in visible_by_code_nav_date[code]
+                    )
+                    cap_value = item.get("daily_cap_cny")
+                    if cap_value is None and unlimited_tranche_days:
+                        eligible_list: list[date] = []
+                        for tranche_day in unlimited_tranche_days:
+                            target = date(
+                                planned.year,
+                                planned.month,
+                                min(
+                                    tranche_day,
+                                    monthrange(planned.year, planned.month)[1],
+                                ),
+                            )
+                            next_date = next(
+                                (candidate for candidate in all_eligible if candidate >= target),
+                                None,
+                            )
+                            if next_date is not None:
+                                eligible_list.append(next_date)
+                        eligible = tuple(eligible_list)
+                        route_allocation_mode = "equal_tranches"
+                        planned_tranche_count = len(unlimited_tranche_days)
+                    else:
+                        eligible = all_eligible
+                        route_allocation_mode = "as_soon_as_possible"
+                        planned_tranche_count = 1
+                    reserved_by_date: dict[date, Decimal] = {}
+                    for execution in executions:
+                        if execution.fund_code == code and execution.submit_date >= planned:
+                            reserved_by_date[execution.submit_date] = (
+                                reserved_by_date.get(execution.submit_date, Decimal("0"))
+                                + execution.gross_amount_cny
+                            )
+                    instrument_routes.append(
+                        InstrumentRoute(
+                            sleeve=sleeve,
+                            fund_code=code,
+                            priority=int(item.get("priority", 1)),
+                            minimum_order_cny=Decimal(str(item["minimum_order_cny"])),
+                            daily_cap_cny=None if cap_value is None else Decimal(str(cap_value)),
+                            eligible_dates=eligible,
+                            rule_version=str(item["rule_version"]),
+                            reserved_by_date_cny=reserved_by_date,
+                            allocation_mode=route_allocation_mode,
+                            planned_tranche_count=planned_tranche_count,
+                            shared_daily_cap_group=(
+                                None
+                                if item.get("shared_daily_cap_group") is None
+                                else str(item["shared_daily_cap_group"])
+                            ),
+                            shared_daily_cap_cny=(
+                                None
+                                if item.get("shared_daily_cap_cny") is None
+                                else Decimal(str(item["shared_daily_cap_cny"]))
                             ),
                         )
-                        next_date = next(
-                            (candidate for candidate in all_eligible if candidate >= target),
-                            None,
-                        )
-                        if next_date is not None:
-                            eligible_list.append(next_date)
-                    eligible = tuple(eligible_list)
-                    route_allocation_mode = "equal_tranches"
-                    planned_tranche_count = len(unlimited_tranche_days)
-                else:
-                    eligible = all_eligible
-                    route_allocation_mode = "as_soon_as_possible"
-                    planned_tranche_count = 1
-                reserved_by_date: dict[date, Decimal] = {}
-                for execution in executions:
-                    if execution.fund_code == code and execution.submit_date >= planned:
-                        reserved_by_date[execution.submit_date] = (
-                            reserved_by_date.get(execution.submit_date, Decimal("0"))
-                            + execution.gross_amount_cny
-                        )
-                instrument_routes.append(
-                    InstrumentRoute(
-                        sleeve=sleeve,
-                        fund_code=code,
-                        priority=1,
-                        minimum_order_cny=Decimal(str(item["minimum_order_cny"])),
-                        daily_cap_cny=None if item.get("daily_cap_cny") is None else Decimal(str(item["daily_cap_cny"])),
-                        eligible_dates=eligible,
-                        rule_version=str(item["rule_version"]),
-                        reserved_by_date_cny=reserved_by_date,
-                        allocation_mode=route_allocation_mode,
-                        planned_tranche_count=planned_tranche_count,
                     )
-                )
             routed = generate_simulated_subscriptions(
                 allocation,
                 routes=instrument_routes,
@@ -990,7 +1241,7 @@ def run_local_dca_research(
             cross_month_total = Decimal("0")
             latest_submit_date: date | None = None
             for simulated in routed.subscriptions:
-                route = route_by_sleeve[simulated.sleeve]
+                route = route_by_fund[simulated.fund_code]
                 point = points_by_code_date[simulated.fund_code][simulated.simulated_submit_date]
                 visible_date = visible_by_code_nav_date[simulated.fund_code][point.nav_date]
                 executions.append(
@@ -1031,7 +1282,7 @@ def run_local_dca_research(
                         None if latest_submit_date is None else latest_submit_date.isoformat()
                     ),
                     "issues": list(routed.issues),
-                    "signal_reason": None if signal is None else signal["reason"],
+                    "signal_reason": None if signal is None else signal.get("reason"),
                     "base_contribution_cny": (
                         None
                         if signal is None or allocation_mode not in {"drawdown_budget_add", "sleeve_drawdown_recovery"}
@@ -1043,6 +1294,20 @@ def run_local_dca_research(
                         else signal["budget"]["additional_budget_cny"]
                     ),
                     "incremental_routing_cny": incremental_routing,
+                    "prior_available_cash_cny": f"{allocation.prior_available_cash_cny:.2f}",
+                    "nondeployable_cash_cny": f"{allocation.nondeployable_cash_cny:.2f}",
+                    "effective_target_weights": (
+                        None
+                        if signal is None
+                        or allocation_mode != "satellite_traffic_light"
+                        else signal["effective_target_weights"]
+                    ),
+                    "cash_target_weight": (
+                        None
+                        if signal is None
+                        or allocation_mode != "satellite_traffic_light"
+                        else signal["cash_target_weight"]
+                    ),
                 }
             )
         subscription_result, valuation_result = _run_event_state(
@@ -1077,6 +1342,9 @@ def run_local_dca_research(
         "engine_version": ENGINE_VERSION,
         "mode": "research_only",
         "classification": RESEARCH_CLASSIFICATION,
+        "research_stage": scenario.get("research_stage"),
+        "research_evidence_level": scenario.get("research_evidence_level"),
+        "deferred_variants": scenario.get("deferred_variants", []),
         "scenario_id": scenario["scenario_id"],
         "scenario_sha256": scenario_hash,
         "strategy": {
@@ -1119,6 +1387,13 @@ def run_local_dca_research(
                 {
                     point.content_sha256
                     for _code, points in drawdown_signal_series.values()
+                    for point in points
+                }
+            ),
+            "satellite_signal_batch_sha256": sorted(
+                {
+                    point.content_sha256
+                    for _code, points in satellite_signal_series.values()
                     for point in points
                 }
             ),

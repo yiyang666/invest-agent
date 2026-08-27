@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "policy_id": "phase8_attribution_policy_v1",
+  "status": "active",
+  "benchmark": "dca_baseline@1.5.0",
+  "cashflow_return_method": "modified_dietz_then_geometric_link",
+  "sleeve_method": "brinson_fachler_allocation_selection_interaction",
+  "strategy_method": "precommitted_sequential_ablation_waterfall",
+  "fairness": {
+    "matched_external_cashflows_required_for_strategy_claim": true,
+    "same_period_required": true,
+    "same_valuation_dates_required": true,
+    "fixed_3000_631_reported_separately": true,
+    "asset_universe_change_is_total_policy_outcome_not_signal_alpha": true
+  },
+  "lifecycle": {
+    "minimum_forward_observation_months": 12,
+    "retirement_review_minimum_months": 24,
+    "active_return_floor_pct": "-2.00",
+    "maximum_drawdown_worsening_pp": "3.00",
+    "maximum_target_weight_drift_pp": "5.00",
+    "automatic_promotion_allowed": false,
+    "automatic_retirement_allowed": false,
+    "risk_veto_has_priority": true
+  },
+  "safety": {
+    "research_and_monitoring_only": true,
+    "llm_numeric_attribution_allowed": false,
+    "order_generation_allowed": false,
+    "real_trading_enabled": false
+  }
+}

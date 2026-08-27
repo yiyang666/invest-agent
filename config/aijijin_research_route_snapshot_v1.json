@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "snapshot_id": "aijijin-research-route-snapshot-2026-08-26-v1",
+  "observed_at": "2026-08-26T20:07:39+08:00",
+  "channel": "aijijin_thsfund_current_channel",
+  "mode": "sanitized_read_only_research_evidence",
+  "source_commands": [
+    "aijijin fund fee-rule --fund-code <code>",
+    "aijijin fund subscribe-init --fund-code <code>"
+  ],
+  "privacy_filter": {
+    "raw_protected_response_persisted": false,
+    "account_fields_persisted": false,
+    "customer_fields_persisted": false,
+    "allowed_fields": [
+      "fund identity",
+      "purchase availability",
+      "minimum and maximum purchase",
+      "remaining daily capacity",
+      "fund risk level",
+      "channel purchase discount",
+      "statutory fee bands",
+      "channel-displayed confirmation and arrival timing"
+    ]
+  },
+  "research_semantics": {
+    "current_state_only": true,
+    "historical_application": "explicit_counterfactual_only",
+    "primary_purchase_fee": "bank_channel_discounted_first_tier",
+    "fee_sensitivity": "repeat_with_statutory_first_tier",
+    "unbounded_max_buy_sentinel_normalized_to_null": true,
+    "share_rounding_assumption": "two_decimals_half_up_until_channel_specific_evidence_is_added",
+    "real_order_submission_allowed": false
+  },
+  "routes": [
+    {
+      "fund_code": "016452",
+      "fund_name": "南方纳斯达克100指数发起（QDII）A",
+      "purchase_status": "limited",
+      "minimum_purchase_cny": "1",
+      "daily_purchase_limit_cny": "10",
+      "observed_remaining_daily_capacity_cny": "10",
+      "fund_risk_level": 4,
+      "statutory_first_tier_purchase_fee_rate": "0.012",
+      "bank_channel_purchase_fee_rate": "0.0012",
+      "wallet_channel_purchase_fee_rate": "0",
+      "redemption_fee_tiers": [
+        {"minimum_holding_days_inclusive": 0, "maximum_holding_days_exclusive": 7, "rate": "0.015"},
+        {"minimum_holding_days_inclusive": 7, "maximum_holding_days_exclusive": null, "rate": "0"}
+      ],
+      "buy_confirmation_business_days": 2,
+      "sell_confirmation_business_days": 2,
+      "sell_cash_arrival_business_days": 5
+    },
+    {
+      "fund_code": "020712",
+      "fund_name": "华安三菱日联日经225ETF发起式联接（QDII）A",
+      "purchase_status": "limited",
+      "minimum_purchase_cny": "1",
+      "daily_purchase_limit_cny": "10",
+      "observed_remaining_daily_capacity_cny": "10",
+      "fund_risk_level": 3,
+      "statutory_first_tier_purchase_fee_rate": "0.006",
+      "bank_channel_purchase_fee_rate": "0.0006",
+      "wallet_channel_purchase_fee_rate": "0",
+      "redemption_fee_tiers": [
+        {"minimum_holding_days_inclusive": 0, "maximum_holding_days_exclusive": 7, "rate": "0.015"},
+        {"minimum_holding_days_inclusive": 7, "maximum_holding_days_exclusive": null, "rate": "0"}
+      ],
+      "buy_confirmation_business_days": 1,
+      "sell_confirmation_business_days": 1,
+      "sell_cash_arrival_business_days": 4
+    },
+    {
+      "fund_code": "100055",
+      "fund_name": "富国全球科技互联网股票（QDII）A",
+      "purchase_status": "limited",
+      "minimum_purchase_cny": "100",
+      "daily_purchase_limit_cny": "1000",
+      "observed_remaining_daily_capacity_cny": "1000",
+      "fund_risk_level": 3,
+      "statutory_first_tier_purchase_fee_rate": "0.015",
+      "bank_channel_purchase_fee_rate": "0.0015",
+      "wallet_channel_purchase_fee_rate": "0.0015",
+      "redemption_fee_tiers": [
+        {"minimum_holding_days_inclusive": 0, "maximum_holding_days_exclusive": 7, "rate": "0.015"},
+        {"minimum_holding_days_inclusive": 7, "maximum_holding_days_exclusive": 30, "rate": "0.0075"},
+        {"minimum_holding_days_inclusive": 30, "maximum_holding_days_exclusive": 365, "rate": "0.005"},
+        {"minimum_holding_days_inclusive": 365, "maximum_holding_days_exclusive": 730, "rate": "0.003"},
+        {"minimum_holding_days_inclusive": 730, "maximum_holding_days_exclusive": null, "rate": "0"}
+      ],
+      "buy_confirmation_business_days": 2,
+      "sell_confirmation_business_days": 2,
+      "sell_cash_arrival_business_days": 7
+    },
+    {
+      "fund_code": "007300",
+      "fund_name": "国联安半导体ETF联接A",
+      "purchase_status": "open",
+      "minimum_purchase_cny": "100",
+      "daily_purchase_limit_cny": null,
+      "observed_remaining_daily_capacity_cny": null,
+      "fund_risk_level": 4,
+      "statutory_first_tier_purchase_fee_rate": "0.008",
+      "bank_channel_purchase_fee_rate": "0.0008",
+      "wallet_channel_purchase_fee_rate": "0",
+      "redemption_fee_tiers": [
+        {"minimum_holding_days_inclusive": 0, "maximum_holding_days_exclusive": 7, "rate": "0.015"},
+        {"minimum_holding_days_inclusive": 7, "maximum_holding_days_exclusive": 365, "rate": "0.005"},
+        {"minimum_holding_days_inclusive": 365, "maximum_holding_days_exclusive": null, "rate": "0"}
+      ],
+      "buy_confirmation_business_days": 1,
+      "sell_confirmation_business_days": 1,
+      "sell_cash_arrival_business_days": 3
+    },
+    {
+      "fund_code": "014880",
+      "fund_name": "天弘中证机器人ETF发起联接指数A",
+      "purchase_status": "open",
+      "minimum_purchase_cny": "100",
+      "daily_purchase_limit_cny": null,
+      "observed_remaining_daily_capacity_cny": null,
+      "fund_risk_level": 4,
+      "statutory_first_tier_purchase_fee_rate": "0.01",
+      "bank_channel_purchase_fee_rate": "0.001",
+      "wallet_channel_purchase_fee_rate": "0",
+      "redemption_fee_tiers": [
+        {"minimum_holding_days_inclusive": 0, "maximum_holding_days_exclusive": 7, "rate": "0.015"},
+        {"minimum_holding_days_inclusive": 7, "maximum_holding_days_exclusive": 30, "rate": "0.003"},
+        {"minimum_holding_days_inclusive": 30, "maximum_holding_days_exclusive": null, "rate": "0.0005"}
+      ],
+      "buy_confirmation_business_days": 1,
+      "sell_confirmation_business_days": 1,
+      "sell_cash_arrival_business_days": 3
+    },
+    {
+      "fund_code": "017894",
+      "fund_name": "汇添富纳斯达克生物科技ETF发起式联接指数（QDII）人民币A",
+      "purchase_status": "limited",
+      "minimum_purchase_cny": "1",
+      "daily_purchase_limit_cny": "100",
+      "observed_remaining_daily_capacity_cny": "100",
+      "fund_risk_level": 3,
+      "statutory_first_tier_purchase_fee_rate": "0.012",
+      "bank_channel_purchase_fee_rate": "0.0012",
+      "wallet_channel_purchase_fee_rate": "0",
+      "redemption_fee_tiers": [
+        {"minimum_holding_days_inclusive": 0, "maximum_holding_days_exclusive": 7, "rate": "0.015"},
+        {"minimum_holding_days_inclusive": 7, "maximum_holding_days_exclusive": null, "rate": "0"}
+      ],
+      "buy_confirmation_business_days": 2,
+      "sell_confirmation_business_days": 2,
+      "sell_cash_arrival_business_days": 4
+    },
+    {
+      "fund_code": "000216",
+      "fund_name": "华安黄金ETF联接A",
+      "purchase_status": "open",
+      "minimum_purchase_cny": "100",
+      "daily_purchase_limit_cny": null,
+      "observed_remaining_daily_capacity_cny": null,
+      "fund_risk_level": 5,
+      "statutory_first_tier_purchase_fee_rate": "0.006",
+      "bank_channel_purchase_fee_rate": "0.0006",
+      "wallet_channel_purchase_fee_rate": "0",
+      "redemption_fee_tiers": [
+        {"minimum_holding_days_inclusive": 0, "maximum_holding_days_exclusive": 7, "rate": "0.015"},
+        {"minimum_holding_days_inclusive": 7, "maximum_holding_days_exclusive": 365, "rate": "0.001"},
+        {"minimum_holding_days_inclusive": 365, "maximum_holding_days_exclusive": null, "rate": "0"}
+      ],
+      "buy_confirmation_business_days": 1,
+      "sell_confirmation_business_days": 1,
+      "sell_cash_arrival_business_days": 2
+    },
+    {
+      "fund_code": "008114",
+      "fund_name": "天弘中证红利低波动100指数A",
+      "purchase_status": "open",
+      "minimum_purchase_cny": "100",
+      "daily_purchase_limit_cny": null,
+      "observed_remaining_daily_capacity_cny": null,
+      "fund_risk_level": 4,
+      "statutory_first_tier_purchase_fee_rate": "0.01",
+      "bank_channel_purchase_fee_rate": "0.001",
+      "wallet_channel_purchase_fee_rate": "0",
+      "redemption_fee_tiers": [
+        {"minimum_holding_days_inclusive": 0, "maximum_holding_days_exclusive": 7, "rate": "0.015"},
+        {"minimum_holding_days_inclusive": 7, "maximum_holding_days_exclusive": 30, "rate": "0.003"},
+        {"minimum_holding_days_inclusive": 30, "maximum_holding_days_exclusive": null, "rate": "0.0005"}
+      ],
+      "buy_confirmation_business_days": 1,
+      "sell_confirmation_business_days": 1,
+      "sell_cash_arrival_business_days": 3
+    }
+  ]
+}

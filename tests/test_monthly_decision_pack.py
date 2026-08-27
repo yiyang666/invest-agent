@@ -45,7 +45,7 @@ class MonthlyDecisionPackTests(unittest.TestCase):
     def test_signal_envelope_is_research_evidence_not_execution(self) -> None:
         result = _signal_envelope(
             strategy_id="dca_baseline",
-            version="1.4.0",
+            version="1.5.0",
             review_date=date(2026, 8, 1),
             valid_until="2026-08-31T23:59:59+08:00",
             payload={"real_order_submission_available": False},
@@ -89,7 +89,7 @@ class MonthlyDecisionPackTests(unittest.TestCase):
     def test_missing_or_competing_target_authority_stops_pack(self) -> None:
         baseline = {
             "strategy_id": "dca_baseline",
-            "strategy_version": "1.4.0",
+            "strategy_version": "1.5.0",
             "target_allocation_authority": True,
         }
         _require_target_authority({"accepted_signals": [baseline]})

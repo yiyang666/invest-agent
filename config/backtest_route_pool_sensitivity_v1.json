@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "matrix_id": "executable_route_pool_631_contribution_sensitivity_v1",
+  "purpose": "检验当前可购买多路由、共享日限额与5/15/25非限购计划在3000至5000元月供下的容量、现金拖累和风险表现。",
+  "monthly_contribution_cny": ["3000", "4000", "5000"],
+  "calendar_days": [1],
+  "defensive_routes": [
+    {
+      "fund_code": "006932",
+      "role": "0-3年政策性金融债防御主路线",
+      "rule_version": "research_assumption_uniform_fee_0p0015_v11"
+    }
+  ],
+  "scenario_overrides": {
+    "subscription_assumption": {
+      "precommitted_before_cutoff": true,
+      "confirmation_rule": "nav_visible_date",
+      "carry_unfilled_across_month_end": true,
+      "reserved_cash_counts_toward_target_sleeve": true,
+      "unlimited_fund_tranche_calendar_days": [5, 15, 25]
+    }
+  },
+  "fixed_assumptions": {
+    "allocation": "20/10/10/10/10/30/10",
+    "purchase_rules": "current_2026_channel_rules_applied_counterfactually",
+    "nav_visibility": "next_fund_nav_date",
+    "forward_fill": false,
+    "queue_expiry": "research_horizon_end"
+  }
+}

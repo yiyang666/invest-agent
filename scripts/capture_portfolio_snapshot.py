@@ -20,6 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from invest_agent.domain.portfolio import (
     PortfolioSnapshot,
+    PositionStatus,
     PositionSnapshot,
     QualityIssue,
     QualitySeverity,
@@ -27,6 +28,7 @@ from invest_agent.domain.portfolio import (
 
 
 SNAPSHOT_DIRECTORY = PROJECT_ROOT / "data" / "private" / "portfolio_snapshots"
+PENDING_SHARE_MARKERS = {"", "-", "--", "待确认", "确认中", "处理中", "none", "null"}
 
 
 def decimal_or_issue(
@@ -48,6 +50,32 @@ def decimal_or_issue(
             )
         )
         return Decimal("0")
+
+
+def holding_shares_and_status(
+    value: object,
+    *,
+    fund_code: str,
+    market_value: Decimal,
+    issues: list[QualityIssue],
+) -> tuple[Decimal, PositionStatus]:
+    text = "" if value is None else str(value).strip()
+    try:
+        shares = Decimal(text)
+    except (InvalidOperation, ValueError):
+        if text.lower() in PENDING_SHARE_MARKERS and market_value > 0:
+            return Decimal("0"), PositionStatus.PENDING_CONFIRMATION
+        issues.append(
+            QualityIssue(
+                "invalid_decimal",
+                f"Could not parse holding shares for {fund_code}",
+                QualitySeverity.ERROR,
+            )
+        )
+        return Decimal("0"), PositionStatus.CONFIRMED
+    if shares == 0 and market_value > 0:
+        return shares, PositionStatus.PENDING_CONFIRMATION
+    return shares, PositionStatus.CONFIRMED
 
 
 def fetch_overview() -> dict[str, object]:
@@ -121,11 +149,14 @@ def build_snapshot(envelope: dict[str, object]) -> PortfolioSnapshot:
             )
             continue
         fund_code = str(fund.get("fundCode", ""))
-        shares = decimal_or_issue(
-            fund.get("holdVol"), field="holding shares", fund_code=fund_code, issues=issues
-        )
         market_value = decimal_or_issue(
             fund.get("totalAmount"), field="market value", fund_code=fund_code, issues=issues
+        )
+        shares, position_status = holding_shares_and_status(
+            fund.get("holdVol"),
+            fund_code=fund_code,
+            market_value=market_value,
+            issues=issues,
         )
         positions.append(
             PositionSnapshot(
@@ -133,6 +164,7 @@ def build_snapshot(envelope: dict[str, object]) -> PortfolioSnapshot:
                 fund_name=str(fund.get("fundName")) if fund.get("fundName") else None,
                 shares=shares,
                 market_value=market_value,
+                status=position_status,
             )
         )
 

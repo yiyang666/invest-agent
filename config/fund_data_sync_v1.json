@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "sync_id": "fund_data_sync_v1",
+  "mode": "collection_only",
+  "timezone": "Asia/Shanghai",
+  "database_path": "data/private/invest_agent.sqlite3",
+  "raw_root": "data/raw/fund_batches",
+  "fund_sources": {
+    "purchase_route_pool_path": "config/qdii_purchase_route_pool_v1.json",
+    "global_qdii_research_pool_path": "config/global_qdii_research_pool_v1.json",
+    "include_blocked_reference_routes": false,
+    "static_funds": [
+      {"fund_code": "110020", "reason": "domestic_broad_policy_route"},
+      {"fund_code": "019861", "reason": "domestic_growth_policy_route"},
+      {"fund_code": "006932", "reason": "defensive_policy_route"},
+      {"fund_code": "160646", "reason": "technology_satellite_policy_route"},
+      {"fund_code": "000216", "reason": "hierarchical_strategy_research_candidate"},
+      {"fund_code": "007300", "reason": "hierarchical_strategy_research_candidate"},
+      {"fund_code": "008114", "reason": "hierarchical_strategy_research_candidate"},
+      {"fund_code": "014880", "reason": "hierarchical_strategy_research_candidate"}
+    ],
+    "research_candidate_funds": [
+      {"fund_code": "006282", "current_channel_availability": "limited", "channel_checked_at": "2026-08-24T00:00:00+08:00"},
+      {"fund_code": "017436", "current_channel_availability": "limited", "channel_checked_at": "2026-08-24T00:00:00+08:00"},
+      {"fund_code": "017437", "current_channel_availability": "limited", "channel_checked_at": "2026-08-24T00:00:00+08:00"},
+      {"fund_code": "080006", "current_channel_availability": "limited", "channel_checked_at": "2026-08-24T00:00:00+08:00"},
+      {"fund_code": "016452", "current_channel_availability": "limited", "channel_checked_at": "2026-08-24T00:00:00+08:00"},
+      {"fund_code": "016453", "current_channel_availability": "limited", "channel_checked_at": "2026-08-24T00:00:00+08:00"}
+    ],
+    "latest_portfolio_snapshot": {
+      "enabled": true,
+      "directory": "data/private/portfolio_snapshots",
+      "include_positions_even_when_purchase_blocked": true
+    }
+  },
+  "collection": {
+    "provider_id": "akshare_eastmoney",
+    "overlap_calendar_days": 3,
+    "bootstrap_calendar_days": 1095,
+    "bootstrap_mode": "bounded_recent_history",
+    "maximum_nav_lag_calendar_days": 5,
+    "timeout_seconds": 20,
+    "max_attempts": 2,
+    "secondary_crosscheck_cadence": "weekly_separate_job"
+  },
+  "schedule_recommendation": {
+    "timezone": "Asia/Shanghai",
+    "weekdays": ["MO", "TU", "WE", "TH", "FR"],
+    "local_time": "23:30",
+    "automatic_strategy_or_report_run": false
+  },
+  "safety": {
+    "trading_allowed": false,
+    "strategy_inference_allowed": false,
+    "publish_failed_batches": false,
+    "fallback_to_mock_data": false
+  }
+}

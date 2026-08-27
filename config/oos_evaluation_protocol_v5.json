@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "protocol_id": "dca_baseline_v1_5_prospective_oos_v5",
+  "status": "frozen_waiting_for_future_observations",
+  "frozen_at": "2026-08-25T23:59:59+08:00",
+  "mode": "research_only",
+  "supersedes": {
+    "protocol_id": "dca_baseline_v1_4_prospective_oos_v4",
+    "file_sha256": "de997fa13ee9e589dc3c0dc3fcfcf80faa832afb6ab16c9311f166daf03a4a9e",
+    "change_class": "strategy_and_route_parameter_change",
+    "clock_reset_required": true,
+    "reason": "unavailable_us_broad_route_replaced_by_purchase_pool_uk_broad_added_and_domestic_growth_fixed_to_019861"
+  },
+  "candidate": {
+    "strategy_id": "dca_baseline",
+    "strategy_version": "1.5.0",
+    "strategy_spec_path": "strategies/specs/dca_baseline_v1_5.json",
+    "strategy_spec_file_sha256": "91b24b4587f1a101e4f095b66041cba9f81d717593465f9fa86fb8875df94960",
+    "scenario_path": "config/backtest_research_scenario_v11.json",
+    "scenario_file_sha256": "a530de565e7e4af703cfded90ef9599c67d8ba434406a388bd0284751ba70269",
+    "investment_policy_file_sha256": "624b50dccbf5cfb9a161ab947f1eb1688751eb7c1971c70e19353f5094ac1a5b",
+    "purchase_route_pool_path": "config/qdii_purchase_route_pool_v1.json",
+    "purchase_route_pool_file_sha256": "682f4e620d9486f3488f45b91438e7ebea5d2f0cde01945f6b7881e814043074",
+    "allocation_anchor": "allocation_anchor_631",
+    "comparison_benchmark": "dca_baseline@1.5.0",
+    "allocation": "20/10/10/10/10/30/10",
+    "monthly_contribution_cny": "3000",
+    "purchase_fees": "route_specific",
+    "routes": {
+      "domestic_broad_core": "110020",
+      "us_broad_core": "purchase_route_pool:us_broad_core",
+      "uk_broad_core": "539003",
+      "us_growth": "000043",
+      "domestic_growth": "019861",
+      "defensive": "006932",
+      "sh_hk_sz_passive_technology_satellite": "160646"
+    }
+  },
+  "evaluation": {
+    "earliest_eligible_observation_date": "2026-08-26",
+    "minimum_complete_months": 12,
+    "interim_review_frequency_months": 3,
+    "interim_reviews_are_descriptive_only": true,
+    "eligible_visibility": ["strict_point_in_time"],
+    "append_only_results": true,
+    "parameter_changes_reset_candidate_and_clock": true,
+    "historical_2024_2026_windows": "diagnostic_only_not_out_of_sample"
+  },
+  "gates": {
+    "required": [
+      "all_seven_sleeves_have_complete_eligible_observations",
+      "route_pool_rules_are_versioned_and_reconciled",
+      "same_inputs_produce_identical_results",
+      "no_leverage_no_sell_no_real_orders",
+      "no_negative_cash_or_unreconciled_events"
+    ],
+    "review_if_maximum_drawdown_pct_below": -15,
+    "stress_tolerance_approximately_pct": -20,
+    "return_threshold": null,
+    "return_threshold_reason": "正式比较基准收益门槛尚未独立冻结，禁止事后选择有利阈值。"
+  },
+  "current_result": {
+    "status": "not_started_future_data_unavailable",
+    "eligible_complete_months": 0,
+    "gate_passed": false
+  }
+}

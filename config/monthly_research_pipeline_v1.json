@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "pipeline_id": "monthly_research_pipeline_v1",
-  "run_id": "monthly_research_pipeline_2026_08_bootstrap",
-  "as_of": "2026-08-16T23:59:59+08:00",
+  "run_id": "monthly_research_pipeline_2026_08_v1_5_current_snapshot",
+  "as_of": "2026-08-25T23:59:59+08:00",
   "source_configs": {
     "monthly_decision": {
       "path": "config/monthly_decision_pack_v1.json",
-      "sha256": "04f1b67f7de64a2c867cee6271a0f47f1a6649284ddb37fd768ea84a9985e3fd"
+      "sha256": "1365e324bbf638f2f1cd9622c0471494e5c754c83591364e4553278241195f6d"
     },
     "research_report": {
       "path": "config/research_report_v1.json",
-      "sha256": "641a2296ccc62c9b3524d3780499e3b74cc047f82b7c29e647e751877b35244a"
+      "sha256": "0996bf5400c1f97478241407d06b6bd88cb559e1b6ed8845844953f32935127e"
     },
     "research_explanation": {
       "path": "config/research_explanation_acceptance_v1.json",
@@ -18,14 +18,14 @@
     }
   },
   "artifact_paths": {
-    "decision_pack_json": "data/private/reports/phase-4-monthly-research-decision-pack-s4-2-2026-08-16.json",
-    "research_report_json": "data/private/reports/phase-5-monthly-research-report-s5-1-2026-08-16.json",
-    "research_report_markdown": "data/private/reports/phase-5-monthly-research-report-s5-1-2026-08-16.md",
-    "grounded_explanation_json": "data/private/reports/phase-5-grounded-explanation-s5-2-2026-08-16.json",
-    "grounded_explanation_markdown": "data/private/reports/phase-5-grounded-explanation-s5-2-2026-08-16.md",
-    "explanation_acceptance_json": "data/private/reports/phase-5-grounded-explanation-acceptance-s5-2-2026-08-16.json"
+    "decision_pack_json": "data/private/reports/monthly-research-decision-pack-v1-5-current-2026-08-25.json",
+    "research_report_json": "data/private/reports/monthly-research-report-v1-5-current-2026-08-25.json",
+    "research_report_markdown": "data/private/reports/monthly-research-report-v1-5-current-2026-08-25.md",
+    "grounded_explanation_json": "data/private/reports/grounded-explanation-v1-5-current-2026-08-25.json",
+    "grounded_explanation_markdown": "data/private/reports/grounded-explanation-v1-5-current-2026-08-25.md",
+    "explanation_acceptance_json": "data/private/reports/grounded-explanation-acceptance-v1-5-current-2026-08-25.json"
   },
-  "manifest_path": "data/private/reports/phase-5-monthly-research-pipeline-s5-3-2026-08-16.json",
+  "manifest_path": "data/private/reports/monthly-research-pipeline-v1-5-current-2026-08-25.json",
   "safety": {
     "research_only": true,
     "advisory_only": true,

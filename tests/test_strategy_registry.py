@@ -8,12 +8,12 @@ from invest_agent.decision.registry import build_decision_input, validate_strate
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _signal(strategy_id: str = "dca_baseline", version: str = "1.4.0") -> dict:
+def _signal(strategy_id: str = "dca_baseline", version: str = "1.5.0") -> dict:
     return {
         "strategy_id": strategy_id,
         "strategy_version": version,
-        "signal_as_of": "2026-08-16T08:00:00+08:00",
-        "data_cutoff": "2026-08-15T23:59:59+08:00",
+        "signal_as_of": "2026-08-25T08:00:00+08:00",
+        "data_cutoff": "2026-08-24T23:59:59+08:00",
         "valid_until": "2026-08-31T23:59:59+08:00",
         "data_quality": {"status": "historical_visibility_assumed", "issues": []},
         "risk": {"veto": False, "reasons": []},
@@ -33,7 +33,7 @@ class StrategyRegistryTests(unittest.TestCase):
 
         self.assertEqual(self.registry["schema_version"], 3)
         self.assertEqual(len(index), 4)
-        self.assertIn(("dca_baseline", "1.4.0"), index)
+        self.assertIn(("dca_baseline", "1.5.0"), index)
         self.assertIn(("sleeve_drawdown_recovery", "1.0.0"), index)
         self.assertEqual(
             sum(
@@ -53,7 +53,7 @@ class StrategyRegistryTests(unittest.TestCase):
             terminology["allocation_anchor_631"]["mandatory_execution_schedule"]
         )
         self.assertEqual(
-            terminology["dca_baseline@1.4.0"]["kind"],
+            terminology["dca_baseline@1.5.0"]["kind"],
             "comparison_benchmark_strategy",
         )
         self.assertTrue(
@@ -67,7 +67,7 @@ class StrategyRegistryTests(unittest.TestCase):
         result = build_decision_input(
             self.registry,
             workspace_root=ROOT,
-            as_of="2026-08-16T23:59:59+08:00",
+            as_of="2026-08-25T23:59:59+08:00",
             signals=[_signal()],
         )
 
@@ -80,14 +80,14 @@ class StrategyRegistryTests(unittest.TestCase):
     def test_unregistered_expired_and_risk_vetoed_signals_are_rejected(self) -> None:
         unregistered = _signal("unknown_strategy", "1.0.0")
         expired = _signal()
-        expired["valid_until"] = "2026-08-15T23:59:59+08:00"
+        expired["valid_until"] = "2026-08-24T23:59:59+08:00"
         vetoed = _signal("drawdown_budget_add", "1.0.0")
         vetoed["risk"] = {"veto": True, "reasons": ["portfolio_drawdown_limit"]}
 
         result = build_decision_input(
             self.registry,
             workspace_root=ROOT,
-            as_of="2026-08-16T23:59:59+08:00",
+            as_of="2026-08-25T23:59:59+08:00",
             signals=[unregistered, expired, vetoed],
         )
 
@@ -114,7 +114,7 @@ class StrategyRegistryTests(unittest.TestCase):
             build_decision_input(
                 self.registry,
                 workspace_root=ROOT,
-                as_of="2026-08-16T12:00:00+08:00",
+                as_of="2026-08-25T12:00:00+08:00",
                 signals=[_signal()],
             )
 

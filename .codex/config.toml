@@ -1,0 +1,14 @@
+[mcp_servers.guchacha]
+url = "https://guchacha.com/mcp"
+bearer_token_env_var = "GUCHACHA_MCP_TOKEN"
+enabled = true
+required = false
+enabled_tools = [
+  "list_datasets",
+  "get_index_valuation",
+  "get_index_weight",
+  "get_index_forward_pe",
+]
+default_tools_approval_mode = "prompt"
+startup_timeout_sec = 10
+tool_timeout_sec = 30

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "protocol_id": "hierarchical_risk_budget_valuation_release_destination_sensitivity_v1",
+  "status": "frozen_before_same_universe_performance_run",
+  "frozen_date": "2026-08-27",
+  "strategy_id": "hierarchical_risk_budget_valuation",
+  "strategy_version": "0.2.0",
+  "diagnostic_only": true,
+  "hypothesis": "如果债券黄金接盘显著修复A2相对A1的收益损失而不恶化风险，A2主版本失败主要来自现金停泊；如果仍无增量，红绿灯信号本身更可能缺乏价值。",
+  "primary_same_universe_control": {
+    "scenario_id": "hierarchical_risk_budget_valuation_a2_satellite_traffic_light_cash_v1",
+    "role": "cash_parking_control"
+  },
+  "allowed_candidate_scenario_ids": [
+    "hierarchical_risk_budget_valuation_a2_satellite_traffic_light_bond_gold_sensitivity_v1"
+  ],
+  "required_invariants": {
+    "identical_route_payloads": true,
+    "identical_strategic_sleeve_weights": true,
+    "identical_provider": true,
+    "identical_period": true,
+    "identical_calendar_day": true,
+    "identical_monthly_external_cashflows": true,
+    "same_initial_state": "zero_holdings_zero_cash",
+    "same_strategy_spec_bytes": true,
+    "no_real_orders": true
+  },
+  "only_allowed_rule_difference": "allocation_engine.released_weight_destination: cash -> bond_gold_2_to_1",
+  "post_result_rule": "sensitivity_result_cannot_replace_a2_primary_without_new_strategy_version_and_new_comparison_protocol",
+  "interpretation_limits": [
+    "short_window_only",
+    "counterfactual_execution",
+    "diagnostic_not_candidate_selection",
+    "no_parameter_backfill"
+  ]
+}

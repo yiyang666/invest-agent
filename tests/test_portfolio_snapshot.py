@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from invest_agent.domain.portfolio import (
     PortfolioSnapshot,
+    PositionStatus,
     PositionSnapshot,
     QualityStatus,
     ensure_public_payload,
@@ -49,6 +50,28 @@ class PortfolioSnapshotTests(unittest.TestCase):
     def test_sensitive_keys_are_rejected_recursively(self) -> None:
         with self.assertRaises(ValueError):
             ensure_public_payload({"nested": {"bankAccount": "should-not-exist"}})
+
+    def test_pending_confirmation_is_valid_without_confirmed_shares(self) -> None:
+        snapshot = PortfolioSnapshot(
+            as_of=self.make_snapshot().as_of,
+            source="test",
+            batch_id="batch-pending",
+            cash=Decimal("0"),
+            positions=(
+                PositionSnapshot(
+                    "539001",
+                    Decimal("0"),
+                    Decimal("100"),
+                    status=PositionStatus.PENDING_CONFIRMATION,
+                ),
+            ),
+        )
+
+        self.assertEqual(snapshot.quality_status, QualityStatus.PASS)
+        self.assertEqual(
+            snapshot.to_public_dict()["positions"][0]["status"],
+            "pending_confirmation",
+        )
 
 
 if __name__ == "__main__":

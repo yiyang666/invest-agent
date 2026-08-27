@@ -1,0 +1,94 @@
+# Copy through scripts/proposal.py; do not edit this template for one strategy.
+schema_version = 1
+strategy_id = "replace_me"
+strategy_version = "0.1.0"
+title = "replace_me"
+status = "draft" # draft -> frozen before any performance run
+mode = "research_only"
+hypothesis = "用一句可证伪的话说明为什么该策略可能优于相同现金流的631。"
+allocation_anchor = "allocation_anchor_631"
+comparison_benchmark = "dca_baseline@1.5.0"
+scope = "new_money_only"
+allow_selling = false
+allow_leverage = false
+
+[capital]
+monthly_committed_cny = 3000
+monthly_discretionary_max_cny = 2000
+monthly_hard_cap_cny = 5000
+uninvested_cash_action = "remain_cash"
+
+[stable]
+enabled = true
+base_amount_cny = 2000
+allocation_method = "631_target_gap"
+schedule_calendar_days = [5, 15, 25]
+
+[flexible]
+enabled = true
+base_amount_cny = 1000
+discretionary_max_cny = 2000
+allocation_method = "signal_rules"
+decision_frequency = "monthly"
+decision_calendar_day = 1
+untriggered_action = "remain_cash"
+
+[data]
+provider_id = "akshare_eastmoney"
+signal_nav_field = "accumulated_nav"
+execution_nav_field = "unit_nav"
+visibility = "historical_visibility_assumed"
+forward_fill = false
+missing_signal_action = "no_signal"
+
+[discovery]
+status = "not_required" # not_required | pending | research_ready | complete | blocked
+report_path = ""
+report_sha256 = ""
+new_fund_routes = [] # Example: [{ fund_code = "012345", sleeve_id = "japan_broad_core" }]
+new_sleeves = [] # Example: ["japan_broad_core"]
+novel_data_inputs = [] # Example: ["nikkei_225_index_total_return"]
+
+[risk]
+maximum_single_fund_weight_pct = 25
+maximum_theme_weight_pct = 30
+portfolio_drawdown_review_pct = 15
+portfolio_drawdown_veto_pct = 20
+maximum_active_rebalances_per_month = 2
+
+[comparators]
+fixed_cashflow = "dca_baseline@1.5.0:monthly_3000"
+matched_cashflow = "dca_baseline@1.5.0:same_month_same_total_cashflow"
+require_identical_monthly_cashflows = true
+
+[acceptance]
+primary_return_metric = "xirr_pct"
+minimum_return_delta_pp = "DECIDE_BEFORE_BACKTEST"
+maximum_drawdown_worsening_pp = "DECIDE_BEFORE_BACKTEST"
+automatic_winner_selection = false
+parameter_changes_create_new_version = true
+
+[[signals]]
+signal_id = "signal_1"
+primitive = "portfolio_drawdown"
+scope = "portfolio"
+lookback_observations = 126
+operator = "<="
+threshold = -0.10
+evaluation_lag_business_days = 1
+on_missing = "no_signal"
+
+[[actions]]
+action_id = "action_1"
+when_signal = "signal_1"
+priority = 1
+action_type = "allocate_new_cash"
+amount_source = "flexible_budget"
+maximum_amount_cny = 500
+target_sleeves = ["domestic_broad_core", "us_broad_core"]
+target_weights = [0.5, 0.5]
+cooldown_calendar_days = 30
+
+[notes]
+reason_for_thresholds = "在回测前写明阈值来源；不要用回测最优值反填。"
+known_limitations = "历史数据仅用于研究；需要前瞻样本外观察。"

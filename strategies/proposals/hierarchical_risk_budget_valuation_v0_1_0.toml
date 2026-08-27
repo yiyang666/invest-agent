@@ -1,0 +1,410 @@
+# Copy through scripts/proposal.py; do not edit this template for one strategy.
+schema_version = 1
+strategy_id = "hierarchical_risk_budget_valuation"
+strategy_version = "0.1.0"
+title = "分层风险预算与估值水位组合策略"
+status = "frozen" # frozen before discovery-backed implementation and any performance run
+mode = "research_only"
+hypothesis = "在相同逐月现金流下，分层风险预算、估值归一化定投和有上限的回撤加仓，可能在组合压力不突破20%风险线的前提下提高XIRR或改善回撤后的资金使用效率。"
+allocation_anchor = "allocation_anchor_631"
+comparison_benchmark = "dca_baseline@1.5.0"
+scope = "new_money_only"
+allow_selling = false
+allow_leverage = false
+
+[theory_freeze]
+status = "frozen"
+confirmed_date = "2026-08-26"
+confirmed_scope = "allocation_hierarchy_signal_thresholds_cashflow_identity_and_daily_monthly_quarterly_semantics"
+proposal_status_reason = "full proposal remains draft until acceptance criteria and discovery evidence are frozen"
+parameter_change_rule = "material_changes_create_0_2_0_and_reset_prospective_observation"
+
+[capital]
+monthly_committed_cny = 3000
+monthly_discretionary_max_cny = 2000
+monthly_hard_cap_cny = 5000
+uninvested_cash_action = "remain_cash"
+
+[stable]
+enabled = true
+base_amount_cny = 3000
+allocation_method = "core_priority_2000_plus_dynamic_target_gap_1000"
+schedule_calendar_days = [5]
+
+[flexible]
+enabled = true
+base_amount_cny = 0
+discretionary_max_cny = 2000
+allocation_method = "target_gap_plus_drawdown_signal_rules"
+decision_frequency = "monthly"
+decision_calendar_day = 1
+untriggered_action = "remain_cash"
+
+[data]
+provider_id = "akshare_eastmoney"
+signal_nav_field = "accumulated_nav"
+execution_nav_field = "unit_nav"
+visibility = "historical_visibility_assumed"
+forward_fill = false
+missing_signal_action = "no_signal"
+
+[discovery]
+status = "pending" # not_required | pending | complete | blocked
+report_path = ""
+report_sha256 = ""
+new_fund_routes = [
+  { fund_code = "016452", sleeve_id = "us_nasdaq_core" },
+  { fund_code = "020712", sleeve_id = "japan_broad_core" },
+  { fund_code = "100055", sleeve_id = "global_technology_satellite" },
+  { fund_code = "007300", sleeve_id = "semiconductor_satellite" },
+  { fund_code = "014880", sleeve_id = "robotics_satellite" },
+  { fund_code = "017894", sleeve_id = "biotechnology_satellite" },
+  { fund_code = "000216", sleeve_id = "gold_stabilizer" },
+  { fund_code = "008114", sleeve_id = "dividend_stabilizer" },
+]
+new_sleeves = [
+  "us_nasdaq_core",
+  "japan_broad_core",
+  "global_technology_satellite",
+  "semiconductor_satellite",
+  "robotics_satellite",
+  "biotechnology_satellite",
+  "gold_stabilizer",
+  "dividend_stabilizer",
+]
+novel_data_inputs = [
+  "csi300_pe_ttm_history",
+  "nasdaq100_pe_ttm_history",
+  "core_index_pe_ttm_history",
+  "daily_portfolio_return_panel",
+  "fund_redemption_rule_history",
+  "portfolio_share_lot_ledger",
+]
+
+[risk]
+maximum_single_fund_weight_pct = 25
+maximum_theme_weight_pct = 30
+portfolio_drawdown_review_pct = 15
+portfolio_drawdown_veto_pct = 20
+maximum_active_rebalances_per_month = 2
+
+[comparators]
+fixed_cashflow = "dca_baseline@1.5.0:monthly_3000"
+matched_cashflow = "dca_baseline@1.5.0:same_month_same_total_cashflow"
+require_identical_monthly_cashflows = true
+
+[acceptance]
+primary_return_metric = "xirr_pct"
+minimum_return_delta_pp = 0.5
+maximum_drawdown_worsening_pp = 2.0
+automatic_winner_selection = false
+parameter_changes_create_new_version = true
+matrix_status = "frozen_user_confirmed_2026_08_26"
+historical_drawdown_hard_limit_pct = 15.0
+stress_drawdown_hard_limit_pct = 20.0
+dominance_maximum_drawdown_worsening_pp = 1.0
+risk_improvement_return_delta_floor_pp = -0.5
+risk_improvement_minimum_drawdown_improvement_pp = 2.0
+tradeoff_minimum_return_delta_pp = 1.0
+tradeoff_maximum_drawdown_worsening_pp = 2.0
+rolling_window_minimum_non_underperformance_ratio = 0.55
+sensitivity_minimum_support_ratio = 0.60
+all_metrics_net_of_investor_level_fees = true
+
+[[signals]]
+signal_id = "monthly_risk_budget"
+primitive = "composite_risk_budget_coefficient"
+scope = "portfolio"
+lookback_observations = 2520
+operator = ">="
+threshold = 0.0
+evaluation_lag_business_days = 1
+on_missing = "no_signal"
+
+[[signals]]
+signal_id = "core_valuation_score"
+primitive = "sleeve_valuation_percentile"
+scope = "core_sleeves"
+lookback_observations = 2520
+operator = ">="
+threshold = 0.0
+evaluation_lag_business_days = 1
+on_missing = "ineligible"
+
+[[signals]]
+signal_id = "core_drawdown_5"
+primitive = "sleeve_drawdown"
+scope = "core_sleeves"
+lookback_observations = 20
+operator = "<="
+threshold = -0.05
+evaluation_lag_business_days = 1
+on_missing = "no_signal"
+
+[[signals]]
+signal_id = "core_drawdown_10"
+primitive = "sleeve_drawdown"
+scope = "core_sleeves"
+lookback_observations = 20
+operator = "<="
+threshold = -0.10
+evaluation_lag_business_days = 1
+on_missing = "no_signal"
+
+[[signals]]
+signal_id = "monthly_target_gap"
+primitive = "target_gap"
+scope = "satellite_and_defensive_sleeves"
+lookback_observations = 1
+operator = ">"
+threshold = 0.0
+evaluation_lag_business_days = 1
+on_missing = "hold_cash"
+
+[[actions]]
+action_id = "monthly_core_base"
+when_signal = "always"
+priority = 1
+action_type = "allocate_new_cash"
+amount_source = "stable_budget"
+maximum_amount_cny = 2000
+target_sleeves = ["domestic_broad_core", "us_broad_core", "us_nasdaq_core", "uk_broad_core", "japan_broad_core"]
+target_weights = [0.25, 0.25, 0.25, 0.125, 0.125]
+cooldown_calendar_days = 30
+
+[[actions]]
+action_id = "monthly_gap_fill"
+when_signal = "monthly_target_gap"
+priority = 2
+action_type = "allocate_new_cash"
+amount_source = "committed_dynamic_target_gap_tranche"
+maximum_amount_cny = 1000
+target_sleeves = ["domestic_broad_core", "us_broad_core", "us_nasdaq_core", "uk_broad_core", "japan_broad_core", "global_technology_satellite", "semiconductor_satellite", "robotics_satellite", "biotechnology_satellite", "defensive_bond", "gold_stabilizer", "dividend_stabilizer"]
+target_weights = [0.10, 0.10, 0.10, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.20, 0.10, 0.10]
+cooldown_calendar_days = 30
+
+[[actions]]
+action_id = "monthly_discretionary_gap_fill"
+when_signal = "monthly_target_gap"
+priority = 3
+action_type = "allocate_new_cash"
+amount_source = "flexible_budget_gap_tranche"
+maximum_amount_cny = 1000
+target_sleeves = ["domestic_broad_core", "us_broad_core", "us_nasdaq_core", "uk_broad_core", "japan_broad_core", "global_technology_satellite", "semiconductor_satellite", "robotics_satellite", "biotechnology_satellite", "defensive_bond", "gold_stabilizer", "dividend_stabilizer"]
+target_weights = [0.10, 0.10, 0.10, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.20, 0.10, 0.10]
+cooldown_calendar_days = 30
+
+[[actions]]
+action_id = "core_drawdown_tactical"
+when_signal = "core_drawdown_5"
+priority = 4
+action_type = "allocate_new_cash"
+amount_source = "flexible_budget_tactical_tranche"
+maximum_amount_cny = 1000
+target_sleeves = ["domestic_broad_core", "us_broad_core", "us_nasdaq_core", "uk_broad_core", "japan_broad_core"]
+target_weights = [0.25, 0.25, 0.25, 0.125, 0.125]
+cooldown_calendar_days = 1
+
+[allocation]
+primary_profile = "core_40_satellite_20_defensive_40_user_confirmed"
+core_pct = 40
+satellite_pct = 20
+defensive_pct = 40
+sensitivity_profiles = [
+  "core_50_satellite_10_defensive_40_concentration_control",
+  "core_45_satellite_20_stabilizer_35",
+]
+
+[allocation.core]
+domestic_broad_core_pct = 10
+us_broad_core_pct = 10
+us_nasdaq_core_pct = 10
+uk_broad_core_pct = 5
+japan_broad_core_pct = 5
+
+[allocation.satellite]
+global_technology_satellite_pct = 5
+semiconductor_satellite_pct = 5
+robotics_satellite_pct = 5
+biotechnology_satellite_pct = 5
+weighting_status = "strategic_cap_only_actual_targets_are_dynamic"
+
+[allocation.defensive]
+defensive_bond_pct = 20
+gold_stabilizer_pct = 10
+dividend_stabilizer_pct = 10
+economic_risk_note = "红利仍是权益风险；按经济暴露计算时，基准风险资产约为70%，而不是核心加卫星的60%。"
+
+[high_level]
+name = "风险预算与估值水位双因子调节"
+evaluation_frequency = "monthly"
+evaluation_calendar_day = 1
+user_example_baseline_risk_pct = 80
+economic_risk_baseline_pct = 70
+risk_baseline_status = "confirmed_70_including_dividend_as_equity_risk"
+valuation_importance_pct = 60
+volatility_importance_pct = 40
+formula_status = "confirmed_weighted"
+coefficient_formula = "0.6 * valuation_coefficient + 0.4 * volatility_coefficient"
+
+[high_level.valuation]
+composite_method = "equal_weight_csi300_and_nasdaq100_own_history_percentiles"
+valuation_field = "pe_ttm"
+rolling_history_years = 10
+minimum_history_years = 5
+low_percentile_upper = 40
+middle_percentile_upper = 70
+low_coefficient = 1.0
+middle_coefficient = 0.8
+high_coefficient = 0.6
+visibility_rule = "use_only_values_published_by_previous_month_end"
+
+[high_level.volatility]
+return_window_trading_days = 60
+historical_percentile_threshold = 80
+normal_coefficient = 1.0
+high_coefficient = 0.9
+portfolio_weight_basis = "frozen_strategic_target_weights"
+visibility_rule = "use_only_returns_visible_by_previous_month_end"
+
+[middle_level]
+name = "恒定比例控制与分层补短板"
+monthly_gap_fill_scope = "satellite_and_defensive_only"
+quarterly_rebalance_requested = true
+quarterly_selling_requested = true
+current_research_phase = "buy_only_accumulation_until_redemption_engine_is_specified"
+rebalance_method = "buy_first_then_sell_only_outside_frozen_bands"
+rebalance_band_status = "confirmed_bucket_5pp_sleeve_3pp"
+target_hierarchy = "strategic_cap_then_high_level_risk_target_then_satellite_state_target_then_execution_target"
+gap_basis = "current_dynamic_execution_target_never_static_40_20_40"
+monthly_active_rebalance_event_cap = 1
+monthly_core_drawdown_event_cap = 1
+ordinary_sell_gap_ratio = 0.5
+ordinary_sell_minimum_holding_days = 90
+
+[redemption_extension]
+status = "discovery_required"
+reason = "current_custom_strategy_path_is_buy_only_but_frozen_theory_requires_monthly_satellite_reduction_and_quarterly_band_rebalancing"
+required_semantics = [
+  "lot_level_holding_days",
+  "effective_dated_redemption_fees",
+  "fund_specific_cutoff_calendar_confirmation_and_cash_arrival",
+  "sellable_share_constraints",
+  "pending_redemption_cash_state",
+  "no_automatic_retry_on_unknown_state",
+]
+implementation_boundary = "research_backtest_only_no_live_redemption"
+
+[core_level]
+name = "估值金字塔与回撤狙击"
+base_budget_cny = 2000
+valuation_multiplier_low = 2.0
+valuation_multiplier_middle = 1.0
+valuation_multiplier_high = 0.5
+multiplier_interpretation = "normalize_relative_scores_inside_the_2000_cny_core_priority_budget"
+post_normalization_minimum_of_strategic_weight = 0.75
+post_normalization_maximum_of_strategic_weight = 1.25
+drawdown_reference = "latest_visible_nav_vs_highest_visible_nav_of_prior_20_observations"
+drawdown_5_total_extra_ratio = 0.5
+drawdown_10_total_extra_ratio = 1.0
+drawdown_10_interpretation = "upgrade_total_extra_from_50pct_to_100pct_not_add_another_100pct"
+signal_execution = "evaluate_after_nav_publication_then_submit_on_next_eligible_open_day"
+portfolio_tactical_event_cap_per_month = 2
+tactical_priority = "larger_threshold_breach_then_larger_target_gap_then_fund_code"
+sell_rule = "no_core_sell_except_future_middle_level_quarterly_rebalance"
+
+[satellite_level]
+name = "多主题卫星红绿灯"
+rule_status = "theory_frozen_pending_discovery_and_implementation"
+source_design_total_portfolio_cap_pct = 10
+master_proposal_total_portfolio_cap_pct = 20
+total_portfolio_cap_pct = 20
+total_cap_status = "user_confirmed_with_dynamic_state_scaling"
+base_weight_frequency = "quarterly"
+base_weight_method = "bounded_inverse_volatility"
+volatility_lookback_observations = 252
+minimum_theme_share_of_satellite_pct = 15
+maximum_theme_share_of_satellite_pct = 35
+technology_semiconductor_robotics_combined_cap_of_satellite_pct = 70
+state_frequency = "monthly"
+green_conditions_required = 2
+yellow_conditions_required = 1
+red_conditions_required = 0
+long_moving_average_observations = 200
+momentum_lookback_observations = 126
+green_multiplier = 1.0
+yellow_multiplier = 0.5
+red_multiplier = 0.0
+renormalize_after_state_scaling = false
+monthly_gap_step_ratio = 0.5
+deep_drawdown_lookback_observations = 252
+deep_drawdown_lock_threshold = -0.20
+recovery_positive_months_required = 2
+recovery_moving_average_observations = 60
+recovery_first_state = "yellow_for_at_least_one_monthly_cycle"
+hard_cap_action = "reduce_to_compliant_bound_after_human_review"
+product_change_action = "manual_review"
+released_weight_destination = "bond_and_gold_stabilizers_not_other_themes"
+dynamic_theme_target_formula = "20pct * high_level_coefficient * quarterly_base_weight * traffic_light_multiplier"
+middle_level_gap_rule = "compare_against_dynamic_theme_target_not_static_20pct_satellite_cap"
+
+[[signals]]
+signal_id = "satellite_long_trend"
+primitive = "moving_average"
+scope = "satellite_sleeves"
+lookback_observations = 200
+operator = ">"
+threshold = 0.0
+evaluation_lag_business_days = 1
+on_missing = "ineligible"
+
+[[signals]]
+signal_id = "satellite_six_month_momentum"
+primitive = "absolute_trend"
+scope = "satellite_sleeves"
+lookback_observations = 126
+operator = ">"
+threshold = 0.0
+evaluation_lag_business_days = 1
+on_missing = "ineligible"
+
+[[signals]]
+signal_id = "satellite_deep_drawdown_lock"
+primitive = "sleeve_drawdown"
+scope = "satellite_sleeves"
+lookback_observations = 252
+operator = "<="
+threshold = -0.20
+evaluation_lag_business_days = 1
+on_missing = "ineligible"
+
+[[signals]]
+signal_id = "satellite_recovery_confirmation"
+primitive = "two_month_recovery_confirmation"
+scope = "satellite_sleeves"
+lookback_observations = 60
+operator = ">="
+threshold = 2.0
+evaluation_lag_business_days = 1
+on_missing = "ineligible"
+
+[[signals]]
+signal_id = "satellite_quarterly_risk_weights"
+primitive = "bounded_inverse_volatility_weights"
+scope = "satellite_sleeves"
+lookback_observations = 252
+operator = ">="
+threshold = 0.0
+evaluation_lag_business_days = 1
+on_missing = "ineligible"
+
+[defensive_level]
+name = "被动平衡与接盘"
+internal_weights = "bond_50_gold_25_dividend_25"
+monthly_rule = "receive_monthly_gap_fill_by_largest_target_shortfall"
+satellite_exit_rule = "future_only_after_satellite_sell_and_redemption_semantics_are_implemented"
+
+[notes]
+reason_for_thresholds = "PE 30/70、综合估值40/70、20日回撤5/10和60日波动前20%均来自用户预先提出；尚未根据回测结果优化。"
+known_limitations = "当前自定义研究引擎只支持新增资金和申购；季度卖出、卫星状态机、估值历史与多项新基金产品规则尚待发现或实现。历史数据仅用于研究，并需要前瞻样本外观察。"
+open_decisions = "理论层和绩效接受矩阵均已冻结；发现阶段需确定基金、数据、产品规则和赎回语义，代理或证据分叉再集中请求用户决定。"

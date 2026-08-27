@@ -71,6 +71,37 @@ providers:
     authentication_required: false
     page_size: 100
     known_limit: historical_rows_do_not_expose_original_announcement_timestamp
+  guchacha_mcp:
+    enabled: true
+    role: remote_index_valuation_discovery_only
+    adapter_status: project_mcp_registered_collection_adapter_not_implemented
+    service_url: https://guchacha.com/mcp
+    upstream_domains:
+      - guchacha.com
+    transport: streamable_http
+    authentication: bearer_token_from_environment
+    credential_environment_variable: GUCHACHA_MCP_TOKEN
+    current_free_tier_confirmed_by_user: true
+    documented_rate_limit_per_hour: 600
+    enabled_tools:
+      - list_datasets
+      - get_index_valuation
+      - get_index_weight
+      - get_index_forward_pe
+    network_mode: interactive_low_frequency_discovery_only
+    allow_in_inference_path: false
+    allow_in_backtest_path: false
+    allow_in_execution_path: false
+    persist_before_use: true
+    raw_before_normalization: true
+    require_secondary_source_validation: true
+    publish_to_validated_store: false
+    automatic_updates_allowed: false
+    known_limits:
+      - remote_service_version_cannot_be_pinned
+      - complete_history_boundaries_not_documented
+      - revision_and_pagination_semantics_not_documented
+      - data_persistence_and_derived_use_terms_not_documented
   tushare_pro:
     enabled: false
     role: optional_paid_validator_and_upgrade

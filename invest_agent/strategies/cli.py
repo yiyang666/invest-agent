@@ -108,6 +108,12 @@ def main(argv: list[str] | None = None) -> int:
                         date.fromisoformat(value) for value in item["eligible_dates"]
                     ),
                     rule_version=item["rule_version"],
+                    shared_daily_cap_group=item.get("shared_daily_cap_group"),
+                    shared_daily_cap_cny=(
+                        None
+                        if item.get("shared_daily_cap_cny") is None
+                        else Decimal(str(item["shared_daily_cap_cny"]))
+                    ),
                 )
                 for item in request["routes"]
             )

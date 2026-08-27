@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from invest_agent.backtest.local_research import (
+    _current_position_cash_state,
     _current_values,
     calculate_path_metrics,
     load_research_scenario,
@@ -72,6 +73,38 @@ class LocalResearchBacktestTests(unittest.TestCase):
             path = Path(directory) / "scenario.json"
             path.write_text(json.dumps(scenario), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "fallback"):
+                load_research_scenario(path)
+
+    def test_target_gap_scenario_accepts_prioritized_multi_route_sleeve(self) -> None:
+        scenario = deepcopy(self._scenario())
+        scenario["routes"][0]["priority"] = 1
+        scenario["routes"].append(
+            {
+                **scenario["routes"][0],
+                "fund_code": "000002",
+                "priority": 2,
+                "purchase_fee_rate": "0.0014",
+            }
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenario.json"
+            path.write_text(json.dumps(scenario), encoding="utf-8")
+            loaded = load_research_scenario(path)
+
+        self.assertEqual(len(loaded["routes"]), 2)
+
+    def test_multi_route_sleeve_rejects_duplicate_priority(self) -> None:
+        scenario = deepcopy(self._scenario())
+        scenario["routes"].append(
+            {
+                **scenario["routes"][0],
+                "fund_code": "000002",
+            }
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenario.json"
+            path.write_text(json.dumps(scenario), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "priorities"):
                 load_research_scenario(path)
 
     def test_path_metrics_remove_external_contribution_from_twr(self) -> None:
@@ -187,6 +220,57 @@ class LocalResearchBacktestTests(unittest.TestCase):
 
         self.assertEqual(total, Decimal("100.00"))
         self.assertEqual(values, {"core": Decimal("60.00"), "overseas": Decimal("40.00")})
+
+    def test_dynamic_target_state_keeps_cash_explicit(self) -> None:
+        valuations = {
+            "daily_valuations": [
+                {
+                    "total_value_cny": "100.00",
+                    "available_cash_cny": "30.00",
+                    "pending_subscription_cash_cny": "5.00",
+                    "distribution_receivable_cny": "5.00",
+                    "positions": [
+                        {"fund_code": "000001", "market_value_cny": "60.00"}
+                    ],
+                }
+            ]
+        }
+
+        total, positions, available, nondeployable = _current_position_cash_state(
+            valuations,
+            fund_to_sleeve={"000001": "core"},
+            sleeves=("core", "satellite"),
+        )
+
+        self.assertEqual(total, Decimal("100.00"))
+        self.assertEqual(positions, {"core": Decimal("60.00"), "satellite": Decimal("0")})
+        self.assertEqual(available, Decimal("30.00"))
+        self.assertEqual(nondeployable, Decimal("10.00"))
+
+    def test_scenario_overlay_replaces_stage_without_copying_routes(self) -> None:
+        base = self._scenario()
+        with tempfile.TemporaryDirectory() as directory:
+            base_path = Path(directory) / "base.json"
+            overlay_path = Path(directory) / "overlay.json"
+            base_path.write_text(json.dumps(base), encoding="utf-8")
+            overlay_path.write_text(
+                json.dumps(
+                    {
+                        "extends": "base.json",
+                        "overrides": {
+                            "scenario_id": "overlay-v1",
+                            "research_stage": "A2",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            loaded = load_research_scenario(overlay_path)
+
+        self.assertEqual(loaded["scenario_id"], "overlay-v1")
+        self.assertEqual(loaded["research_stage"], "A2")
+        self.assertEqual(loaded["routes"], base["routes"])
 
 
 if __name__ == "__main__":

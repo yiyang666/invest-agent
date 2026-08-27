@@ -10,11 +10,11 @@ from typing import Any, Mapping
 from .registry import load_strategy_registry, validate_strategy_registry
 
 
-EXPECTED_STRATEGIES = {
-    ("dca_baseline", "1.4.0"),
-    ("new_money_trend_rs", "1.0.0"),
-    ("drawdown_budget_add", "1.0.0"),
-    ("sleeve_drawdown_recovery", "1.0.0"),
+EXPECTED_STRATEGY_IDS = {
+    "dca_baseline",
+    "new_money_trend_rs",
+    "drawdown_budget_add",
+    "sleeve_drawdown_recovery",
 }
 
 STRATEGY_LABELS = {
@@ -28,6 +28,7 @@ SLEEVE_LABELS = {
     "defensive": "防御",
     "domestic_broad_core": "国内宽基",
     "us_broad_core": "美国宽基",
+    "uk_broad_core": "英国宽基",
     "domestic_growth": "国内成长",
     "us_growth": "海外成长",
     "sh_hk_sz_passive_technology_satellite": "沪港深科技卫星",
@@ -155,20 +156,18 @@ def _validate_pack(pack: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     if not isinstance(accepted, list):
         raise ValueError("accepted_signals must be a list")
     identities = {
-        (str(item.get("strategy_id")), str(item.get("strategy_version")))
+        str(item.get("strategy_id"))
         for item in accepted
         if isinstance(item, Mapping)
     }
-    if identities != EXPECTED_STRATEGIES:
+    if identities != EXPECTED_STRATEGY_IDS:
         raise ValueError("source decision pack must contain the four frozen strategies")
     authorities = [
         item
         for item in accepted
         if isinstance(item, Mapping) and item.get("target_allocation_authority") is True
     ]
-    if len(authorities) != 1 or (
-        authorities[0].get("strategy_id"), authorities[0].get("strategy_version")
-    ) != ("dca_baseline", "1.4.0"):
+    if len(authorities) != 1 or authorities[0].get("strategy_id") != "dca_baseline":
         raise ValueError("source decision pack requires one dca_baseline authority")
     if any(item.get("execution_enabled") is not False for item in accepted):
         raise ValueError("accepted strategy signal cannot enable execution")
@@ -301,7 +300,9 @@ def build_research_report(
         f"comparison_benchmark: {policy['comparison_benchmark']}",
         f"target_max_portfolio_drawdown_pct: {policy['target_drawdown_pct']}",
         f"stress_limit_portfolio_drawdown_pct: {policy['stress_drawdown_pct']}",
-        "real_trading_enabled: false",
+        "require_human_approval: true",
+        "approval_scope: exact_single_order",
+        "auto_retry_mutations: false",
     ]
     if any(line not in policy_text for line in required_policy_lines):
         raise ValueError("investment policy does not match report policy context")
@@ -318,8 +319,7 @@ def build_research_report(
     baseline_index = next(
         index
         for index, item in enumerate(accepted)
-        if (item["strategy_id"], item["strategy_version"])
-        == ("dca_baseline", "1.4.0")
+        if item["strategy_id"] == "dca_baseline"
     )
     strategy_views = [
         _strategy_summary(item)

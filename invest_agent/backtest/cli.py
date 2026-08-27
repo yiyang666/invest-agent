@@ -24,6 +24,8 @@ from .local_research import load_research_scenario, run_local_dca_research
 from .sensitivity import load_sensitivity_spec, run_sensitivity_matrix
 from .rolling import load_rolling_spec, run_rolling_windows
 from .candidate_compare import load_comparison_spec, run_candidate_comparison
+from .pair_compare import run_pair_cashflow_comparison
+from .same_universe_compare import run_same_universe_comparison
 from .trend_robustness import load_trend_robustness_spec, run_trend_robustness
 from .drawdown_compare import run_drawdown_dual_benchmark
 from .drawdown_robustness import (
@@ -101,13 +103,51 @@ def build_parser() -> argparse.ArgumentParser:
     sleeve_drawdown.add_argument("--db", type=Path, default=Path("data/private/invest_agent.sqlite3"))
     sleeve_drawdown.add_argument("--spec", type=Path, required=True)
     sleeve_drawdown.add_argument("--output", type=Path)
+    pair_compare = subparsers.add_parser("pair-cashflow-compare")
+    pair_compare.add_argument("--candidate-scenario", type=Path, required=True)
+    pair_compare.add_argument("--benchmark-scenario", type=Path, required=True)
+    pair_compare.add_argument("--candidate-spec", type=Path, required=True)
+    pair_compare.add_argument("--benchmark-spec", type=Path, required=True)
+    pair_compare.add_argument("--db", type=Path, default=Path("data/private/invest_agent.sqlite3"))
+    pair_compare.add_argument("--output", type=Path)
+    same_universe = subparsers.add_parser("same-universe-compare")
+    same_universe.add_argument("--candidate-scenario", type=Path, required=True)
+    same_universe.add_argument("--control-scenario", type=Path, required=True)
+    same_universe.add_argument("--spec", type=Path, required=True)
+    same_universe.add_argument("--protocol", type=Path, required=True)
+    same_universe.add_argument("--db", type=Path, default=Path("data/private/invest_agent.sqlite3"))
+    same_universe.add_argument("--output", type=Path)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        if args.command == "sleeve-drawdown-compare":
+        if args.command == "same-universe-compare":
+            spec_bytes = args.spec.read_bytes()
+            protocol_bytes = args.protocol.read_bytes()
+            payload = run_same_universe_comparison(
+                database=args.db,
+                candidate_scenario=load_research_scenario(args.candidate_scenario),
+                control_scenario=load_research_scenario(args.control_scenario),
+                strategy_spec=json.loads(spec_bytes),
+                strategy_spec_bytes=spec_bytes,
+                comparison_protocol=json.loads(protocol_bytes),
+                comparison_protocol_bytes=protocol_bytes,
+            )
+        elif args.command == "pair-cashflow-compare":
+            candidate_spec_bytes = args.candidate_spec.read_bytes()
+            benchmark_spec_bytes = args.benchmark_spec.read_bytes()
+            payload = run_pair_cashflow_comparison(
+                database=args.db,
+                candidate_scenario=load_research_scenario(args.candidate_scenario),
+                candidate_spec=json.loads(candidate_spec_bytes),
+                candidate_spec_bytes=candidate_spec_bytes,
+                benchmark_scenario=load_research_scenario(args.benchmark_scenario),
+                benchmark_spec=json.loads(benchmark_spec_bytes),
+                benchmark_spec_bytes=benchmark_spec_bytes,
+            )
+        elif args.command == "sleeve-drawdown-compare":
             spec_bytes = args.spec.read_bytes()
             benchmark_spec_bytes = args.benchmark_spec.read_bytes()
             payload = run_sleeve_drawdown_compare(

@@ -1,0 +1,78 @@
+{
+  "$schema": "../../schemas/strategy_spec.schema.json",
+  "schema_version": 1,
+  "strategy_id": "dca_baseline",
+  "strategy_version": "1.5.0",
+  "status": "implemented",
+  "mode": "research_only",
+  "purpose": "作为当前可购买产品约束下的新版631比较基准与个人长期配置参考：美国宽基降至10%，新增10%英国宽基，国内成长采用019861，并把多基金限额、共享容量和费率放进同一事件回测。",
+  "inputs": {
+    "timezone": "Asia/Shanghai",
+    "data_source": "validated_local_store_only",
+    "nav_field": "unit_nav",
+    "contribution_cny": {"canonical": 3000, "sensitivity": [4000, 5000]},
+    "schedule": {
+      "budget_freeze_calendar_day": 1,
+      "limited_fund_start_calendar_day": 1,
+      "unlimited_fund_tranche_calendar_days": [5, 15, 25],
+      "non_open_day_rule": "next_instrument_eligible_open_day"
+    },
+    "allocation": "20/10/10/10/10/30/10",
+    "allocation_role": "research_benchmark_and_personal_target",
+    "purchase_route_pool": "config/qdii_purchase_route_pool_v1.json",
+    "domestic_growth_long_history_proxy": "019861",
+    "domestic_growth_style_definition": "019861_science_technology_innovation_100_selected_for_longer_history_and_reproducible_baseline",
+    "defensive_route": "006932"
+  },
+  "rules": {
+    "signal": {"type": "precommitted_monthly_plan", "depends_on_market_state": false, "depends_on_nav_or_return": false, "generated_once_per_calendar_month": true},
+    "cash_flow": {"borrowing_or_leverage": false, "uninvested_amount": "remain_as_cash", "carry_unfilled_order_across_month_end": true, "reserved_cash_counts_toward_its_sleeve": true},
+    "buy_only_allocation": {"selling_allowed": false, "allocation_rule": "new cash fills current target gaps after invested value and reserved pending cash", "overweight_sleeve_new_money": 0},
+    "instrument_routing": {
+      "limited_route_rule": "start on first eligible date from month start and queue FIFO across month boundaries",
+      "unlimited_route_rule": "split monthly allocation across calendar days 5, 15, and 25",
+      "multiple_routes_per_sleeve": true,
+      "respect_route_priority": true,
+      "respect_shared_daily_cap_groups": true,
+      "automatic_fund_substitution": false
+    },
+    "risk_boundary": {"policy_limits_are_external_vetoes": true, "target_maximum_drawdown_pct": 15, "stress_limit_drawdown_pct": 20, "stress_tolerance_is_approximate_not_a_return_target": true, "standard_synthetic_stress_result_pct": -20.79977, "standard_synthetic_stress_disposition": "review_required_at_approximately_20pct_boundary", "baseline_remains_valid_when_stress_requires_review": true}
+  },
+  "prohibitions": [
+    "use_same_day_unpublished_nav",
+    "forward_fill_missing_nav",
+    "borrow_cash",
+    "sell_to_restore_target_weights",
+    "treat_current_purchase_limits_as_historical_facts",
+    "replace_unavailable_fund_without_versioned_mapping_change",
+    "submit_real_orders"
+  ],
+  "backtest_scenarios": {
+    "primary": "config/backtest_research_scenario_v11.json",
+    "comparison": "config/backtest_research_scenario_v8.json",
+    "contribution_cny": [3000, 4000, 5000]
+  },
+  "required_outputs": [
+    "time_weighted_return",
+    "xirr",
+    "annualized_volatility",
+    "maximum_drawdown_and_recovery",
+    "purchase_fees",
+    "cash_drag",
+    "route_level_allocations",
+    "data_rule_strategy_and_code_hashes"
+  ],
+  "acceptance_tests": [
+    "same_inputs_produce_byte_equivalent_results",
+    "shared_a_c_limit_is_not_double_counted",
+    "route_priority_falls_through_only_after_capacity_is_consumed",
+    "limited_routes_carry_across_month_end",
+    "no_negative_cash_and_no_sell_events"
+  ],
+  "known_blockers": [
+    "prospective_out_of_sample_observation_incomplete",
+    "current_limits_are_counterfactual_when_applied_to_historical_market_paths",
+    "fund_specific_qdii_calendar_rules_incomplete",
+    "strict_point_in_time_history_is_not_available_for_backfilled_nav"
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "基金交易规则核验"
+  short_description: "优先使用爱基金 CLI 核验申购、限额、赎回费与到账规则"
+  default_prompt: "Use $verify-fund-trading-rules to verify the current trading rules for this fund."

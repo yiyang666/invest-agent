@@ -7,8 +7,17 @@
 1. `README.md`
 2. `docs/architecture.md`
 3. `docs/roadmap.md`
-4. `config/investment_policy.yaml`（存在时）或示例模板
-5. 与任务有关的 `docs/decisions/` 和 `docs/integrations/`
+4. `docs/capabilities.md`
+5. `config/investment_policy.yaml`（存在时）或示例模板
+6. 与任务有关的 `docs/decisions/` 和 `docs/integrations/`
+
+## Capability routing
+
+- 新增实现或改用网页手工分析前，先检查 `docs/capabilities.md` 中已有的 CLI、项目级 Skill 和 MCP。
+- 基金数据更新走 `fund-data-collect` 和数据CLI；指标、回测、风控、报告与归因只读取通过门禁的本地数据。
+- 当前渠道交易规则走 `verify-fund-trading-rules`，优先使用爱基金CLI只读预检，不用申购/赎回试单取数。
+- 新策略走 `design-fund-strategy`；规则和比较协议先冻结，再运行回测与 `invest_agent.attribution`。
+- MCP与网页只负责发现和采集，不能在推理时越过本地仓直接生成指标、策略、归因或订单。
 
 ## Safety invariants
 

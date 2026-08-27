@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "policy_id": "phase7_controlled_live_policy_draft_v1",
+  "status": "active_controlled_live",
+  "real_trading_enabled": true,
+  "allowed_mutations": ["purchase"],
+  "initial_live_scope": "single_purchase_then_immediate_reconciliation",
+  "proposed_hard_limits_cny": {
+    "single_purchase": "5000.00",
+    "daily_total": "5000.00",
+    "monthly_total": "5000.00"
+  },
+  "dynamic_budget_guard": {
+    "order_must_match_approved_schedule": true,
+    "single_purchase_must_not_exceed_remaining_monthly_budget": true,
+    "daily_total_must_not_exceed_remaining_monthly_budget": true,
+    "unlimited_routes_use_calendar_days": [5, 15, 25],
+    "limited_routes_may_fill_as_soon_as_capacity_allows": true
+  },
+  "first_live_pilot": {
+    "status": "completed_2026-08-26",
+    "maximum_single_purchase_cny": "500.00",
+    "maximum_orders": 1,
+    "automatic_revoke": false
+  },
+  "required_preflight_sequence": [
+    "subscribe_init_current_request",
+    "fee_rule_current_request",
+    "identity_and_risk_validation",
+    "explicit_payment_method_selection",
+    "trade_treaty_current_request",
+    "explicit_agreement_read_confirmation",
+    "trade_record_success",
+    "check_before_trade_when_required",
+    "project_exact_order_summary",
+    "fresh_single_order_human_confirmation"
+  ],
+  "exact_final_summary_fields": [
+    "fund_code",
+    "fund_name",
+    "action",
+    "amount_cny",
+    "payment_account_masked",
+    "payment_method",
+    "estimated_fee_cny",
+    "agreement_record",
+    "expected_confirmation",
+    "intent_sha256"
+  ],
+  "submission": {
+    "cli_only": true,
+    "command": "aijijin fund buy",
+    "automatic_retry": false,
+    "success_requires_trade_detail": true,
+    "unknown_requires_reconciliation": true,
+    "automatic_revoke_after_test": false,
+    "revoke_assumed_available": false
+  },
+  "environment": {
+    "reject_unknown_gateway_overrides": true,
+    "approved_hosts": [
+      "trade.5ifund.com",
+      "fund.10jqka.com.cn"
+    ],
+    "credentials_may_be_logged": false,
+    "transaction_account_may_be_persisted": false
+  },
+  "activation_requirements": [
+    "monthly_5000_cny_cap_already_exists_in_investment_policy",
+    "real_adapter_static_review_passes",
+    "domain_override_guard_passes",
+    "read_only_preflight_passes",
+    "repository_investment_policy_is_versioned",
+    "one_exact_order_is_displayed_and_confirmed_in_current_turn"
+  ],
+  "dynamic_product_rule_precedence": [
+    "aijijin_cli_current_read_only_preflight",
+    "fund_company_current_documents",
+    "validated_local_versioned_rules",
+    "public_web_cross_check_only"
+  ],
+  "redeem_render_policy": {
+    "read_only_preflight_allowed": true,
+    "persist_redacted_normalized_facts_only": true,
+    "does_not_enable_redeem_submission": true
+  },
+  "controlled_gateway": {
+    "persistent_digest_only_approval": true,
+    "atomic_approval_consume_and_submitting": true,
+    "single_daily_monthly_caps_checked_atomically": true,
+    "restart_submitting_becomes_unknown": true,
+    "unknown_blocks_resubmission_until_reconciled": true,
+    "automatic_cli_submission": false
+  },
+  "pilot_state": "completed_first_purchase_confirmed_and_holding_reconciled",
+  "phase7_state": "closed"
+}

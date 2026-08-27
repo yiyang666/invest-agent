@@ -2,7 +2,7 @@ schema_version: 1
 status: provisional
 review_date: 2026-11-15
 
-system_mode: advisory_only
+system_mode: controlled_live
 
 investor_profile:
   life_stage: early_career
@@ -16,18 +16,25 @@ objective:
   horizon_years: 5
   liquidity_priority: high
   allocation_anchor: allocation_anchor_631
-  comparison_benchmark: dca_baseline@1.4.0
+  comparison_benchmark: dca_baseline@1.5.0
   benchmark_interpretation: allocation_anchor_is_not_a_mandatory_execution_schedule
   current_fund_assets_cny: 6000
   contribution:
-    cadence: monthly_stepwise
+    cadence: monthly_base_plus_discretionary
     current_band_cny:
       minimum: 3000
       maximum: 5000
-    future_step_bands_cny:
-      - minimum: 5000
-        maximum: 8000
-        activation: explicit_user_update
+    stable_base_contribution_cny: 3000
+    discretionary_budget_cny:
+      minimum: 0
+      maximum: 2000
+      default_commitment: 0
+      activation: versioned_strategy_signal_or_explicit_user_decision
+    total_monthly_hard_cap_cny: 5000
+    future_step_bands_cny: []
+    future_increase_status: no_committed_step_up
+    fixed_benchmark_contribution_cny: 3000
+    discretionary_cashflow_requires_matched_comparator: true
     flexible: true
     band_changes_require_user_update: true
 
@@ -61,19 +68,22 @@ allocation:
     id: long_term_60_defensive_30_satellite_10
     long_term_assets_pct:
       domestic_broad_core: 20
-      us_broad_core: 20
+      us_broad_core: 10
+      uk_broad_core: 10
       us_growth: 10
       domestic_growth: 10
     defensive_pct: 30
     sh_hk_sz_passive_technology_satellite_pct: 10
     selected_routes:
       domestic_broad_core: "110020"
-      us_broad_core: "050025"
-      us_growth: "539001"
+      us_broad_core: "017641"
+      uk_broad_core: "539003"
+      us_growth: "000043"
       domestic_growth: "019861"
       sh_hk_sz_passive_technology_satellite: "160646"
       defensive: "006932"
     defensive_route_status: selected_research_route
+    purchase_route_pool: config/qdii_purchase_route_pool_v1.json
   benchmark_and_personal_target_aligned: true
   tactical_overlay_policy:
     allowed: true
@@ -89,7 +99,7 @@ allocation:
   superseded_repair_candidate:
     id: long_term_60_defensive_35_satellite_05
     status: rejected_by_user_to_preserve_simple_631_baseline
-  candidate_selection_status: personal_target_631_reconfirmed_pending_oos_and_product_rule_gates
+  candidate_selection_status: personal_target_631_v1_5_selected_pending_oos_and_product_rule_gates
 
 risk:
   target_max_portfolio_drawdown_pct: 15
@@ -114,14 +124,26 @@ decision:
   key_field_change_invalidates_approval: true
 
 execution:
-  real_trading_enabled: false
+  real_trading_enabled: true
+  live_scope: exact_single_purchase_only
+  live_activation_date: 2026-08-25
+  live_hard_limits_cny:
+    single_purchase: 5000
+    daily_total: 5000
+    monthly_total: 5000
+  first_live_pilot:
+    status: completed_2026-08-26
+    maximum_single_purchase_cny: 500
+    maximum_orders: 1
   allowed_actions:
     - analyze
     - propose
     - read_holdings
     - read_orders
+    - purchase_with_exact_current_approval
+    - reconcile_order
   mutation_permissions:
-    purchase: false
+    purchase: true
     redeem: false
     revoke: false
   auto_retry_mutations: false
@@ -144,6 +166,8 @@ integrations:
     consent_recorded_date: 2026-08-15
     credentials_path: ~/.aijijin/credentials.json
     initial_capability_mode: read_only
+    current_capability_mode: controlled_live_purchase_exact_approval
+    phase7_preparation: phase7_closed_controlled_purchase_active
 
 data:
   timezone: Asia/Shanghai

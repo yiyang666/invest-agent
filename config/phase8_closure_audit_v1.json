@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "audit_id": "phase8_closure_audit_v1",
+  "status": "closed",
+  "closed_at": "2026-08-27",
+  "scope": "deterministic_attribution_and_strategy_lifecycle",
+  "checks": {
+    "principal_pnl_fees_and_cash_drag_separated": true,
+    "modified_dietz_periods_geometrically_linked": true,
+    "cashflow_matched_benchmark_gate": true,
+    "sleeve_allocation_selection_interaction_reconciles": true,
+    "cash_sleeve_remains_explicit": true,
+    "precommitted_sequential_ablation_available": true,
+    "asset_universe_change_not_labeled_signal_alpha": true,
+    "strategy_spec_and_evidence_hash_bound": true,
+    "forward_observation_minimum_enforced": true,
+    "risk_veto_and_evidence_blockers_fail_closed": true,
+    "automatic_promotion_disabled": true,
+    "automatic_retirement_disabled": true,
+    "order_generation_disabled": true,
+    "no_real_trading_side_effects": true
+  },
+  "evidence": {
+    "policy": "config/phase8_attribution_policy_v1.json",
+    "contract": "docs/attribution.md",
+    "implementation": [
+      "invest_agent/attribution/engine.py",
+      "invest_agent/attribution/lifecycle.py",
+      "invest_agent/attribution/cli.py"
+    ],
+    "tests": [
+      "tests/test_phase8_attribution.py"
+    ],
+    "adr": "docs/decisions/ADR-0027-phase8-attribution-lifecycle.md"
+  },
+  "engineering_state": "closed",
+  "operational_evidence_state": "accumulating_forward_monthly_observations",
+  "next_work": "operate_the_closed_system_and_iterate_from_real_evidence"
+}

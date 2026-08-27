@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "scenario_id": "hierarchical_risk_budget_valuation_a1_fixed_40_20_40_v1",
+  "classification": "counterfactual_research_assumption",
+  "research_evidence_level": "research_ready",
+  "research_stage": "A1_fixed_strategic_target_gap",
+  "purpose": "只检验40/20/40固定战略目标、目标缺口和当前限额队列；不启用卫星红绿灯、风险预算、估值、回撤加仓或赎回。",
+  "provider_id": "akshare_eastmoney",
+  "period": {"start_date": "2024-03-01", "end_date": "2026-07-31"},
+  "monthly_contribution_cny": "3000",
+  "calendar_day": 1,
+  "allocation_engine": {"mode": "revalidated_target_gap"},
+  "allocation_profiles": [
+    {
+      "id": "A1_fixed_40_20_40_target_gap",
+      "weights": {
+        "domestic_broad_core": "0.10",
+        "us_broad_core": "0.10",
+        "us_nasdaq_core": "0.10",
+        "uk_broad_core": "0.05",
+        "japan_broad_core": "0.05",
+        "global_technology_satellite": "0.05",
+        "semiconductor_satellite": "0.05",
+        "robotics_satellite": "0.05",
+        "biotechnology_satellite": "0.05",
+        "defensive_bond": "0.20",
+        "gold_stabilizer": "0.10",
+        "dividend_stabilizer": "0.10"
+      }
+    }
+  ],
+  "routes": [
+    {"sleeve": "domestic_broad_core", "fund_code": "110020", "priority": 1, "role": "沪深300核心", "minimum_order_cny": "10", "daily_cap_cny": null, "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "existing_research_route_rule_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_broad_core", "fund_code": "017641", "priority": 1, "role": "标普500人民币A主路线", "minimum_order_cny": "10", "daily_cap_cny": "10", "shared_daily_cap_group": "cifm_sp500_a_c_combined_daily_purchase", "shared_daily_cap_cny": "10", "purchase_fee_rate": "0.0012", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_broad_core", "fund_code": "019305", "priority": 2, "role": "标普500人民币C同日共享限额路线", "minimum_order_cny": "10", "daily_cap_cny": "10", "shared_daily_cap_group": "cifm_sp500_a_c_combined_daily_purchase", "shared_daily_cap_cny": "10", "purchase_fee_rate": "0", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_broad_core", "fund_code": "096001", "priority": 3, "role": "标普500等权补充路线", "minimum_order_cny": "10", "daily_cap_cny": "10", "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_broad_core", "fund_code": "519981", "priority": 4, "role": "标普100等权增强后备路线", "minimum_order_cny": "1", "daily_cap_cny": "10", "purchase_fee_rate": "0.0014", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "us_nasdaq_core", "fund_code": "016452", "priority": 1, "role": "纳斯达克100核心", "minimum_order_cny": "1", "daily_cap_cny": "10", "purchase_fee_rate": "0.0012", "share_precision": 2, "share_rounding_mode": "half_up", "rule_version": "aijijin_current_snapshot_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "uk_broad_core", "fund_code": "539003", "priority": 1, "role": "富时100英国宽基核心", "minimum_order_cny": "1", "daily_cap_cny": "5000", "purchase_fee_rate": "0.0012", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "current_2026_channel_rule_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "japan_broad_core", "fund_code": "020712", "priority": 1, "role": "日经225核心稀缺路线", "minimum_order_cny": "1", "daily_cap_cny": "10", "purchase_fee_rate": "0.0006", "share_precision": 2, "share_rounding_mode": "half_up", "rule_version": "aijijin_current_snapshot_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "global_technology_satellite", "fund_code": "100055", "priority": 1, "role": "全球科技卫星", "minimum_order_cny": "100", "daily_cap_cny": "1000", "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "half_up", "rule_version": "aijijin_current_snapshot_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "semiconductor_satellite", "fund_code": "007300", "priority": 1, "role": "半导体卫星", "minimum_order_cny": "100", "daily_cap_cny": null, "purchase_fee_rate": "0.0008", "share_precision": 2, "share_rounding_mode": "half_up", "rule_version": "aijijin_current_snapshot_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "robotics_satellite", "fund_code": "014880", "priority": 1, "role": "机器人卫星", "minimum_order_cny": "100", "daily_cap_cny": null, "purchase_fee_rate": "0.001", "share_precision": 2, "share_rounding_mode": "half_up", "rule_version": "aijijin_current_snapshot_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "biotechnology_satellite", "fund_code": "017894", "priority": 1, "role": "生物科技卫星", "minimum_order_cny": "1", "daily_cap_cny": "100", "purchase_fee_rate": "0.0012", "share_precision": 2, "share_rounding_mode": "half_up", "rule_version": "aijijin_current_snapshot_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "defensive_bond", "fund_code": "006932", "priority": 1, "role": "0至3年政策性金融债防御", "minimum_order_cny": "10", "daily_cap_cny": null, "purchase_fee_rate": "0.0015", "share_precision": 2, "share_rounding_mode": "down", "rule_version": "existing_research_route_rule_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "gold_stabilizer", "fund_code": "000216", "priority": 1, "role": "黄金稳定仓", "minimum_order_cny": "100", "daily_cap_cny": null, "purchase_fee_rate": "0.0006", "share_precision": 2, "share_rounding_mode": "half_up", "rule_version": "aijijin_current_snapshot_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"},
+    {"sleeve": "dividend_stabilizer", "fund_code": "008114", "priority": 1, "role": "红利低波权益稳定仓", "minimum_order_cny": "100", "daily_cap_cny": null, "purchase_fee_rate": "0.001", "share_precision": 2, "share_rounding_mode": "half_up", "rule_version": "aijijin_current_snapshot_applied_counterfactually_a1_v1", "rule_effective_date": "2024-03-01", "assumption_authority": "counterfactual_research_assumption"}
+  ],
+  "nav_assumption": {"field": "unit_nav", "visibility_rule": "next_fund_nav_date", "forward_fill": false},
+  "subscription_assumption": {"precommitted_before_cutoff": true, "confirmation_rule": "nav_visible_date", "carry_unfilled_across_month_end": false, "reserved_cash_counts_toward_target_sleeve": true, "unfilled_target_gap_revalidated_next_month": true, "unlimited_fund_tranche_calendar_days": [5]},
+  "distribution_assumption": {"election": "cash", "payment_date_rule": "next_fund_nav_date", "cash_precision": 2, "cash_rounding_mode": "half_up"},
+  "deferred_variants": ["A2_satellite_traffic_light", "A3_satellite_risk_budget", "D4_0_volatility", "D4_2_dual_valuation", "D4_5_five_index_valuation", "core_drawdown_tactical", "v0_3_redemption"],
+  "official_rule_gate": {"status": "blocked", "reason": "research_ready探索：当前渠道规则反事实应用于历史；合同沿革、历史渠道有效日期、精确结算与前瞻样本外尚未完成。"}
+}

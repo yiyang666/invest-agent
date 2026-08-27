@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "protocol_id": "hierarchical_risk_budget_valuation_same_universe_comparison_v1",
+  "status": "frozen_before_same_universe_performance_run",
+  "frozen_date": "2026-08-27",
+  "strategy_id": "hierarchical_risk_budget_valuation",
+  "strategy_version": "0.2.0",
+  "amendment_reason": "初次A1/A2结果暴露了631与424之间的基金池、战略权重和执行语义混杂；新增同资产主对照以分离资产选择与策略规则增量，不改变候选信号或参数。",
+  "external_anchor": {
+    "strategy": "dca_baseline@1.5.0",
+    "role": "policy_and_total_outcome_reference",
+    "required": true
+  },
+  "primary_same_universe_control": {
+    "scenario_id": "hierarchical_risk_budget_valuation_424_dca_baseline_v1",
+    "role": "primary_strategy_effectiveness_control",
+    "monthly_contribution_cny": "3000",
+    "allocation_engine_mode": "target_gap",
+    "carry_unfilled_across_month_end": true,
+    "unlimited_fund_tranche_calendar_days": [5, 15, 25]
+  },
+  "allowed_candidate_scenario_ids": [
+    "hierarchical_risk_budget_valuation_a1_fixed_40_20_40_v1",
+    "hierarchical_risk_budget_valuation_a2_satellite_traffic_light_cash_v1"
+  ],
+  "required_invariants": {
+    "identical_route_payloads": true,
+    "identical_strategic_sleeve_weights": true,
+    "identical_provider": true,
+    "identical_period": true,
+    "identical_calendar_day": true,
+    "identical_monthly_external_cashflows": true,
+    "same_initial_state": "zero_holdings_zero_cash",
+    "same_strategy_spec_bytes": true,
+    "no_real_orders": true
+  },
+  "causal_questions": {
+    "424_dca_vs_631": "资产池、战略配置与相应路由整体差异；不归因于高级信号。",
+    "a1_vs_424_dca": "每月重新验证目标缺口并取消旧跨月预留队列的执行机制增量。",
+    "a2_vs_a1": "卫星红绿灯相对A1的独立增量。",
+    "a2_vs_424_dca": "当前累计执行规则相对同资产基础定投的整体增量。"
+  },
+  "excluded_controls": [
+    {
+      "control_id": "424_fixed_split_dca",
+      "reason": "用户明确认为意义不大；不纳入当前实验族。"
+    }
+  ],
+  "interpretation_limits": [
+    "short_window_only",
+    "counterfactual_execution",
+    "current_channel_rules_applied_to_history",
+    "no_causal_claim_from_424_dca_vs_631",
+    "no_promotion_without_complete_discovery_and_robustness_gates"
+  ]
+}

@@ -28,7 +28,7 @@ from invest_agent.data.quality import (
 )
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 class ImmutableBatchConflict(RuntimeError):
@@ -282,6 +282,26 @@ class FundDataStore:
                     PRIMARY KEY (batch_id, fund_code, ex_date)
                 );
 
+                CREATE TABLE IF NOT EXISTS fund_history_boundaries (
+                    fund_code TEXT PRIMARY KEY,
+                    current_contract_start_date TEXT NOT NULL,
+                    boundary_kind TEXT NOT NULL,
+                    current_identity TEXT NOT NULL,
+                    source_reference TEXT NOT NULL,
+                    source_checked_at TEXT NOT NULL,
+                    config_sha256 TEXT NOT NULL,
+                    activated_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS fund_history_backfills (
+                    fund_code TEXT NOT NULL,
+                    provider_id TEXT NOT NULL,
+                    current_contract_start_date TEXT NOT NULL,
+                    batch_id TEXT NOT NULL REFERENCES data_batches(batch_id),
+                    completed_at TEXT NOT NULL,
+                    PRIMARY KEY (fund_code, provider_id, current_contract_start_date)
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_nav_fund_date
                     ON fund_nav_observations(fund_code, nav_date);
                 CREATE INDEX IF NOT EXISTS idx_metadata_fund
@@ -298,7 +318,7 @@ class FundDataStore:
                 "SELECT value FROM schema_metadata WHERE key = 'schema_version'"
             ).fetchone()
             existing_version = int(existing["value"]) if existing is not None else None
-            if existing_version is not None and existing_version not in {1, 2, SCHEMA_VERSION}:
+            if existing_version is not None and existing_version not in {1, 2, 3, SCHEMA_VERSION}:
                 raise RuntimeError(
                     f"Unsupported data-store schema version: {existing['value']}"
                 )
@@ -748,6 +768,117 @@ class FundDataStore:
                     (batch_id,),
                 ).fetchone()
         return int(row["count"])
+
+    def latest_nav_date(self, *, fund_code: str, provider_id: str) -> str | None:
+        """Return the newest published NAV date for one provider and fund."""
+
+        self.initialize()
+        with self.session() as connection:
+            row = connection.execute(
+                """
+                SELECT MAX(observation.nav_date) AS latest_nav_date
+                FROM fund_nav_observations AS observation
+                JOIN data_batches AS batch ON batch.batch_id = observation.batch_id
+                WHERE observation.fund_code = ?
+                  AND observation.provider_id = ?
+                  AND batch.quality_status <> 'fail'
+                """,
+                (fund_code, provider_id),
+            ).fetchone()
+        value = row["latest_nav_date"]
+        return str(value) if value is not None else None
+
+    def activate_history_boundary(
+        self,
+        *,
+        fund_code: str,
+        current_contract_start_date: str,
+        boundary_kind: str,
+        current_identity: str,
+        source_reference: str,
+        source_checked_at: str,
+        config_sha256: str,
+    ) -> None:
+        """Mirror a verified current-contract boundary into the serving store."""
+
+        self.initialize()
+        with self.session() as connection:
+            connection.execute(
+                """
+                INSERT INTO fund_history_boundaries(
+                    fund_code, current_contract_start_date, boundary_kind,
+                    current_identity, source_reference, source_checked_at,
+                    config_sha256, activated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(fund_code) DO UPDATE SET
+                    current_contract_start_date = excluded.current_contract_start_date,
+                    boundary_kind = excluded.boundary_kind,
+                    current_identity = excluded.current_identity,
+                    source_reference = excluded.source_reference,
+                    source_checked_at = excluded.source_checked_at,
+                    config_sha256 = excluded.config_sha256,
+                    activated_at = excluded.activated_at
+                """,
+                (
+                    fund_code,
+                    current_contract_start_date,
+                    boundary_kind,
+                    current_identity,
+                    source_reference,
+                    source_checked_at,
+                    config_sha256,
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+
+    def history_backfill_completed(
+        self,
+        *,
+        fund_code: str,
+        provider_id: str,
+        current_contract_start_date: str,
+    ) -> bool:
+        self.initialize()
+        with self.session() as connection:
+            row = connection.execute(
+                """
+                SELECT 1
+                FROM fund_history_backfills
+                WHERE fund_code = ? AND provider_id = ?
+                  AND current_contract_start_date = ?
+                """,
+                (fund_code, provider_id, current_contract_start_date),
+            ).fetchone()
+        return row is not None
+
+    def mark_history_backfill_completed(
+        self,
+        *,
+        fund_code: str,
+        provider_id: str,
+        current_contract_start_date: str,
+        batch_id: str,
+    ) -> None:
+        self.initialize()
+        with self.session() as connection:
+            connection.execute(
+                """
+                INSERT INTO fund_history_backfills(
+                    fund_code, provider_id, current_contract_start_date,
+                    batch_id, completed_at
+                ) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(fund_code, provider_id, current_contract_start_date)
+                DO UPDATE SET batch_id = excluded.batch_id,
+                              completed_at = excluded.completed_at
+                """,
+                (
+                    fund_code,
+                    provider_id,
+                    current_contract_start_date,
+                    batch_id,
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
 
     def iter_distribution_batches(self) -> Iterator[sqlite3.Row]:
         self.initialize()

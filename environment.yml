@@ -1,0 +1,9 @@
+name: invest-agent
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - akshare==1.18.91
+      - requests==2.34.2

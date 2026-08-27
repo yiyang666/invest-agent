@@ -39,6 +39,11 @@ class QualityStatus(str, Enum):
     FAIL = "fail"
 
 
+class PositionStatus(str, Enum):
+    CONFIRMED = "confirmed"
+    PENDING_CONFIRMATION = "pending_confirmation"
+
+
 @dataclass(frozen=True)
 class QualityIssue:
     code: str
@@ -60,6 +65,7 @@ class PositionSnapshot:
     market_value: Decimal
     fund_name: str | None = None
     nav_date: date | None = None
+    status: PositionStatus = PositionStatus.CONFIRMED
 
     def validation_issues(self) -> tuple[QualityIssue, ...]:
         issues: list[QualityIssue] = []
@@ -84,6 +90,14 @@ class PositionSnapshot:
                 QualityIssue(
                     "negative_market_value",
                     f"Market value cannot be negative for {self.fund_code}",
+                    QualitySeverity.ERROR,
+                )
+            )
+        if self.status is PositionStatus.PENDING_CONFIRMATION and self.shares != 0:
+            issues.append(
+                QualityIssue(
+                    "pending_position_has_shares",
+                    f"Pending position must not claim confirmed shares for {self.fund_code}",
                     QualitySeverity.ERROR,
                 )
             )
@@ -197,6 +211,7 @@ class PortfolioSnapshot:
                     "market_value": str(position.market_value),
                     "weight": str(weights[position.fund_code]),
                     "nav_date": position.nav_date.isoformat() if position.nav_date else None,
+                    "status": position.status.value,
                 }
                 for position in self.positions
             ],

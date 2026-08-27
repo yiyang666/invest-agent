@@ -3,7 +3,7 @@
   "audit_id": "phase4_closure_audit_2026_08_16",
   "as_of": "2026-08-16T23:59:59+08:00",
   "required_artifacts": [
-    {"path": "config/investment_policy.yaml", "sha256": "5f23504d0a46aa9022c1311e46ad5354dc2fefa6f052f6b537edb602df74db48"},
+    {"path": "config/investment_policy.yaml", "sha256": "de30c7c541415fda68c34403c7f43edc404e816e2141cf88a807c6284a18cb70"},
     {"path": "strategies/registry.json", "sha256": "78a1108f923438676ed115d42afda3d6cc436bbfc40332a5e6ae88e4786c60fd"},
     {"path": "strategies/specs/dca_baseline_v1_4.json", "sha256": "efb0792dca76946d70de294ed1ed40b4c50f257de223594ab670d1a8056c4a21"},
     {"path": "config/backtest_research_scenario_v8.json", "sha256": "1faebdbbcd64df68d844ac211f30606579803ef6e68d3af72cfe60e46549bab3"},

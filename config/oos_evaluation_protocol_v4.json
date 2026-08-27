@@ -18,7 +18,7 @@
     "strategy_spec_file_sha256": "efb0792dca76946d70de294ed1ed40b4c50f257de223594ab670d1a8056c4a21",
     "scenario_path": "config/backtest_research_scenario_v8.json",
     "scenario_file_sha256": "1faebdbbcd64df68d844ac211f30606579803ef6e68d3af72cfe60e46549bab3",
-    "investment_policy_file_sha256": "5f23504d0a46aa9022c1311e46ad5354dc2fefa6f052f6b537edb602df74db48",
+    "investment_policy_file_sha256": "de30c7c541415fda68c34403c7f43edc404e816e2141cf88a807c6284a18cb70",
     "allocation_anchor": "allocation_anchor_631",
     "comparison_benchmark": "dca_baseline@1.4.0",
     "allocation": "20/20/10/10/30/10",

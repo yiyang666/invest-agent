@@ -1,0 +1,401 @@
+{
+  "$schema": "../../schemas/strategy_spec.schema.json",
+  "acceptance_tests": [
+    "candidate_and_matched_631_have_identical_monthly_cashflows",
+    "signals_use_only_data_visible_at_evaluation_time",
+    "same_inputs_produce_byte_equivalent_results",
+    "no_negative_cash_no_sell_no_leverage",
+    "policy_concentration_and_drawdown_vetoes_are_enforced"
+  ],
+  "backtest_scenarios": {
+    "implementation_status": "pending",
+    "required_comparators": {
+      "fixed_cashflow": "dca_baseline@1.5.0:monthly_3000",
+      "matched_cashflow": "dca_baseline@1.5.0:same_month_same_total_cashflow",
+      "require_identical_monthly_cashflows": true
+    }
+  },
+  "inputs": {
+    "allocation_anchor": "allocation_anchor_631",
+    "capital": {
+      "monthly_committed_cny": 3000,
+      "monthly_discretionary_max_cny": 2000,
+      "monthly_hard_cap_cny": 5000,
+      "uninvested_cash_action": "remain_cash"
+    },
+    "comparison_benchmark": "dca_baseline@1.5.0",
+    "data": {
+      "decision_cutoff": "previous_calendar_month_end_asia_shanghai",
+      "execution_nav_field": "unit_nav",
+      "forward_fill": false,
+      "missing_signal_action": "no_signal",
+      "provider_id": "local_validated_multi_source",
+      "remote_runtime_access": false,
+      "signal_nav_field": "accumulated_nav",
+      "visibility": "historical_visibility_assumed"
+    },
+    "discovery": {
+      "new_fund_routes": [
+        {
+          "fund_code": "016452",
+          "sleeve_id": "us_nasdaq_core"
+        },
+        {
+          "fund_code": "020712",
+          "sleeve_id": "japan_broad_core"
+        },
+        {
+          "fund_code": "100055",
+          "sleeve_id": "global_technology_satellite"
+        },
+        {
+          "fund_code": "007300",
+          "sleeve_id": "semiconductor_satellite"
+        },
+        {
+          "fund_code": "014880",
+          "sleeve_id": "robotics_satellite"
+        },
+        {
+          "fund_code": "017894",
+          "sleeve_id": "biotechnology_satellite"
+        },
+        {
+          "fund_code": "000216",
+          "sleeve_id": "gold_stabilizer"
+        },
+        {
+          "fund_code": "008114",
+          "sleeve_id": "dividend_stabilizer"
+        }
+      ],
+      "new_sleeves": [
+        "us_nasdaq_core",
+        "japan_broad_core",
+        "global_technology_satellite",
+        "semiconductor_satellite",
+        "robotics_satellite",
+        "biotechnology_satellite",
+        "gold_stabilizer",
+        "dividend_stabilizer"
+      ],
+      "novel_data_inputs": [
+        "csi300_pe_ttm_history",
+        "sp500_pe_ttm_history",
+        "nasdaq100_pe_ttm_history",
+        "ftse100_pe_ttm_history_or_country_proxy",
+        "nikkei225_pe_ttm_history",
+        "monthly_index_valuation_panel",
+        "daily_portfolio_return_panel"
+      ],
+      "report_path": "strategies/proposals/hierarchical_risk_budget_valuation_discovery_v0_2_0.toml",
+      "report_sha256": "5842c1e49278cbce0f61dd0ca2a8dd496e6ed09e3af81022a5e7127e41ca94c5",
+      "status": "research_ready"
+    },
+    "scope": "new_money_only"
+  },
+  "known_blockers": [
+    "prospective_out_of_sample_observation_incomplete",
+    "novel_signal_primitives_not_implemented",
+    "promotion_discovery_incomplete",
+    "counterfactual_execution_assumptions_require_sensitivity",
+    "strategy_compositor_and_backtest_scenario_not_implemented"
+  ],
+  "mode": "research_only",
+  "prohibitions": [
+    "use_future_or_same_day_unpublished_data",
+    "forward_fill_missing_nav",
+    "change_parameters_after_viewing_backtest_results",
+    "borrow_cash_or_use_leverage",
+    "sell_existing_holdings",
+    "submit_real_orders"
+  ],
+  "purpose": "在相同逐月现金流下，分层风险预算、动态卫星目标、估值归一化定投和有上限的回撤加仓，可能在不突破20%压力线的前提下改善回撤或资金使用效率；D4估值层必须同时战胜无估值消融对照，不能预设有效。",
+  "required_outputs": [
+    "annualized_return",
+    "xirr",
+    "annualized_volatility",
+    "maximum_drawdown_and_recovery",
+    "purchase_fees",
+    "cash_drag",
+    "rolling_windows",
+    "stress_results",
+    "data_rule_strategy_and_code_hashes"
+  ],
+  "research_evidence_level": "research_ready",
+  "rules": {
+    "acceptance": {
+      "all_metrics_net_of_investor_level_fees": true,
+      "automatic_winner_selection": false,
+      "dominance_maximum_drawdown_worsening_pp": 1.0,
+      "historical_drawdown_hard_limit_pct": 15.0,
+      "maximum_drawdown_worsening_pp": 2.0,
+      "minimum_return_delta_pp": 0.5,
+      "parameter_changes_create_new_version": true,
+      "primary_return_metric": "xirr_pct",
+      "risk_improvement_minimum_drawdown_improvement_pp": 2.0,
+      "risk_improvement_return_delta_floor_pp": -0.5,
+      "rolling_window_minimum_non_underperformance_ratio": 0.55,
+      "sensitivity_minimum_support_ratio": 0.6,
+      "stress_drawdown_hard_limit_pct": 20.0,
+      "tradeoff_maximum_drawdown_worsening_pp": 2.0,
+      "tradeoff_minimum_return_delta_pp": 1.0
+    },
+    "actions": [
+      {
+        "action_id": "monthly_core_base",
+        "action_type": "allocate_new_cash",
+        "amount_source": "committed_core_priority_tranche",
+        "cooldown_calendar_days": 30,
+        "maximum_amount_cny": 2000,
+        "priority": 1,
+        "target_sleeves": [
+          "domestic_broad_core",
+          "us_broad_core",
+          "us_nasdaq_core",
+          "uk_broad_core",
+          "japan_broad_core"
+        ],
+        "target_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.125,
+          0.125
+        ],
+        "when_signal": "always"
+      },
+      {
+        "action_id": "monthly_committed_gap_fill",
+        "action_type": "allocate_new_cash",
+        "amount_source": "committed_dynamic_target_gap_tranche",
+        "cooldown_calendar_days": 30,
+        "maximum_amount_cny": 1000,
+        "priority": 2,
+        "target_sleeves": [
+          "domestic_broad_core",
+          "us_broad_core",
+          "us_nasdaq_core",
+          "uk_broad_core",
+          "japan_broad_core",
+          "global_technology_satellite",
+          "semiconductor_satellite",
+          "robotics_satellite",
+          "biotechnology_satellite",
+          "defensive_bond",
+          "gold_stabilizer",
+          "dividend_stabilizer"
+        ],
+        "target_weights": [
+          0.1,
+          0.1,
+          0.1,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.2,
+          0.1,
+          0.1
+        ],
+        "when_signal": "monthly_target_gap"
+      },
+      {
+        "action_id": "monthly_discretionary_gap_fill",
+        "action_type": "allocate_new_cash",
+        "amount_source": "discretionary_target_gap_tranche",
+        "cooldown_calendar_days": 30,
+        "maximum_amount_cny": 1000,
+        "priority": 3,
+        "target_sleeves": [
+          "domestic_broad_core",
+          "us_broad_core",
+          "us_nasdaq_core",
+          "uk_broad_core",
+          "japan_broad_core",
+          "global_technology_satellite",
+          "semiconductor_satellite",
+          "robotics_satellite",
+          "biotechnology_satellite",
+          "defensive_bond",
+          "gold_stabilizer",
+          "dividend_stabilizer"
+        ],
+        "target_weights": [
+          0.1,
+          0.1,
+          0.1,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.2,
+          0.1,
+          0.1
+        ],
+        "when_signal": "monthly_target_gap"
+      },
+      {
+        "action_id": "core_drawdown_tactical",
+        "action_type": "allocate_new_cash",
+        "amount_source": "discretionary_core_drawdown_tranche",
+        "cooldown_calendar_days": 1,
+        "maximum_amount_cny": 1000,
+        "priority": 4,
+        "target_sleeves": [
+          "domestic_broad_core",
+          "us_broad_core",
+          "us_nasdaq_core",
+          "uk_broad_core",
+          "japan_broad_core"
+        ],
+        "target_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.125,
+          0.125
+        ],
+        "when_signal": "core_drawdown_5"
+      }
+    ],
+    "execution": {
+      "leverage_allowed": false,
+      "selling_allowed": false
+    },
+    "flexible": {
+      "allocation_method": "target_gap_1000_plus_core_drawdown_1000",
+      "base_amount_cny": 0,
+      "decision_calendar_day": 1,
+      "decision_frequency": "monthly",
+      "discretionary_max_cny": 2000,
+      "enabled": true,
+      "untriggered_action": "remain_cash"
+    },
+    "risk": {
+      "maximum_active_rebalances_per_month": 2,
+      "maximum_single_fund_weight_pct": 25,
+      "maximum_theme_weight_pct": 30,
+      "portfolio_drawdown_review_pct": 15,
+      "portfolio_drawdown_veto_pct": 20
+    },
+    "signals": [
+      {
+        "evaluation_lag_business_days": 1,
+        "lookback_observations": 120,
+        "on_missing": "no_signal",
+        "operator": ">=",
+        "primitive": "composite_risk_budget_coefficient",
+        "scope": "portfolio",
+        "signal_id": "monthly_risk_budget",
+        "threshold": 0.0
+      },
+      {
+        "evaluation_lag_business_days": 1,
+        "lookback_observations": 120,
+        "on_missing": "ineligible",
+        "operator": ">=",
+        "primitive": "sleeve_valuation_percentile",
+        "scope": "core_sleeves",
+        "signal_id": "core_valuation_score",
+        "threshold": 0.0
+      },
+      {
+        "evaluation_lag_business_days": 1,
+        "lookback_observations": 20,
+        "on_missing": "no_signal",
+        "operator": "<=",
+        "primitive": "sleeve_drawdown",
+        "scope": "core_sleeves",
+        "signal_id": "core_drawdown_5",
+        "threshold": -0.05
+      },
+      {
+        "evaluation_lag_business_days": 1,
+        "lookback_observations": 20,
+        "on_missing": "no_signal",
+        "operator": "<=",
+        "primitive": "sleeve_drawdown",
+        "scope": "core_sleeves",
+        "signal_id": "core_drawdown_10",
+        "threshold": -0.1
+      },
+      {
+        "evaluation_lag_business_days": 1,
+        "lookback_observations": 1,
+        "on_missing": "hold_cash",
+        "operator": ">",
+        "primitive": "target_gap",
+        "scope": "all_strategy_sleeves",
+        "signal_id": "monthly_target_gap",
+        "threshold": 0.0
+      },
+      {
+        "evaluation_lag_business_days": 1,
+        "lookback_observations": 200,
+        "on_missing": "ineligible",
+        "operator": ">",
+        "primitive": "moving_average",
+        "scope": "satellite_sleeves",
+        "signal_id": "satellite_long_trend",
+        "threshold": 0.0
+      },
+      {
+        "evaluation_lag_business_days": 1,
+        "lookback_observations": 126,
+        "on_missing": "ineligible",
+        "operator": ">",
+        "primitive": "absolute_trend",
+        "scope": "satellite_sleeves",
+        "signal_id": "satellite_six_month_momentum",
+        "threshold": 0.0
+      },
+      {
+        "evaluation_lag_business_days": 1,
+        "lookback_observations": 252,
+        "on_missing": "ineligible",
+        "operator": "<=",
+        "primitive": "sleeve_drawdown",
+        "scope": "satellite_sleeves",
+        "signal_id": "satellite_deep_drawdown_lock",
+        "threshold": -0.2
+      },
+      {
+        "evaluation_lag_business_days": 1,
+        "lookback_observations": 60,
+        "on_missing": "ineligible",
+        "operator": ">=",
+        "primitive": "two_month_recovery_confirmation",
+        "scope": "satellite_sleeves",
+        "signal_id": "satellite_recovery_confirmation",
+        "threshold": 2.0
+      },
+      {
+        "evaluation_lag_business_days": 1,
+        "lookback_observations": 252,
+        "on_missing": "ineligible",
+        "operator": ">=",
+        "primitive": "bounded_inverse_volatility_weights",
+        "scope": "satellite_sleeves",
+        "signal_id": "satellite_quarterly_risk_weights",
+        "threshold": 0.0
+      }
+    ],
+    "stable": {
+      "allocation_method": "core_priority_2000_plus_dynamic_target_gap_1000",
+      "base_amount_cny": 3000,
+      "enabled": true,
+      "schedule_calendar_days": [
+        5
+      ]
+    }
+  },
+  "schema_version": 1,
+  "status": "specified",
+  "strategy_id": "hierarchical_risk_budget_valuation",
+  "strategy_version": "0.2.0"
+}

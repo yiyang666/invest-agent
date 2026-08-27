@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "registry_id": "fund_history_boundaries_v1",
+  "policy": {
+    "full_history_requires_verified_current_contract_start": true,
+    "preserve_pre_boundary_observations_for_audit": true,
+    "exclude_pre_boundary_observations_from_current_identity_metrics": true,
+    "missing_boundary_action": "bounded_recent_only"
+  },
+  "funds": [
+    {
+      "fund_code": "000216",
+      "current_identity": "华安易富黄金交易型开放式证券投资基金联接基金A",
+      "current_contract_start_date": "2013-08-22",
+      "boundary_kind": "initial_fund_contract_effective_date",
+      "previous_identity": null,
+      "source_reference": "https://wap.huaan.com.cn/news/2013-08-22/175478_1.shtml",
+      "source_checked_at": "2026-08-26T00:00:00+08:00"
+    },
+    {
+      "fund_code": "007300",
+      "current_identity": "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金联接基金A",
+      "current_contract_start_date": "2019-06-26",
+      "boundary_kind": "initial_fund_contract_effective_date",
+      "previous_identity": null,
+      "source_reference": "https://static.cninfo.com.cn/finalpage/2025-05-16/1223562245.PDF",
+      "source_checked_at": "2026-08-26T00:00:00+08:00"
+    },
+    {
+      "fund_code": "008114",
+      "current_identity": "天弘中证红利低波动100交易型开放式指数证券投资基金联接基金A",
+      "current_contract_start_date": "2023-12-12",
+      "boundary_kind": "fund_strategy_transformation_effective_date",
+      "previous_identity": "天弘中证红利低波动100指数型发起式证券投资基金A",
+      "source_reference": "https://cdn-thweb.tianhongjijin.com.cn/fundnotice/20231211%E5%85%B3%E4%BA%8E%E5%A4%A9%E5%BC%98%E4%B8%AD%E8%AF%81%E7%BA%A2%E5%88%A9%E4%BD%8E%E6%B3%A2%E5%8A%A8100%E6%8C%87%E6%95%B0%E5%9E%8B%E5%8F%91%E8%B5%B7%E5%BC%8F%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%91%E5%8F%98%E6%9B%B4%E4%B8%BA%E5%A4%A9%E5%BC%98%E4%B8%AD%E8%AF%81%E7%BA%A2%E5%88%A9%E4%BD%8E%E6%B3%A2%E5%8A%A8100%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%91%E8%81%94%E6%8E%A5%E5%9F%BA%E9%87%91%E5%B9%B6%E7%9B%B8%E5%BA%94%E4%BF%AE%E8%AE%A2%E5%9F%BA%E9%87%91%E5%90%88%E5%90%8C%E7%9A%84%E5%85%AC%E5%91%8A.pdf",
+      "source_checked_at": "2026-08-26T00:00:00+08:00"
+    },
+    {
+      "fund_code": "014880",
+      "current_identity": "天弘中证机器人交易型开放式指数证券投资基金发起式联接基金A",
+      "current_contract_start_date": "2023-07-11",
+      "boundary_kind": "initial_fund_contract_effective_date",
+      "previous_identity": null,
+      "source_reference": "https://cdn-thweb.tianhongjijin.com.cn/fundnotice/4a5c7e6c6d2e9d439b1162e229440c5b.pdf",
+      "source_checked_at": "2026-08-26T00:00:00+08:00"
+    },
+    {
+      "fund_code": "016452",
+      "current_identity": "南方纳斯达克100指数发起式证券投资基金(QDII)A",
+      "current_contract_start_date": "2022-11-29",
+      "boundary_kind": "initial_fund_contract_effective_date",
+      "previous_identity": null,
+      "source_reference": "https://www.southernfund.com/main/files/2025/08/29/742014822783.pdf",
+      "source_checked_at": "2026-08-26T00:00:00+08:00"
+    },
+    {
+      "fund_code": "017894",
+      "current_identity": "汇添富纳斯达克生物科技交易型开放式指数证券投资基金发起式联接基金(QDII)人民币A",
+      "current_contract_start_date": "2023-03-14",
+      "boundary_kind": "initial_fund_contract_effective_date",
+      "previous_identity": null,
+      "source_reference": "https://www.99fund.com/upload/20250828/202508281756374652036.pdf",
+      "source_checked_at": "2026-08-26T00:00:00+08:00"
+    },
+    {
+      "fund_code": "020712",
+      "current_identity": "华安三菱日联日经225交易型开放式指数证券投资基金发起式联接基金(QDII)A",
+      "current_contract_start_date": "2024-02-07",
+      "boundary_kind": "initial_fund_contract_effective_date",
+      "previous_identity": null,
+      "source_reference": "https://www.huaan.com.cn/upload2010/2025/08/29/164010704_f6378f16-9c8f-3030-87ce-00ad571ac71e.pdf",
+      "source_checked_at": "2026-08-26T00:00:00+08:00"
+    },
+    {
+      "fund_code": "539003",
+      "current_identity": "建信富时100指数型证券投资基金(QDII)A人民币",
+      "current_contract_start_date": "2020-01-10",
+      "boundary_kind": "fund_transformation_contract_effective_date",
+      "previous_identity": "建信全球资源混合型证券投资基金",
+      "source_reference": "https://statics.citics.com/product/file/contract/539003.pdf",
+      "source_checked_at": "2026-08-25T00:00:00+08:00"
+    },
+    {
+      "fund_code": "100055",
+      "current_identity": "富国全球科技互联网股票型证券投资基金(QDII)A人民币",
+      "current_contract_start_date": "2018-06-20",
+      "boundary_kind": "fund_transformation_contract_effective_date",
+      "previous_identity": "富国全球顶级消费品混合型证券投资基金",
+      "source_reference": "https://www.fullgoal.com.cn/pdfjs/web/viewer.html?file=%2Fwbs-file%2Ffund_report%2F20260601%2FCN_50100000_100055_FA010080_20260015_100055_20260601_090000_01.pdf",
+      "source_checked_at": "2026-08-26T00:00:00+08:00"
+    }
+  ]
+}

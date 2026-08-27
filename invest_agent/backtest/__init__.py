@@ -21,6 +21,7 @@ from .sensitivity import (
 )
 from .rolling import build_rolling_scenarios, load_rolling_spec, run_rolling_windows
 from .candidate_compare import load_comparison_spec, run_candidate_comparison
+from .pair_compare import build_benchmark_scenarios, run_pair_cashflow_comparison
 
 __all__ = [
     "CashContribution",
@@ -44,4 +45,6 @@ __all__ = [
     "run_rolling_windows",
     "load_comparison_spec",
     "run_candidate_comparison",
+    "build_benchmark_scenarios",
+    "run_pair_cashflow_comparison",
 ]

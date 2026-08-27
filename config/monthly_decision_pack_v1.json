@@ -1,32 +1,34 @@
 {
   "schema_version": 1,
-  "pack_id": "monthly_research_decision_2026_08_bootstrap",
-  "pack_kind": "bootstrap_mid_cycle_research",
-  "as_of": "2026-08-16T23:59:59+08:00",
+  "pack_id": "monthly_research_decision_2026_08_v1_5_current_snapshot",
+  "pack_kind": "current_snapshot_mid_cycle_research",
+  "as_of": "2026-08-25T23:59:59+08:00",
   "signal_review_date": "2026-08-01",
   "signal_valid_until": "2026-08-31T23:59:59+08:00",
-  "market_data_as_of": "2026-08-15",
+  "market_data_as_of": "2026-08-21",
   "provider_id": "akshare_eastmoney",
   "nav_field": "accumulated_nav",
   "database_path": "data/private/invest_agent.sqlite3",
-  "snapshot_path": "data/private/portfolio_snapshots/thsfund-20260815T153750+0800.json",
+  "snapshot_path": "data/private/portfolio_snapshots/thsfund-20260825T082452+0800.json",
   "registry_path": "strategies/registry.json",
   "monthly_contribution_preview_cny": "3000",
   "quality_limits": {
-    "maximum_snapshot_age_calendar_days": 3,
-    "maximum_market_data_age_calendar_days": 3
+    "maximum_snapshot_age_calendar_days": 1,
+    "maximum_market_data_age_calendar_days": 4
   },
   "target_routes": {
     "domestic_broad_core": "110020",
-    "us_broad_core": "050025",
-    "us_growth": "539001",
+    "us_broad_core": "017641",
+    "uk_broad_core": "539003",
+    "us_growth": "000043",
     "domestic_growth": "019861",
     "defensive": "006932",
     "sh_hk_sz_passive_technology_satellite": "160646"
   },
   "target_weights": {
     "domestic_broad_core": "0.20",
-    "us_broad_core": "0.20",
+    "us_broad_core": "0.10",
+    "uk_broad_core": "0.10",
     "us_growth": "0.10",
     "domestic_growth": "0.10",
     "defensive": "0.30",
@@ -35,6 +37,8 @@
   "current_position_role_mapping": {
     "000043": "us_growth",
     "016452": "us_growth",
+    "539001": "us_growth",
+    "019861": "domestic_growth",
     "026211": "domestic_growth",
     "014408": "legacy_active_other",
     "019087": "legacy_theme_other"

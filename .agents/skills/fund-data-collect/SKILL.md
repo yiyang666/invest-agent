@@ -112,7 +112,6 @@ After changes, run:
 
 ```bash
 python3 -m unittest discover -s tests -v
-python3 /Users/ethan/.codex/skills/.system/skill-creator/scripts/quick_validate.py .agents/skills/fund-data-collect
 ```
 
 Do not publish a real collected batch merely to make a test pass. Use temporary directories and synthetic fixtures for tests.

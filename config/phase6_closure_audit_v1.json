@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "audit_id": "phase6_closure_audit_v1",
+  "status": "closed",
+  "closed_at": "2026-08-25",
+  "scope": "human_approval_and_mock_execution",
+  "checks": {
+    "exact_immutable_intent": true,
+    "fifteen_minute_one_time_approval": true,
+    "decision_to_draft_fail_closed": true,
+    "route_fee_and_daily_cap_revalidated": true,
+    "approval_restart_safe": true,
+    "approval_concurrent_consume_atomic": true,
+    "execution_state_restart_safe": true,
+    "approval_and_submitting_state_atomic": true,
+    "incomplete_restart_becomes_unknown": true,
+    "unknown_requires_reconciliation": true,
+    "interactive_exact_digest_confirmation": true,
+    "sensitive_plaintext_excluded_from_journal": true,
+    "network_used": false,
+    "external_side_effects": false,
+    "real_trading_enabled": false
+  },
+  "fault_injections": [
+    "crash_after_approval_consume_before_transaction_commit",
+    "crash_after_submitting_state_commit",
+    "process_restart",
+    "concurrent_approval_consume",
+    "concurrent_submission_begin",
+    "unknown_state_retry",
+    "intent_field_tampering",
+    "expired_approval"
+  ],
+  "evidence": {
+    "tests": [
+      "tests/test_phase6_mock_approval.py",
+      "tests/test_phase6_mock_drafts.py",
+      "tests/test_phase6_persistent_mock_execution.py",
+      "tests/test_phase6_mock_cli.py"
+    ],
+    "adr": [
+      "docs/decisions/ADR-0019-phase6-mock-approval-gate.md",
+      "docs/decisions/ADR-0020-phase6-draft-and-persistent-approval.md",
+      "docs/decisions/ADR-0021-phase6-closure.md"
+    ]
+  },
+  "production_state": "blocked_pending_phase7_controlled_live_gate"
+}

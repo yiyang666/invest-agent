@@ -1,0 +1,4 @@
+interface:
+  display_name: "自定义基金策略实验室"
+  short_description: "低轮次制定策略，处理新基金、新袖套并与631公平回测"
+  default_prompt: "使用 $design-fund-strategy 将我的组合策略想法固化，必要时完成新基金和新袖套发现，再与631 v1.5公平回测。"

@@ -1,0 +1,46 @@
+{
+  "extends": "backtest_hierarchical_a1_v1.json",
+  "overrides": {
+    "scenario_id": "hierarchical_risk_budget_valuation_424_dca_baseline_v1",
+    "research_stage": "C1_424_dca_baseline_631_execution_semantics",
+    "purpose": "使用与A1完全相同的12袖套、代表基金和40/20/40战略权重，只复用631 v1.5的目标缺口、跨月限额队列及5/15/25日无限额基金分批语义；不启用卫星红绿灯、风险预算、估值、回撤加仓或赎回。",
+    "allocation_engine": {
+      "mode": "target_gap"
+    },
+    "allocation_profiles": [
+      {
+        "id": "C1_424_dca_baseline_target_gap",
+        "weights": {
+          "domestic_broad_core": "0.10",
+          "us_broad_core": "0.10",
+          "us_nasdaq_core": "0.10",
+          "uk_broad_core": "0.05",
+          "japan_broad_core": "0.05",
+          "global_technology_satellite": "0.05",
+          "semiconductor_satellite": "0.05",
+          "robotics_satellite": "0.05",
+          "biotechnology_satellite": "0.05",
+          "defensive_bond": "0.20",
+          "gold_stabilizer": "0.10",
+          "dividend_stabilizer": "0.10"
+        }
+      }
+    ],
+    "subscription_assumption": {
+      "carry_unfilled_across_month_end": true,
+      "reserved_cash_counts_toward_target_sleeve": true,
+      "unfilled_target_gap_revalidated_next_month": false,
+      "unlimited_fund_tranche_calendar_days": [5, 15, 25]
+    },
+    "deferred_variants": [
+      "A1_monthly_revalidated_target_gap",
+      "A2_satellite_traffic_light",
+      "A3_satellite_inverse_volatility_and_recovery_lock",
+      "D4_0_volatility",
+      "D4_2_dual_valuation",
+      "D4_5_five_index_valuation",
+      "core_drawdown_tactical",
+      "v0_3_redemption"
+    ]
+  }
+}

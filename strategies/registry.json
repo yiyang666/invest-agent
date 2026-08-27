@@ -1,8 +1,8 @@
 {
   "$schema": "../schemas/strategy_registry.schema.json",
   "schema_version": 3,
-  "registry_id": "phase4_strategy_registry_s4_4",
-  "as_of": "2026-08-16T23:59:59+08:00",
+  "registry_id": "strategy_registry_baseline_v1_5_2026_08_25",
+  "as_of": "2026-08-25T23:59:59+08:00",
   "mode": "research_only",
   "terminology": {
     "allocation_anchor_631": {
@@ -10,7 +10,7 @@
       "kind": "long_term_policy_anchor",
       "mandatory_execution_schedule": false
     },
-    "dca_baseline@1.4.0": {
+    "dca_baseline@1.5.0": {
       "definition": "allocation_anchor_631_plus_monthly_budget_target_gap_and_fund_routing_rules",
       "kind": "comparison_benchmark_strategy"
     },
@@ -47,26 +47,26 @@
   "strategies": [
     {
       "strategy_id": "dca_baseline",
-      "strategy_version": "1.4.0",
+      "strategy_version": "1.5.0",
       "role": "benchmark_and_personal_target",
       "lifecycle_status": "implemented",
       "mode": "research_only",
       "spec": {
-        "path": "strategies/specs/dca_baseline_v1_4.json",
-        "sha256": "efb0792dca76946d70de294ed1ed40b4c50f257de223594ab670d1a8056c4a21"
+        "path": "strategies/specs/dca_baseline_v1_5.json",
+        "sha256": "91b24b4587f1a101e4f095b66041cba9f81d717593465f9fa86fb8875df94960"
       },
       "evidence": {
-        "status": "baseline_retained_pending_gates",
+        "status": "baseline_promoted_pending_oos_and_product_rule_gates",
         "disposition": "use_as_shared_research_benchmark_and_personal_target",
-        "primary_report_path": "docs/backtest/phase-4-risk-repair-candidates-c4-5.md",
-        "primary_report_sha256": "0b81c12a8ef08bd43895efa1e179c7c11b699de385afc5a41beb77701e853d9e",
+        "primary_report_path": "docs/decisions/ADR-0018-promote-executable-631-v1-5.md",
+        "primary_report_sha256": "50aeff257c54063f9f5e8f83de487d45e9e1f81675e40b95b98023950e0147c8",
         "historical_visibility": "historical_visibility_assumed",
-        "prospective_oos": "frozen_waiting_for_future_observations"
+        "prospective_oos": "clock_reset_required_for_v1_5"
       },
       "gates": {
         "data_quality": "research_pass_strict_point_in_time_blocked",
-        "backtest": "research_complete_production_blocked",
-        "risk": "approximately_20pct_tolerance_review_boundary",
+        "backtest": "historical_route_pool_research_complete_production_blocked",
+        "risk": "slow_bear_20p80pct_requires_review_near_tolerance_boundary",
         "production_approved": false,
         "execution_enabled": false
       },

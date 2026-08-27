@@ -5,7 +5,10 @@
 - Bundle 版本：`thsfund 0.2.0`
 - SDK：`aijijin-sdk 0.2.0`
 - Bundle SHA-256：`bc80a9064e5145a6449ff491474ca14fe7822c7d078820956d11c5e55371ece8`
-- 状态：已静态审查；Skill 与 SDK 已项目级安装；设备注册与最终授权已完成；只读模式；实盘交易关闭
+- 项目内wheel SHA-256：`14089db9d9cd5e9c75e5a3ecaa01cc3f7bd194485974e68bf127116ffa240ccf`
+- 状态：已静态审查；Skill 与 SDK 已项目级安装；逐笔受控申购试运行完成；赎回/撤单及自动交易关闭
+
+项目副本仅移除了上游Skill头部不受Codex schema支持的`version`字段；业务流程未改，版本继续由审查记录、wheel文件名和哈希锁定。
 
 ## 1. 能力范围
 
@@ -45,6 +48,8 @@ SDK 通过 `aijijin` CLI 调用 `trade.5ifund.com` 和 `fund.10jqka.com.cn` 的�
 
 本项目必须在 `aijijin fund buy` 前增加自己的最终确认门：展示基金、金额、支付账户、费用、协议状态和预计确认信息，并验证一次性批准。
 
+基金候选的渠道核验不得以调用 `fund buy` 试单。申购费优先通过只读的 `fund fee-rule` 查询；只有核验可购状态、最低金额或限额确有需要时，才调用只读的 `fund subscribe-init`，并且只提取非敏感规则字段，不保存账户、支付方式或原始响应。动态规则必须记录渠道与核验时点，查询结果仍不能解除 `advisory_only`。
+
 ### 4.2 自动升级路径不适用于 Codex
 
 上游 Skill 的自动升级说明硬编码解压到 `~/.claude/skills/`，不适合 Codex，并会覆盖现有文件。因此禁用任何自动升级；升级由本项目固定版本、校验并人工执行。
@@ -70,6 +75,8 @@ SDK 支持 `AIJIJIN_GATEWAY_URL` 和 `AIJIJIN_API_BASE_URL`。生产运行前必
 5. 申购、赎回、撤单由项目自己的 Execution Gateway 包装并默认关闭。
 6. 自动更新关闭；任何升级重新静态审查。
 
+动态产品交易规则优先通过CLI只读预检获取，公开网页仅用于交叉核验。赎回预览原始响应包含交易账户信息，不得持久化；项目只保留脱敏归一化规则。
+
 ## 6. 安装前置门禁
 
 - [x] 用户同意项目级安装 Skill
@@ -92,3 +99,11 @@ SDK 支持 `AIJIJIN_GATEWAY_URL` 和 `AIJIJIN_API_BASE_URL`。生产运行前必
 - 已读取钱包余额、基金持仓及总资产汇总；原始结果未写入仓库，后续仅通过脱敏 PortfolioSnapshot 输出。
 - 上游说明中的 `aijijin --version` 在 0.2.0 不受支持，因此以包元数据和 Python 导入双重核对版本。
 - macOS 系统 Python 3.9 使用旧版 LibreSSL，不作为本项目运行时。
+
+## 8. 代表基金研究快照（2026-08-26）
+
+为 `hierarchical_risk_budget_valuation@0.2.0` 的探索门，项目对8只代表基金运行了只读 `fund fee-rule`，并在确有必要时运行只读 `fund subscribe-init`。未调用 `fund buy`、`fund redeem`、撤单或订单提交接口。
+
+归一化结果保存于 `config/aijijin_research_route_snapshot_v1.json`，只包含基金身份、可购状态、最低/最高申购额、当日剩余额度、风险等级、费率阶梯、渠道折扣及平台展示的确认/到账工作日。原始受保护响应未持久化，账户、客户、支付方式和凭证字段均未进入仓库。
+
+该快照只证明2026-08-26当前渠道状态。用于历史回测时必须标记 `counterfactual_execution`，并用法定首档费率重复费用敏感性；它不解除 `advisory_only`，也不代表历史每天适用同一限额或到账规则。

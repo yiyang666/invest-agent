@@ -116,6 +116,42 @@ class DcaStrategyTests(unittest.TestCase):
             ],
         )
 
+    def test_share_classes_cannot_double_a_shared_daily_cap(self) -> None:
+        plan = self._plan("20")
+        shared_fields = {
+            "shared_daily_cap_group": "same-master-fund",
+            "shared_daily_cap_cny": Decimal("10"),
+        }
+        result = generate_simulated_subscriptions(
+            plan,
+            routes=(
+                InstrumentRoute(
+                    "core",
+                    "000001",
+                    1,
+                    Decimal("10"),
+                    Decimal("10"),
+                    (date(2026, 5, 5),),
+                    "a-share",
+                    **shared_fields,
+                ),
+                InstrumentRoute(
+                    "core",
+                    "000002",
+                    2,
+                    Decimal("10"),
+                    Decimal("10"),
+                    (date(2026, 5, 5),),
+                    "c-share",
+                    **shared_fields,
+                ),
+            ),
+        )
+
+        self.assertEqual(len(result.subscriptions), 1)
+        self.assertEqual(result.subscriptions[0].gross_amount_cny, Decimal("10.00"))
+        self.assertEqual(result.contribution_cash_remaining_cny, Decimal("10.00"))
+
     def test_carries_limited_route_across_month_end_with_reserved_capacity(self) -> None:
         plan = self._plan()
         result = generate_simulated_subscriptions(

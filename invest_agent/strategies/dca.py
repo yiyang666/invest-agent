@@ -63,6 +63,8 @@ class MonthlyAllocationPlan:
     monthly_contribution_cny: Decimal
     allocations: tuple[SleeveAllocation, ...]
     unallocated_cash_cny: Decimal
+    prior_available_cash_cny: Decimal = Decimal("0")
+    nondeployable_cash_cny: Decimal = Decimal("0")
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -76,6 +78,10 @@ class MonthlyAllocationPlan:
             "monthly_contribution_cny": _money_text(self.monthly_contribution_cny),
             "allocations": [item.to_dict() for item in self.allocations],
             "unallocated_cash_cny": _money_text(self.unallocated_cash_cny),
+            "prior_available_cash_cny": _money_text(
+                self.prior_available_cash_cny
+            ),
+            "nondeployable_cash_cny": _money_text(self.nondeployable_cash_cny),
             "mode": "simulation_only",
         }
 
@@ -92,6 +98,8 @@ class InstrumentRoute:
     reserved_by_date_cny: Mapping[date, Decimal] = field(default_factory=dict)
     allocation_mode: str = "as_soon_as_possible"
     planned_tranche_count: int = 1
+    shared_daily_cap_group: str | None = None
+    shared_daily_cap_cny: Decimal | None = None
 
 
 @dataclass(frozen=True)
@@ -244,6 +252,8 @@ def generate_simulated_subscriptions(
     """Route allocations through explicit dates/caps and emit simulation-only events."""
     seen_funds: set[str] = set()
     priorities: set[tuple[str, int]] = set()
+    shared_caps: dict[str, Decimal] = {}
+    shared_reserved_by_date: dict[tuple[str, date], Decimal] = {}
     for route in routes:
         if route.fund_code in seen_funds:
             raise ValueError("a fund code can appear in only one route")
@@ -257,6 +267,22 @@ def generate_simulated_subscriptions(
             raise ValueError("minimum order must be positive")
         if route.daily_cap_cny is not None and route.daily_cap_cny <= 0:
             raise ValueError("daily cap must be positive when supplied")
+        if bool(route.shared_daily_cap_group) != (
+            route.shared_daily_cap_cny is not None
+        ):
+            raise ValueError(
+                "shared daily cap group and amount must be declared together"
+            )
+        if (
+            route.shared_daily_cap_cny is not None
+            and route.shared_daily_cap_cny <= 0
+        ):
+            raise ValueError("shared daily cap must be positive when supplied")
+        if route.shared_daily_cap_group is not None:
+            group_cap = _money(route.shared_daily_cap_cny)
+            prior_cap = shared_caps.setdefault(route.shared_daily_cap_group, group_cap)
+            if prior_cap != group_cap:
+                raise ValueError("shared daily cap group must use one consistent cap")
         if not route.rule_version:
             raise ValueError("every route requires a rule version")
         if route.allocation_mode not in {"as_soon_as_possible", "equal_tranches"}:
@@ -272,6 +298,18 @@ def generate_simulated_subscriptions(
                 raise ValueError(
                     f"reserved daily capacity exceeds cap for {route.fund_code} on {reserved_date}"
                 )
+            if route.shared_daily_cap_group is not None:
+                shared_key = (route.shared_daily_cap_group, reserved_date)
+                shared_reserved_by_date[shared_key] = (
+                    shared_reserved_by_date.get(shared_key, Decimal("0"))
+                    + _money(reserved_amount)
+                )
+                if shared_reserved_by_date[shared_key] > _money(
+                    route.shared_daily_cap_cny
+                ):
+                    raise ValueError(
+                        "reserved daily capacity exceeds the shared daily cap"
+                    )
 
     month_end = date(
         plan.planned_date.year,
@@ -288,6 +326,7 @@ def generate_simulated_subscriptions(
     unfilled: dict[str, Decimal] = {}
     issues: list[str] = []
     sequence = 0
+    shared_capacity_used: dict[tuple[str, date], Decimal] = {}
     for allocation in plan.allocations:
         remaining = allocation.allocated_cny
         sleeve_routes = sorted(
@@ -296,6 +335,81 @@ def generate_simulated_subscriptions(
         )
         if remaining > 0 and not sleeve_routes:
             issues.append(f"missing_route:{allocation.sleeve}")
+        if sleeve_routes and all(
+            route.allocation_mode == "as_soon_as_possible"
+            for route in sleeve_routes
+        ):
+            dated_capacity = sorted(
+                (
+                    submit_date.year,
+                    submit_date.month,
+                    route.priority,
+                    submit_date,
+                    route.fund_code,
+                    route,
+                )
+                for route in sleeve_routes
+                for submit_date in set(route.eligible_dates)
+                if plan.planned_date <= submit_date <= routing_end
+            )
+            for _year, _month, _priority, submit_date, _fund_code, route in dated_capacity:
+                minimum = _money(route.minimum_order_cny)
+                if remaining < minimum:
+                    break
+                cap = (
+                    None
+                    if route.daily_cap_cny is None
+                    else _money(route.daily_cap_cny)
+                )
+                if cap is None:
+                    available_capacity = remaining
+                else:
+                    reserved = _money(
+                        Decimal(
+                            route.reserved_by_date_cny.get(
+                                submit_date, Decimal("0")
+                            )
+                        )
+                    )
+                    available_capacity = max(Decimal("0"), cap - reserved)
+                shared_key = None
+                if route.shared_daily_cap_group is not None:
+                    shared_key = (route.shared_daily_cap_group, submit_date)
+                    shared_remaining = max(
+                        Decimal("0"),
+                        _money(route.shared_daily_cap_cny)
+                        - shared_reserved_by_date.get(shared_key, Decimal("0"))
+                        - shared_capacity_used.get(shared_key, Decimal("0")),
+                    )
+                    available_capacity = min(available_capacity, shared_remaining)
+                amount = _floor_money(min(remaining, available_capacity))
+                if amount < minimum:
+                    continue
+                sequence += 1
+                subscriptions.append(
+                    SimulatedSubscription(
+                        simulation_id=_simulation_id(
+                            plan, route, submit_date, amount, sequence
+                        ),
+                        sleeve=allocation.sleeve,
+                        fund_code=route.fund_code,
+                        planned_date=plan.planned_date,
+                        simulated_submit_date=submit_date,
+                        gross_amount_cny=amount,
+                        rule_version=route.rule_version,
+                    )
+                )
+                remaining -= amount
+                if shared_key is not None:
+                    shared_capacity_used[shared_key] = (
+                        shared_capacity_used.get(shared_key, Decimal("0")) + amount
+                    )
+                if remaining == 0:
+                    break
+            unfilled[allocation.sleeve] = remaining
+            if remaining > 0:
+                issues.append(f"{unfilled_issue_prefix}:{allocation.sleeve}")
+            continue
         for route in sleeve_routes:
             minimum = _money(route.minimum_order_cny)
             cap = None if route.daily_cap_cny is None else _money(route.daily_cap_cny)
@@ -354,6 +468,16 @@ def generate_simulated_subscriptions(
                         Decimal(route.reserved_by_date_cny.get(submit_date, Decimal("0")))
                     )
                     available_capacity = max(Decimal("0"), cap - reserved)
+                shared_key = None
+                if route.shared_daily_cap_group is not None:
+                    shared_key = (route.shared_daily_cap_group, submit_date)
+                    shared_remaining = max(
+                        Decimal("0"),
+                        _money(route.shared_daily_cap_cny)
+                        - shared_reserved_by_date.get(shared_key, Decimal("0"))
+                        - shared_capacity_used.get(shared_key, Decimal("0")),
+                    )
+                    available_capacity = min(available_capacity, shared_remaining)
                 amount = min(remaining, available_capacity)
                 amount = _floor_money(amount)
                 if amount < minimum:
@@ -373,6 +497,10 @@ def generate_simulated_subscriptions(
                     )
                 )
                 remaining -= amount
+                if shared_key is not None:
+                    shared_capacity_used[shared_key] = (
+                        shared_capacity_used.get(shared_key, Decimal("0")) + amount
+                    )
                 if remaining == 0:
                     break
             if remaining == 0:

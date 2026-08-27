@@ -82,7 +82,12 @@ def validate_strategy_registry(
     if not isinstance(terminology, Mapping):
         raise ValueError("strategy registry terminology must be an object")
     anchor = terminology.get("allocation_anchor_631")
-    benchmark = terminology.get("dca_baseline@1.4.0")
+    benchmark_entries = [
+        (key, value)
+        for key, value in terminology.items()
+        if isinstance(key, str) and key.startswith("dca_baseline@")
+    ]
+    benchmark = benchmark_entries[0][1] if len(benchmark_entries) == 1 else None
     overlay = terminology.get("tactical_overlay")
     if not all(isinstance(item, Mapping) for item in (anchor, benchmark, overlay)):
         raise ValueError("strategy registry terminology entries are incomplete")
@@ -175,6 +180,16 @@ def validate_strategy_registry(
 
     if target_authorities != 1:
         raise ValueError("registry must contain exactly one target-allocation authority")
+    authority = next(
+        item
+        for item in entries
+        if item["decision_permissions"]["target_allocation_authority"] is True
+    )
+    expected_benchmark_key = (
+        f"{authority['strategy_id']}@{authority['strategy_version']}"
+    )
+    if benchmark_entries[0][0] != expected_benchmark_key:
+        raise ValueError("terminology benchmark must match target-allocation authority")
     return index
 
 
