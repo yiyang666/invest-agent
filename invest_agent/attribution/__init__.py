@@ -7,6 +7,8 @@ from .engine import (
     sequential_ablation_waterfall,
 )
 from .lifecycle import evaluate_strategy_lifecycle, load_attribution_policy
+from .research_audit import attribute_buy_only_sleeve_pnl
+from .signal_events import analyze_traffic_light_forward_returns
 
 __all__ = [
     "attribute_sleeves_brinson",
@@ -15,4 +17,6 @@ __all__ = [
     "sequential_ablation_waterfall",
     "evaluate_strategy_lifecycle",
     "load_attribution_policy",
+    "attribute_buy_only_sleeve_pnl",
+    "analyze_traffic_light_forward_returns",
 ]

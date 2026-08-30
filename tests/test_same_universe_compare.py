@@ -1,4 +1,5 @@
 from copy import deepcopy
+from decimal import Decimal
 import json
 from pathlib import Path
 import unittest
@@ -16,6 +17,22 @@ PROTOCOL_PATH = ROOT / "config/backtest_hierarchical_comparison_protocol_v1.json
 PROTOCOL_V2_PATH = ROOT / "config/backtest_hierarchical_comparison_protocol_v2.json"
 RELEASE_SENSITIVITY_PATH = ROOT / "config/backtest_hierarchical_a2_bond_gold_sensitivity_v1.json"
 RELEASE_PROTOCOL_PATH = ROOT / "config/backtest_hierarchical_release_destination_protocol_v1.json"
+D1_PROTOCOL_PATH = ROOT / "config/backtest_hierarchical_d1_single_theme_protocol_v1.json"
+D1_SCENARIO_PATHS = (
+    ROOT / "config/backtest_hierarchical_d1_global_tech_v1.json",
+    ROOT / "config/backtest_hierarchical_d1_semiconductor_v1.json",
+    ROOT / "config/backtest_hierarchical_d1_robotics_v1.json",
+    ROOT / "config/backtest_hierarchical_d1_biotechnology_v1.json",
+)
+D3_PROTOCOL_PATH = ROOT / "config/backtest_hierarchical_d3_factor_ablation_protocol_v1.json"
+D3_SCENARIO_PATHS = (
+    ROOT / "config/backtest_hierarchical_d3_long_average_only_v1.json",
+    ROOT / "config/backtest_hierarchical_d3_momentum_only_v1.json",
+)
+D4_PROTOCOL_PATH = ROOT / "config/backtest_hierarchical_d4_satellite_floor_protocol_v1.json"
+D4_SCENARIO_PATH = ROOT / "config/backtest_hierarchical_d4_satellite_floor_v1.json"
+A3A_PROTOCOL_PATH = ROOT / "config/backtest_hierarchical_a3a_satellite_inverse_volatility_protocol_v1.json"
+A3A_SCENARIO_PATH = ROOT / "config/backtest_hierarchical_a3a_satellite_inverse_volatility_v1.json"
 
 
 class SameUniverseComparisonTests(unittest.TestCase):
@@ -220,6 +237,114 @@ class SameUniverseComparisonTests(unittest.TestCase):
         )
         self.assertEqual(
             protocol["allowed_candidate_scenario_ids"], [bond_gold["scenario_id"]]
+        )
+
+    def test_d1_single_theme_protocol_freezes_one_controlled_sleeve_per_scenario(self) -> None:
+        protocol = json.loads(D1_PROTOCOL_PATH.read_text(encoding="utf-8"))
+        base = load_research_scenario(RELEASE_SENSITIVITY_PATH)
+        observed_ids = []
+        observed_sleeves = []
+        for path in D1_SCENARIO_PATHS:
+            scenario = load_research_scenario(path)
+            observed_ids.append(scenario["scenario_id"])
+            controlled = scenario["allocation_engine"][
+                "controlled_satellite_sleeves"
+            ]
+            self.assertEqual(len(controlled), 1)
+            observed_sleeves.extend(controlled)
+            engine = deepcopy(scenario["allocation_engine"])
+            engine.pop("controlled_satellite_sleeves")
+            self.assertEqual(engine, base["allocation_engine"])
+            self.assertEqual(scenario["routes"], base["routes"])
+            self.assertEqual(
+                scenario["allocation_profiles"], base["allocation_profiles"]
+            )
+        self.assertEqual(observed_ids, protocol["allowed_candidate_scenario_ids"])
+        self.assertEqual(len(set(observed_sleeves)), 4)
+
+    def test_d3_factor_ablation_changes_only_the_frozen_factor_mode(self) -> None:
+        protocol = json.loads(D3_PROTOCOL_PATH.read_text(encoding="utf-8"))
+        base = load_research_scenario(RELEASE_SENSITIVITY_PATH)
+        observed_ids = []
+        observed_modes = []
+        for path in D3_SCENARIO_PATHS:
+            scenario = load_research_scenario(path)
+            observed_ids.append(scenario["scenario_id"])
+            signal_parameters = scenario["allocation_engine"]["signal_parameters"]
+            observed_modes.append(signal_parameters["factor_mode"])
+
+            candidate_engine = deepcopy(scenario["allocation_engine"])
+            base_engine = deepcopy(base["allocation_engine"])
+            candidate_engine["signal_parameters"].pop("factor_mode")
+            self.assertEqual(candidate_engine, base_engine)
+            self.assertEqual(scenario["routes"], base["routes"])
+            self.assertEqual(
+                scenario["allocation_profiles"], base["allocation_profiles"]
+            )
+            self.assertEqual(scenario["period"], base["period"])
+            self.assertEqual(
+                scenario["monthly_contribution_cny"],
+                base["monthly_contribution_cny"],
+            )
+
+        self.assertEqual(observed_ids, protocol["allowed_candidate_scenario_ids"])
+        self.assertEqual(
+            observed_modes, ["long_average_only", "momentum_only"]
+        )
+        self.assertEqual(
+            protocol["only_allowed_difference"],
+            "allocation_engine.signal_parameters.factor_mode",
+        )
+
+    def test_d4_strategic_floor_changes_only_the_frozen_floor_multiplier(self) -> None:
+        protocol = json.loads(D4_PROTOCOL_PATH.read_text(encoding="utf-8"))
+        base = load_research_scenario(RELEASE_SENSITIVITY_PATH)
+        candidate = load_research_scenario(D4_SCENARIO_PATH)
+
+        candidate_engine = deepcopy(candidate["allocation_engine"])
+        self.assertEqual(
+            candidate_engine["signal_parameters"].pop(
+                "strategic_floor_multiplier"
+            ),
+            "0.5",
+        )
+        self.assertEqual(candidate_engine, base["allocation_engine"])
+        self.assertEqual(candidate["routes"], base["routes"])
+        self.assertEqual(candidate["allocation_profiles"], base["allocation_profiles"])
+        self.assertEqual(candidate["period"], base["period"])
+        self.assertEqual(
+            protocol["allowed_candidate_scenario_ids"],
+            [candidate["scenario_id"]],
+        )
+
+    def test_a3a_inverse_volatility_keeps_the_same_universe_and_total_satellite_target(self) -> None:
+        protocol = json.loads(A3A_PROTOCOL_PATH.read_text(encoding="utf-8"))
+        control = load_research_scenario(A1_PATH)
+        candidate = load_research_scenario(A3A_SCENARIO_PATH)
+
+        self.assertEqual(candidate["routes"], control["routes"])
+        self.assertEqual(candidate["allocation_profiles"], control["allocation_profiles"])
+        self.assertEqual(candidate["period"], control["period"])
+        self.assertEqual(
+            candidate["monthly_contribution_cny"],
+            control["monthly_contribution_cny"],
+        )
+        weights = candidate["allocation_profiles"][0]["weights"]
+        self.assertEqual(
+            sum(
+                Decimal(weights[sleeve])
+                for sleeve in (
+                    "global_technology_satellite",
+                    "semiconductor_satellite",
+                    "robotics_satellite",
+                    "biotechnology_satellite",
+                )
+            ),
+            Decimal("0.20"),
+        )
+        self.assertEqual(
+            protocol["allowed_candidate_scenario_ids"],
+            [candidate["scenario_id"]],
         )
 
 

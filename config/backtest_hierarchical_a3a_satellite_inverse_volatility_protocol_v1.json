@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "protocol_id": "hierarchical_a3a_satellite_inverse_volatility_only_v1",
+  "status": "frozen_before_same_universe_performance_run",
+  "frozen_date": "2026-08-30",
+  "strategy_id": "hierarchical_risk_budget_valuation",
+  "strategy_version": "0.2.0",
+  "hypothesis": "卫星仓持续保持20%时，有上下限和相关主题合计上限的季度逆波动权重，可能比四主题等权降低集中风险或改善收益回撤关系，且避免趋势红灯错过恢复段。",
+  "primary_same_universe_control": {
+    "scenario_id": "hierarchical_risk_budget_valuation_a1_fixed_40_20_40_v1",
+    "role": "equal_weight_satellite_424_dca_baseline"
+  },
+  "allowed_candidate_scenario_ids": [
+    "hierarchical_a3a_satellite_inverse_volatility_only_v1"
+  ],
+  "required_invariants": {
+    "identical_route_payloads": true,
+    "identical_strategic_sleeve_weights": true,
+    "identical_provider": true,
+    "identical_period": true,
+    "identical_calendar_day": true,
+    "identical_monthly_external_cashflows": true,
+    "same_initial_state": "zero_holdings_zero_cash",
+    "same_strategy_spec_bytes": true,
+    "no_real_orders": true
+  },
+  "frozen_contract": {
+    "satellite_total_portfolio_target": "0.20",
+    "recompute_frequency": "calendar_quarter",
+    "signal_cutoff": "day_before_quarter_start",
+    "lookback_return_observations": 252,
+    "minimum_observations": 253,
+    "maximum_staleness_days": 10,
+    "minimum_theme_share_of_satellite": "0.15",
+    "maximum_theme_share_of_satellite": "0.35",
+    "technology_semiconductor_robotics_cap_of_satellite": "0.70",
+    "missing_any_theme": "constraint_neutral_fallback_23p33_23p33_23p33_30",
+    "red_green_timing": false,
+    "selling_allowed": false,
+    "renormalize_to_full_satellite_target": true
+  },
+  "interpretation_limits": [
+    "single_precommitted_weighting_rule",
+    "short_window_only",
+    "counterfactual_execution",
+    "no_bound_or_lookback_grid_search",
+    "no_automatic_promotion"
+  ]
+}

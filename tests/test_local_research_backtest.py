@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from invest_agent.backtest.local_research import (
+    STATE_AWARE_TARGET_GAP_MODES,
     _current_position_cash_state,
     _current_values,
     calculate_path_metrics,
@@ -246,6 +247,11 @@ class LocalResearchBacktestTests(unittest.TestCase):
         self.assertEqual(positions, {"core": Decimal("60.00"), "satellite": Decimal("0")})
         self.assertEqual(available, Decimal("30.00"))
         self.assertEqual(nondeployable, Decimal("10.00"))
+
+    def test_satellite_inverse_volatility_reuses_state_aware_target_gap_execution(self) -> None:
+        self.assertIn(
+            "satellite_inverse_volatility", STATE_AWARE_TARGET_GAP_MODES
+        )
 
     def test_scenario_overlay_replaces_stage_without_copying_routes(self) -> None:
         base = self._scenario()

@@ -23,6 +23,7 @@
 - 组合回撤分档预算；
 - 袖套回撤与修复信号；
 - 组合压力、单基金和主题上限。
+- 四主题季度有界逆波动权重：252个收益观察、单主题15%–35%、科技/半导体/机器人合计70%上限、缺失历史时约束中性回退；只改变未来新增资金目标，不赎回。
 
 这些原语可减少新代码，但当前没有任意组合规则 DSL。新组合仍要增加一个薄的确定性编排函数、场景配置和测试。
 
@@ -66,7 +67,7 @@
 
 ## 当前显式硬编码边界
 
-- `backtest.local_research` 只识别 `target_gap`、`new_money_trend_rs`、`drawdown_budget_add`、`sleeve_drawdown_recovery` 等已有模式。
+- `backtest.local_research` 识别 `target_gap`、`new_money_trend_rs`、`drawdown_budget_add`、`sleeve_drawdown_recovery`、`satellite_traffic_light` 和 `satellite_inverse_volatility` 等已有模式；仍不是任意策略DSL。
 - `decision.monthly` 逐个构造四个已有策略信号。
 - `decision.reporting` 固定了四个策略标签和载荷解释。
 - `approval.drafts` 要求唯一 `dca_baseline` 目标权威。

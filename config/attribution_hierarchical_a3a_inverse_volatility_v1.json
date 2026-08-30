@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "audit_id": "hierarchical_a3a_inverse_volatility_buy_only_sleeve_pnl_v1",
+  "backtest_result_path": "data/private/reports/hierarchical-a3a-inverse-volatility-full-20260830-v1.json",
+  "routes_path": "config/backtest_hierarchical_a1_v1.json",
+  "sleeve_groups": {
+    "domestic_broad_core": "core",
+    "us_broad_core": "core",
+    "us_nasdaq_core": "core",
+    "uk_broad_core": "core",
+    "japan_broad_core": "core",
+    "global_technology_satellite": "satellite",
+    "semiconductor_satellite": "satellite",
+    "robotics_satellite": "satellite",
+    "biotechnology_satellite": "satellite",
+    "defensive_bond": "defensive",
+    "gold_stabilizer": "defensive",
+    "dividend_stabilizer": "defensive"
+  }
+}

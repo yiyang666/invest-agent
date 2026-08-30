@@ -1,0 +1,13 @@
+{
+  "extends": "backtest_hierarchical_a2_bond_gold_sensitivity_v1.json",
+  "overrides": {
+    "scenario_id": "hierarchical_d4_satellite_strategic_floor_v1",
+    "research_stage": "D4_satellite_strategic_floor",
+    "purpose": "D4预冻结软门控：卫星20%拆为10%长期底仓与10%战术仓。保持双因子窗口和债券黄金2:1去向不变，信号只缩放战术半仓；绿灯、黄灯、红灯或不可用分别保留单主题战略目标的100%、75%、50%、50%，仍只买不卖。",
+    "allocation_engine": {
+      "signal_parameters": {
+        "strategic_floor_multiplier": "0.5"
+      }
+    }
+  }
+}

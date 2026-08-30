@@ -1,0 +1,11 @@
+{
+  "extends": "backtest_hierarchical_a2_bond_gold_sensitivity_v1.json",
+  "overrides": {
+    "scenario_id": "hierarchical_d1_single_theme_global_technology_v1",
+    "research_stage": "D1_single_theme_global_technology",
+    "purpose": "D1预冻结单主题诊断：只让全球科技袖套执行现有双因子红绿灯，其余三个卫星袖套保持A1目标；释放目标进入债券黄金2:1。",
+    "allocation_engine": {
+      "controlled_satellite_sleeves": ["global_technology_satellite"]
+    }
+  }
+}

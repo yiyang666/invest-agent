@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "study_id": "hierarchical_d2_traffic_light_forward_event_study_v1",
+  "status": "frozen_before_event_return_run",
+  "frozen_date": "2026-08-29",
+  "signal_result_path": "data/private/reports/hierarchical-risk-budget-a2-bond-gold-full-20260829-d0.json",
+  "database_path": "data/private/invest_agent.sqlite3",
+  "provider_id": "akshare_eastmoney",
+  "evaluation_end_date": "2026-07-31",
+  "theme_funds": {
+    "global_technology_satellite": "100055",
+    "semiconductor_satellite": "007300",
+    "robotics_satellite": "014880",
+    "biotechnology_satellite": "017894"
+  },
+  "defensive_funds": {
+    "defensive_bond": {"fund_code": "006932", "weight": "0.6666666666666666666666666667"},
+    "gold_stabilizer": {"fund_code": "000216", "weight": "0.3333333333333333333333333333"}
+  },
+  "horizons_months": [1, 3, 6],
+  "maximum_staleness_days": 10,
+  "interpretation_contract": {
+    "signal_parameters_unchanged": true,
+    "forward_returns_are_evaluation_only": true,
+    "ineligible_months_excluded": true,
+    "no_parameter_selection_from_this_study": true
+  }
+}

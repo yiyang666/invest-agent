@@ -1,0 +1,4 @@
+interface:
+  display_name: "Market Data Collect"
+  short_description: "Collect and validate scheduled market-context data"
+  default_prompt: "Use $market-data-collect to refresh, replay, inspect, or schedule validated Guchacha market-context data."

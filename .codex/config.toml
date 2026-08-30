@@ -8,6 +8,9 @@ enabled_tools = [
   "get_index_valuation",
   "get_index_weight",
   "get_index_forward_pe",
+  "get_industry_crowding",
+  "get_market_series",
+  "get_macro",
 ]
 default_tools_approval_mode = "prompt"
 startup_timeout_sec = 10

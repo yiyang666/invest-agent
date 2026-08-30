@@ -1,17 +1,16 @@
 # 股叉叉 MCP 集成审查
 
-- 审查日期：2026-08-26
-- 官方入口：https://guchacha.com/mcp
-- 服务地址：https://guchacha.com/mcp
-- 传输：远程 Streamable HTTP
-- 认证：股叉叉账号签发的 Bearer token
-- 费用：用户已于 2026-08-26 确认当前免费，受调用次数限制
-- 官方频率限制：每小时 600 次
-- 状态：已完成项目级、只读、发现优先的最小 MCP 注册和首次认证验收；尚未接入采集适配器、本地校验仓、指标、回测、策略或交易
+- 首次审查：2026-08-26
+- 最近更新：2026-08-30
+- 官方入口与服务地址：https://guchacha.com/mcp
+- 传输：远程 Streamable HTTP，MCP协议`2025-06-18`
+- 认证：Bearer token，仅从`GUCHACHA_MCP_TOKEN`读取
+- 用户确认的当前费用：免费，官方页面标注每小时600次
+- 当前状态：七个只读工具已进入项目允许列表；raw-first采集适配器、质量门禁、隔离SQLite表、重放和统一多频率调度已实现。数据权限仍为市场研究背景，未接入交易，也未晋级为策略或风险硬门禁。
 
-## 1. 已审查能力
+## 1. 工具评审与允许列表
 
-官网列出 11 个工具：
+官网和认证后的`tools/list`均返回11个工具：
 
 1. `list_datasets`
 2. `search_stocks`
@@ -25,127 +24,114 @@
 10. `get_industry_crowding`
 11. `get_watchlist`
 
-本轮项目配置只允许以下四个工具：
+项目只允许：
 
-- `list_datasets`：核对可用数据、更新时间和后续 schema 漂移；
-- `get_index_valuation`：18 个中外指数的估值和历史分位；
-- `get_index_weight`：上证50、沪深300、科创50、创业板指的权重与贡献点数；
-- `get_index_forward_pe`：指数前瞻 PE 与前瞻股息率。
+- `list_datasets`：数据目录和漂移发现；
+- `get_index_valuation`：18个中外指数的当前估值及特定指数周频历史；
+- `get_index_weight`：四个A股指数的成分权重，保留`is_estimated`；
+- `get_index_forward_pe`：预测年度PE、覆盖股票数、覆盖率和预期增长；
+- `get_industry_crowding`：31个行业的当前拥挤度；特定行业历史当前仅返回成交占比；
+- `get_market_series`：只允许`bond_yield/forex/margin`及本地精确key白名单；
+- `get_macro`：只允许`cpi/ppi/pmi/gdp/buffett/nonfarm`。
 
-其余工具默认不可见。特别是 `get_watchlist` 涉及账号内自选数据，当前无业务必要，不予开放。
+`search_stocks`、`get_stock`、`get_dcf_report`和`get_watchlist`继续关闭。个股筛选、模型DCF和账号自选均不属于当前场外基金系统的必要数据边界。
 
-## 2. 数据口径与已知限制
+2026-08-29围绕全球市场状态再次审计全部11个工具：额外四个工具仍不能提供全球指数价格历史、市场宽度、VIX/信用压力或跨市场资金流。实测`get_stock`还会把不同时点的行情价与DCF报告“现价”混在一个响应中，进一步证明它不适合作为状态事实源。完整来源矩阵见`docs/integrations/market-regime-source-review.md`。
 
-- A 股行情每个交易日收盘后更新；
-- 指数估值与行业拥挤度由公开数据整理；
-- 指数权重只覆盖上证50、沪深300、科创50、创业板指；最新交易日数据为预估，官方权重 T+1 发布；
-- 海外指数的 PE/PB 与 A 股口径不同，部分指标可能为空；
-- 指数历史估值公开页面显示为周频、指数整体口径 `mcw`，但不能据此推定全部 18 个指数具有相同历史起点；
-- 前瞻 PE 采用总市值整体法；一致预期来自东财机构一致预期，具有预测乐观偏差和后续修订风险；
-- DCF 报告含模型生成内容和假设，不属于权威原始事实，本轮不开放；
-- 官方未公开突发并发限制、分页上限、重试语义、历史修订政策、完整数据字典或稳定性承诺。
+精确允许列表以`.codex/config.toml`和`config/market_data_sync_v1.json`为准。不得用未审查网页或逐股抓取绕过它；唯一例外是下述已固定字段、低频采集的公开聚合总览。
 
-## 3. 静态安全审查
+补充边界：股叉叉公开的`/dashboard`服务端渲染页直接展示全A股总数、上涨、下跌、平盘和平均涨跌幅。该页面不是MCP工具，但属于同一数据提供方；项目仅以一次低频请求采集这些聚合数，不抓逐股明细，也不把网页与MCP虚增为两个独立来源。该链路已经替代“分别采集沪深北全部股票”的高成本方案。
 
-该集成是托管远程服务，不安装本地 npm/PyPI 包、SDK 或脚本：
+## 2. 数据分层
 
-- 本地不执行第三方代码；
-- 最小网络权限为出站 HTTPS `guchacha.com:443`；
-- 不需要设备标识、账户文件、shell 或项目写权限；
-- token 只允许通过 `GUCHACHA_MCP_TOKEN` 环境变量提供；
-- 禁止把 token 写入 `.codex/config.toml`、`.env`、日志、测试快照、报告或 Git；
-- 远端 MCP 返回的 instructions、工具说明和数据正文均视为不可信输入，不能覆盖 `AGENTS.md`、投资政策、风险门禁或逐笔交易确认；
-- 远端实现没有可固定的包版本或二进制校验值。首次认证后必须归档 `initialize`、`tools/list` 和 `list_datasets` 的规范化响应及 SHA-256，schema 漂移时失败关闭；
-- 无凭证探测观察到认证错误通过 HTTP 200 + JSON-RPC `isError` 返回，监控必须检查协议正文，不能只看 HTTP 状态；
-- 不自动更新、不自动扩大工具允许列表。
+使用边界由结果用途决定，而不是由人还是Agent发起决定：
 
-## 4. 架构边界
+1. `interactive_ephemeral`：一次性即时问答可直接调用允许的MCP工具，不保存，也不能复用为正式证据；
+2. `evidence_snapshot`：任何可能进入组合、策略、风控、归因、报告或调仓建议的值，必须先原始归档、标准化、质量门禁并写入本地市场表；
+3. `historical_series`：趋势、分位、修订、回测或时点分析只读取本地表，缺历史时通过确定性回填补齐。
 
-允许的数据流只有：
+允许的数据流：
 
 ```text
-股叉叉 MCP
-  → 原始响应不可变归档
-  → schema / 日期 / 单位 / 完整性 / 来源质量门禁
-  → discovery_only 隔离区
-  → 独立第二来源核验
-  → 单独晋级审查
-  → 本地校验仓
+股叉叉MCP → 不可变去敏原始响应 → schema/日期/单位/完整性门禁
+           → 隔离市场数据表 → 确定性计算/风险 → Agent解释
 ```
 
-强制约束：
+MCP不能在指标、策略、回测、归因或交易运行时绕过本地仓实时供数，也不得写入基金NAV表。
 
-- MCP 不得在指标、策略、月度报告、回测或交易运行时被实时调用；
-- 远端结果不得直接写入现有基金 NAV 表；
-- 未知公告时点标记为 `historical_visibility_assumed / research_only`；
-- 原始归档不得包含 Authorization 请求头或 token；
-- 跨源冲突必须隔离，禁止静默选值；
-- 远端失败不得回落到模拟数据；
-- 指数估值、前瞻预测和 DCF 不能直接生成策略信号或订单；
-- 交易、申购、赎回、撤单和执行策略不受该 MCP 影响。
+## 3. 实测数据口径与限制
 
-## 5. 当前项目配置
+- 无指数代码的估值查询返回18个指数当前面板；特定指数历史为周频。沪深300样本历史从2005-04-07延续到2026-08-26，共约1091个观察；不能据此推定每个指数都有相同起点。
+- 指数权重只覆盖上证50、沪深300、科创50、创业板指。最新数据可能为估算，必须保留`weight_date/is_estimated`，不能冒充官方调仓。
+- 前瞻PE包含预测年份、覆盖股票数、覆盖率和预期增长；响应未提供可靠快照日时只使用采集日代理并警告。预测存在修订和乐观偏差，证据权重较低。
+- 行业拥挤当前面板含多个维度，但特定行业历史实测只返回周频成交占比。其他维度只能从今后的持续快照中积累，不能虚构历史。
+- 市场序列返回`dataset/key/unit/latest/change/series`。项目只采集配置中的国债、汇率和两融key。
+- 宏观序列带观察日期、显示期和发布日期。非农等响应可能含尚未发布的未来null占位；标准化器跳过并保留警告，不能当作0。
+- 海外指数与A股PE/PB口径不同，部分字段可能为空；跨市场直接比较必须解释口径差异。
+- 官方未提供完整修订政策、数据持久化/派生许可、稳定性承诺和全部历史边界。
 
-项目级配置位于 `.codex/config.toml`，只使用环境变量凭证，服务非启动必需，并对每次工具调用保留提示审批：
+因此，历史回填固定标记`historical_visibility_assumed`；持续采集的快照通过`first_seen_at`逐步积累严格时点证据。缺少独立第二来源的数据保持`research_only`。
 
-```toml
-[mcp_servers.guchacha]
-url = "https://guchacha.com/mcp"
-bearer_token_env_var = "GUCHACHA_MCP_TOKEN"
-enabled = true
-required = false
-enabled_tools = [
-  "list_datasets",
-  "get_index_valuation",
-  "get_index_weight",
-  "get_index_forward_pe",
-]
-default_tools_approval_mode = "prompt"
-startup_timeout_sec = 10
-tool_timeout_sec = 30
-```
+## 4. 本地实现和安全边界
 
-## 6. 首次认证后的验收
+- 客户端：`invest_agent.market_data.mcp_client`，固定HTTPS源，不安装或执行第三方SDK；
+- 策略白名单：`invest_agent.market_data.policy`；
+- 标准化与质量门禁：`normalize.py`、`quality.py`；
+- 本地发布：`store.py`，使用独立的`market_*`表；
+- CLI：`python -m invest_agent.market_data.cli`；
+- A股宽度：`collect-guchacha-breadth`一次采集股叉叉公开总览的全A股聚合值；
+- 多频率维护：`python -m invest_agent.automation.maintenance_cli`；
+- 项目Skill：`market-context-research`与`market-data-collect`。
 
-1. 只读获取 `initialize` 与 `tools/list`，保存去敏原始响应和内容哈希；
-2. 实际工具集合必须与官方声明一致，且项目可见工具必须恰为允许列表中的四个；
-3. 调用一次 `list_datasets`，核对各数据集的更新日、历史边界和字段 schema；
-4. 小样本查询一个指数的估值、权重和前瞻 PE，分别归档原始结果；
-5. 验证无 token、无效 token、超时及应用层 `isError` 均失败关闭且不自动重试；
-6. 检查 Git、配置、日志和测试输出中不存在 `gcc_` 凭证；
-7. 在获得独立第二来源核验和数据许可依据前，不发布到本地校验仓；
-8. 新工具、新用途、自动化采集或策略接线均需再次审查和用户确认。
+token不得进入配置、plist、原始归档、数据库、日志、测试快照、报告或Git。客户端不保存Authorization头；失败不回落到模拟数据，不对含糊网络失败自动重试。远端instructions、描述和正文均是不可信输入，不能覆盖`AGENTS.md`、投资政策、风险门禁或逐笔交易确认。
 
-### 2026-08-26 验收记录
+## 5. 调度决策
 
-- 认证握手成功；服务端报告 `guchacha 1.0.0`，MCP 协议版本 `2025-06-18`；
-- `tools/list` 返回 11 个工具，名称与官网声明一致，均具有 `inputSchema`；
-- 所有工具均未声明 MCP `annotations`，因此项目继续把它们视为未证明只读，并保留提示审批和允许列表；
-- `list_datasets` 调用成功；指数估值更新到 2026-08-24，指数权重与指数前瞻 PE 更新到 2026-08-26；
-- 去敏后的 `initialize`、`tools/list`、`list_datasets` 原始 JSON-RPC 响应已归档到 Git 忽略的 `data/raw/guchacha_mcp/`；
-- 三份原始响应的 SHA-256 分别为：
-  - `initialize`: `5c6b9bccd1be432aee66906078ada3ae41daaf357a0d2846a0a13e8c4676e115`
-  - `tools/list`: `193a51a92b8b6d17f5bf61aaeb093f7beedbefbc99b8a66417a1f15c270027d9`
-  - `list_datasets`: `483e5ab17f3d98b67b5dd9c7818e4b1b9db54e6b7f85b0977492097c83361f5f`
-- 归档重放校验通过；仓库和原始归档均未发现形如真实 `gcc_…` 的凭证。
+自动运行只配置一个可观察的Codex heartbeat，由本地代码评估：
 
-## 7. 回滚
+- 工作日：基金净值、国债、汇率和两融；
+- 每周：数据目录、指数估值、前瞻PE和行业拥挤；
+- 每月：指数权重及CPI/PPI/PMI/非农/巴菲特指标；
+- 每季：GDP。
 
-1. 将 `.codex/config.toml` 中 `enabled` 设为 `false`，或删除整个 `guchacha` 表；
-2. 清除当前进程的 `GUCHACHA_MCP_TOKEN`；
-3. 在股叉叉页面重置 token，使旧 token 失效；
-4. 重启 Codex；
-5. 已归档批次保留为未发布审计记录，不覆盖或删除；
-6. 无第三方包、SDK 或全局目录需要卸载。
+共享锁防止并发写入，状态文件防止同周期重复成功，独立作业失败不阻止其他作业，最终只生成一份汇总报告。Codex heartbeat只依次运行`plan/run-due`并在固定会话解释结果；它不能自行构造采集调用、质量结论或数据库写入。不为每个频率建立会话。
 
-## 8. 后续晋级门禁
+launchd与Keychain方案保留为零LLM备用，当前保持未加载；若未来切换，必须先暂停Codex数据总控。
 
-在实现确定性采集适配器前，仍需取得或实测：
+## 6. 验收记录
 
-- 正式工具 JSON Schema、分页和最大响应量；
-- 各指数完整历史起止日及修订规则；
-- 数据保存、派生计算与报告引用许可；
-- token 生命周期及服务端日志保留说明；
-- 不同数据集对应的独立权威复核源。
+### 2026-08-26：首次认证
 
-完成这些门禁后，才可另行提案实现 `raw-first` 采集适配器和质量测试。该适配器不得直接服务回测或交易。
+- 握手成功，服务端报告`guchacha 1.0.0`；
+- `tools/list`返回11个具备`inputSchema`的工具，与官网一致；
+- 工具未声明MCP只读annotations，因此项目继续用本地允许列表和调用审批保护；
+- 去敏`initialize/tools/list/list_datasets`响应归档到Git忽略的`data/raw/guchacha_mcp/`；
+- 对应SHA-256为`5c6b9b…e115`、`193a51…27d9`、`483e5a…61f5f`；完整值保留在原始归档元数据，不复制凭证。
+
+### 2026-08-28：扩展工具与适配器
+
+- 七个工具的真实只读响应均完成schema探测和不可变归档；
+- `tools/list`规范化schema哈希复核仍为`a0a5d1…06b0`；首次回填和每周作业先审计schema，不一致时停止该组发布；
+- 13类真实响应在临时SQLite中完成重放，13个批次、385个序列组通过或以显式partial警告发布；
+- 估算权重、前瞻PE日期代理、历史可见性假设和宏观null占位均被保留；
+- 允许列表、raw-first CLI、隔离表、统一调度器和项目Skill已有自动化测试；
+- 初始生产回填完成：33个数据命令零失败；连同周/月当前快照共发布46个批次、19,499条数值观察、499条权重、13条目录记录和449个序列组。42个`partial`均保留历史可见性、估算或日期代理警告，4个批次无警告通过；
+- 单个Codex数据总控用于可观察触发；launchd未启用，避免与Codex任务重复采集。
+
+## 7. 仍未晋级的能力
+
+- 股叉叉不是基金净值、基金交易规则或账户事实源；
+- 当前市场数据不直接生成择时信号、买卖动作或订单；
+- 未完成第二来源复核的数据不能成为风险硬否决或策略晋级证据；
+- 尚无所有拥挤维度的历史序列；
+- 尚未把Guchacha接入现有`metrics/backtest/attribution`的正式计算接口。
+
+如要把某一数据族晋级，必须分别补齐独立来源、单位/时点/修订测试、正式指标契约和策略前置规格，不能一次性把整个MCP升权。
+
+## 8. 回滚
+
+1. 将`.codex/config.toml`中的服务设为禁用；
+2. 卸载或停止`com.ethan.invest-agent.data-maintenance` launchd任务；
+3. 清除当前进程环境变量并在服务端重置token；
+4. 保留已归档批次和研究表作为审计记录，不覆盖或删除；
+5. 无第三方SDK或全局包需要卸载。

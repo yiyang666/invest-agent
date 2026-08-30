@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "audit_id": "hierarchical_d0_sequential_ablation_waterfall_v1",
+  "metric_name": "final_value_cny",
+  "unit": "CNY",
+  "stages": [
+    {
+      "stage_id": "631_v1_5_matched_cashflow",
+      "claim_scope": "baseline",
+      "metric_value": "100946.13",
+      "evidence_sha256": "613184904d4b4cf3f345cb40a125b52219361c1b60b406feee7aaa7ff3e1f5dd"
+    },
+    {
+      "stage_id": "424_a1_same_universe_dca",
+      "claim_scope": "total_policy_outcome",
+      "metric_value": "103339.97",
+      "evidence_sha256": "3ce000536fc518797fddda9dfb03487cf51a871eca0e3cc1739db167bc635f12"
+    },
+    {
+      "stage_id": "424_a2_buy_only_traffic_light_cash",
+      "claim_scope": "signal_effect",
+      "metric_value": "102318.41",
+      "evidence_sha256": "c60d9e80b3e84149744ba0e681eae68a224ac79f466584600995c007c67e0150"
+    },
+    {
+      "stage_id": "424_a2_buy_only_traffic_light_bond_gold",
+      "claim_scope": "execution_effect",
+      "metric_value": "102750.09",
+      "evidence_sha256": "8d5e3c8f3dcd2d14bf88a5fbc3f0fe8946ddcf06bff71334ff21bca9ac4d4eb7"
+    }
+  ]
+}

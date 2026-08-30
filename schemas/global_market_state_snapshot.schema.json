@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invest-agent/schemas/global_market_state_snapshot.schema.json",
+  "title": "Research-only global market state snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "model_id",
+    "model_version",
+    "as_of",
+    "mode",
+    "overall_state",
+    "observed_composite_score",
+    "axes",
+    "confidence",
+    "missing_capabilities",
+    "conflicts",
+    "guardrails",
+    "reproducibility"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "snapshot_id": {"type": "string", "pattern": "^gms-[0-9]{8}-[0-9a-f]{16}$"},
+    "model_id": {"type": "string", "minLength": 1},
+    "model_version": {"const": "global_market_regime_v1"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "mode": {"const": "research_only"},
+    "overall_state": {
+      "enum": ["supportive", "balanced", "restrictive", "insufficient_evidence"]
+    },
+    "observed_composite_score": {"type": ["number", "null"], "minimum": -1, "maximum": 1},
+    "axes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["axis_id", "label", "weight", "coverage_pct", "state", "score", "features"],
+        "properties": {
+          "axis_id": {"type": "string", "minLength": 1},
+          "label": {"type": "string", "minLength": 1},
+          "weight": {"type": "number", "exclusiveMinimum": 0},
+          "coverage_pct": {"type": "number", "minimum": 0, "maximum": 100},
+          "state": {"enum": ["supportive", "balanced", "restrictive", "unknown"]},
+          "score": {"type": ["number", "null"], "minimum": -1, "maximum": 1},
+          "features": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["feature_id", "region", "weight", "status", "reason", "state", "score", "value", "unit", "observation_date", "evidence"],
+              "properties": {
+                "feature_id": {"type": "string", "minLength": 1},
+                "region": {"type": "string", "minLength": 1},
+                "weight": {"type": "number", "exclusiveMinimum": 0},
+                "status": {"enum": ["available", "missing"]},
+                "reason": {"type": ["string", "null"]},
+                "state": {"enum": ["supportive", "balanced", "restrictive", "unknown"]},
+                "score": {"type": ["number", "null"], "minimum": -1, "maximum": 1},
+                "value": {"type": ["number", "null"]},
+                "unit": {"type": ["string", "null"]},
+                "observation_date": {"type": ["string", "null"], "format": "date"},
+                "calculation_details": {"type": "object"},
+                "evidence": {"type": ["object", "null"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score_pct", "label", "coverage_pct", "strict_point_in_time_pct", "independent_provider_count", "source_diversity_target", "formal_decision_eligible"],
+      "properties": {
+        "score_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "label": {"enum": ["low", "medium", "high"]},
+        "coverage_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "strict_point_in_time_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "independent_provider_count": {"type": "integer", "minimum": 0},
+        "source_diversity_target": {"type": "integer", "minimum": 1},
+        "formal_decision_eligible": {"const": false}
+      }
+    },
+    "missing_capabilities": {"type": "array"},
+    "conflicts": {"type": "array"},
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["market_direction_prediction_allowed", "strategy_signal_generation_allowed", "order_intent_generation_allowed", "real_trading_allowed"],
+      "properties": {
+        "market_direction_prediction_allowed": {"const": false},
+        "strategy_signal_generation_allowed": {"const": false},
+        "order_intent_generation_allowed": {"const": false},
+        "real_trading_allowed": {"const": false}
+      }
+    },
+    "reproducibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["config_sha256", "batch_ids", "content_sha256", "provider_ids", "local_data_only"],
+      "properties": {
+        "config_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "batch_ids": {"type": "array", "items": {"type": "string"}},
+        "content_sha256": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+        "provider_ids": {"type": "array", "items": {"type": "string"}},
+        "local_data_only": {"const": true}
+      }
+    }
+  }
+}

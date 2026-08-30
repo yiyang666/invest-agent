@@ -2,6 +2,15 @@ schema_version: 1
 
 rules:
   allow_web_scraping_as_production_source: false
+  allow_reviewed_public_download_for_personal_research: true
+  require_source_specific_terms_review: true
+  forbid_login_cookie_borrowing: true
+  forbid_captcha_or_anti_bot_bypass: true
+  forbid_proxy_rotation: true
+  forbid_runtime_provider_fallback: true
+  require_fixed_low_frequency_request: true
+  require_no_automatic_retry: true
+  require_private_raw_archive: true
   serve_backtests_from_validated_local_store_only: true
   require_as_of_timestamp: true
   require_batch_id: true
@@ -73,8 +82,8 @@ providers:
     known_limit: historical_rows_do_not_expose_original_announcement_timestamp
   guchacha_mcp:
     enabled: true
-    role: remote_index_valuation_discovery_only
-    adapter_status: project_mcp_registered_collection_adapter_not_implemented
+    role: research_market_context_source
+    adapter_status: raw_first_adapter_and_research_store_operational
     service_url: https://guchacha.com/mcp
     upstream_domains:
       - guchacha.com
@@ -83,25 +92,136 @@ providers:
     credential_environment_variable: GUCHACHA_MCP_TOKEN
     current_free_tier_confirmed_by_user: true
     documented_rate_limit_per_hour: 600
+    public_dashboard_breadth:
+      enabled: true
+      url: https://guchacha.com/dashboard
+      transport: public_server_rendered_html
+      universe: provider_reported_all_a_shares
+      persist_constituent_quotes: false
+      scheduled_frequency: business_daily_after_close
     enabled_tools:
       - list_datasets
       - get_index_valuation
       - get_index_weight
       - get_index_forward_pe
-    network_mode: interactive_low_frequency_discovery_only
+      - get_industry_crowding
+      - get_market_series
+      - get_macro
+    allowed_market_series_datasets:
+      - bond_yield
+      - forex
+      - margin
+    allowed_market_series_keys:
+      bond_yield:
+        - CN_2Y
+        - CN_10Y
+        - US_2Y
+        - US_10Y
+        - JP_2Y
+        - JP_10Y
+      forex:
+        - usdjpy
+        - eurusd
+        - gbpusd
+        - usdcny
+        - dxy
+      margin:
+        - margin_bal
+        - leverage_pct
+    allowed_macro_indicators:
+      - cpi
+      - ppi
+      - pmi
+      - gdp
+      - buffett
+      - nonfarm
+    network_mode: scheduled_and_interactive_low_frequency_collection
     allow_in_inference_path: false
     allow_in_backtest_path: false
     allow_in_execution_path: false
     persist_before_use: true
     raw_before_normalization: true
     require_secondary_source_validation: true
-    publish_to_validated_store: false
-    automatic_updates_allowed: false
+    publish_to_validated_store: gated_by_dataset_specific_quality_checks
+    automatic_updates_allowed: deterministic_scheduler_only
     known_limits:
       - remote_service_version_cannot_be_pinned
       - complete_history_boundaries_not_documented
       - revision_and_pagination_semantics_not_documented
       - data_persistence_and_derived_use_terms_not_documented
+  validated_fund_nav_proxy:
+    enabled: true
+    role: research_only_market_trend_proxy
+    adapter_status: operational_for_china_hong_kong_us_europe_japan
+    source_store: local_validated_fund_store
+    source_provider_id: akshare_eastmoney
+    persist_before_use: true
+    raw_before_normalization: true
+    allow_in_execution_path: false
+    known_limits:
+      - not_official_index_level
+      - tracking_error_and_fees
+      - qdii_fx_and_nav_publication_lag
+      - dax_does_not_represent_all_europe
+      - hong_kong_proxy_tracks_hang_seng_with_rmb_fx_and_qdii_nav_lag
+  fred_download:
+    enabled: true
+    role: personal_research_financial_conditions_source
+    adapter_status: nfci_raw_first_operational
+    upstream_domains:
+      - fred.stlouisfed.org
+    interfaces:
+      - graph/fredgraph.csv?id=NFCI
+    network_mode: scheduled_weekly_low_frequency_only
+    authentication_required: false
+    automatic_retry_allowed: false
+    environment_proxy_used: false
+    allow_in_inference_path: false
+    allow_in_execution_path: false
+    persist_before_use: true
+    raw_before_normalization: true
+    redistribution_allowed: false
+    usage_scope: personal_research_local_only
+    citation_required: true
+    known_limits:
+      - historical_release_timestamps_not_exposed_by_csv
+      - series_is_a_us_financial_conditions_proxy_not_global_market_truth
+  sse_public_market:
+    enabled: true
+    role: personal_research_partial_china_breadth_source
+    adapter_status: sse_end_of_day_a_share_breadth_operational
+    upstream_domains:
+      - www.sse.com.cn
+      - yunhq.sse.com.cn
+    interfaces:
+      - /market/price/trends/
+      - /v1/sh1/list/exchange/equity
+    network_mode: scheduled_business_daily_after_close
+    authentication_required: false
+    automatic_retry_allowed: false
+    environment_proxy_used: false
+    allow_in_inference_path: false
+    allow_in_execution_path: false
+    persist_before_use: true
+    raw_before_normalization: true
+    usage_scope: personal_research_local_only
+    final_snapshot_time_gate: "15:00:00"
+    universe: sse_a_shares_including_star_excluding_b_shares
+    known_limits:
+      - shenzhen_and_beijing_exchanges_not_included
+      - strict_history_starts_at_first_successful_local_collection
+      - no_automatic_provider_fallback
+  finclaw_unified_sources:
+    enabled: false
+    role: interface_map_only
+    sources:
+      efinance: eastmoney_dominant
+      akshare: per_interface_upstream_review_required
+      adata: ths_baidu_eastmoney_tencent_sina
+      ashare: sina_tencent_auto_fallback
+      snowball: rejected_by_terms_and_cookie_risk
+    install_whole_project: false
+    count_packages_as_independent_providers: false
   tushare_pro:
     enabled: false
     role: optional_paid_validator_and_upgrade

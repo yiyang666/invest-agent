@@ -43,6 +43,9 @@ from invest_agent.strategies.satellite_traffic_light import (
     build_satellite_traffic_light_signal,
     build_state_adjusted_target_gap_allocation,
 )
+from invest_agent.strategies.satellite_risk_budget import (
+    build_satellite_risk_budget_signal,
+)
 
 from .subscription_engine import (
     CashContribution,
@@ -59,6 +62,11 @@ from .valuation_engine import (
 ENGINE_VERSION = "local_dca_research_v1"
 RESEARCH_CLASSIFICATION = "counterfactual_research_assumption"
 CENT = Decimal("0.01")
+STATE_AWARE_TARGET_GAP_MODES = {
+    "revalidated_target_gap",
+    "satellite_traffic_light",
+    "satellite_inverse_volatility",
+}
 
 
 def _canonical_sha256(payload: object) -> str:
@@ -181,12 +189,12 @@ def _validate_scenario(payload: Mapping[str, object]) -> None:
         "drawdown_budget_add",
         "sleeve_drawdown_recovery",
         "satellite_traffic_light",
+        "satellite_inverse_volatility",
     }:
         raise ValueError("unsupported allocation engine mode")
     if allocation_mode not in {
         "target_gap",
-        "revalidated_target_gap",
-        "satellite_traffic_light",
+        *STATE_AWARE_TARGET_GAP_MODES,
     } and len(routes) != len(sleeves):
         raise ValueError(
             "multi-route sleeves currently support target-gap and satellite traffic-light research only"
@@ -229,6 +237,18 @@ def _validate_scenario(payload: Mapping[str, object]) -> None:
         }
         if not isinstance(satellite_funds, Mapping) or set(satellite_funds) != expected_satellites:
             raise ValueError("satellite traffic-light requires the four frozen theme sleeves")
+        controlled_satellites = allocation_engine.get(
+            "controlled_satellite_sleeves", sorted(expected_satellites)
+        )
+        if (
+            not isinstance(controlled_satellites, list)
+            or not controlled_satellites
+            or len(controlled_satellites) != len(set(controlled_satellites))
+            or set(controlled_satellites) - expected_satellites
+        ):
+            raise ValueError(
+                "controlled satellite sleeves must be a unique non-empty theme subset"
+            )
         route_by_sleeve = {
             str(route["sleeve"]): str(route["fund_code"])
             for route in routes
@@ -254,11 +274,34 @@ def _validate_scenario(payload: Mapping[str, object]) -> None:
             "momentum_lookback_observations",
             "minimum_observations",
             "maximum_staleness_days",
+            "factor_mode",
+            "strategic_floor_multiplier",
         }
         if set(signal_parameters) - allowed_parameters:
             raise ValueError("satellite signal_parameters contain unsupported keys")
-        if any(int(value) <= 0 for value in signal_parameters.values()):
+        integer_parameters = allowed_parameters - {
+            "factor_mode",
+            "strategic_floor_multiplier",
+        }
+        if any(
+            int(signal_parameters[key]) <= 0
+            for key in integer_parameters
+            if key in signal_parameters
+        ):
             raise ValueError("satellite signal parameters must be positive integers")
+        if signal_parameters.get("factor_mode", "dual") not in {
+            "dual",
+            "long_average_only",
+            "momentum_only",
+        }:
+            raise ValueError("satellite factor mode is unsupported")
+        floor_multiplier = Decimal(
+            str(signal_parameters.get("strategic_floor_multiplier", "0"))
+        )
+        if floor_multiplier < 0 or floor_multiplier > 1:
+            raise ValueError(
+                "satellite strategic floor multiplier must be between zero and one"
+            )
         minimum = int(signal_parameters.get("minimum_observations", 201))
         required = max(
             int(signal_parameters.get("long_average_observations", 200)),
@@ -266,6 +309,98 @@ def _validate_scenario(payload: Mapping[str, object]) -> None:
         )
         if minimum < required:
             raise ValueError("satellite minimum observations do not cover signal windows")
+    if allocation_mode == "satellite_inverse_volatility":
+        satellite_funds = allocation_engine.get("satellite_funds")
+        expected_satellites = {
+            "global_technology_satellite",
+            "semiconductor_satellite",
+            "robotics_satellite",
+            "biotechnology_satellite",
+        }
+        expected_concentration_group = expected_satellites - {
+            "biotechnology_satellite"
+        }
+        if (
+            not isinstance(satellite_funds, Mapping)
+            or set(satellite_funds) != expected_satellites
+        ):
+            raise ValueError(
+                "satellite inverse volatility requires the four frozen theme sleeves"
+            )
+        route_by_sleeve = {
+            str(route["sleeve"]): str(route["fund_code"])
+            for route in routes
+            if str(route["sleeve"]) in expected_satellites
+        }
+        if any(
+            route_by_sleeve.get(str(sleeve)) != str(code)
+            for sleeve, code in satellite_funds.items()
+        ):
+            raise ValueError(
+                "satellite inverse-volatility funds must match configured routes"
+            )
+        if allocation_engine.get("signal_nav_field") != "accumulated_nav":
+            raise ValueError(
+                "satellite inverse volatility requires accumulated_nav signals"
+            )
+        concentration_group = allocation_engine.get(
+            "concentration_group_sleeves", []
+        )
+        if (
+            not isinstance(concentration_group, list)
+            or set(concentration_group) != expected_concentration_group
+            or len(concentration_group) != len(set(concentration_group))
+        ):
+            raise ValueError(
+                "satellite concentration group must be technology, semiconductor, and robotics"
+            )
+        signal_parameters = allocation_engine.get("signal_parameters", {})
+        if not isinstance(signal_parameters, Mapping):
+            raise ValueError(
+                "satellite inverse-volatility signal_parameters must be an object"
+            )
+        allowed_parameters = {
+            "lookback_return_observations",
+            "minimum_observations",
+            "maximum_staleness_days",
+            "minimum_theme_share",
+            "maximum_theme_share",
+            "concentration_group_cap",
+        }
+        if set(signal_parameters) - allowed_parameters:
+            raise ValueError(
+                "satellite inverse-volatility signal_parameters contain unsupported keys"
+            )
+        if any(
+            int(signal_parameters.get(key, default)) <= 0
+            for key, default in {
+                "lookback_return_observations": 252,
+                "minimum_observations": 253,
+                "maximum_staleness_days": 10,
+            }.items()
+        ):
+            raise ValueError(
+                "satellite inverse-volatility observations and staleness must be positive"
+            )
+        lookback = int(signal_parameters.get("lookback_return_observations", 252))
+        minimum = int(signal_parameters.get("minimum_observations", 253))
+        if minimum < lookback + 1:
+            raise ValueError(
+                "satellite inverse-volatility minimum observations must cover returns"
+            )
+        lower = Decimal(str(signal_parameters.get("minimum_theme_share", "0.15")))
+        upper = Decimal(str(signal_parameters.get("maximum_theme_share", "0.35")))
+        group_cap = Decimal(
+            str(signal_parameters.get("concentration_group_cap", "0.70"))
+        )
+        if not 0 <= lower <= upper <= 1 or not 0 < group_cap < 1:
+            raise ValueError("satellite inverse-volatility bounds are invalid")
+        if lower * 4 > 1 or upper * 4 < 1:
+            raise ValueError("satellite theme bounds cannot sum to one")
+        if lower * 3 > group_cap or upper * 3 < group_cap:
+            raise ValueError("satellite concentration group cap is infeasible")
+        if lower > 1 - group_cap or upper < 1 - group_cap:
+            raise ValueError("satellite diversifier share is infeasible")
     if allocation_mode == "drawdown_budget_add":
         composite_funds = allocation_engine.get("composite_funds")
         composite_weights = allocation_engine.get("composite_weights")
@@ -862,7 +997,10 @@ def run_local_dca_research(
             str(sleeve): drawdown_signal_series[str(sleeve)]
             for sleeve in candidate_funds
         }
-    if allocation_mode == "satellite_traffic_light":
+    if allocation_mode in {
+        "satellite_traffic_light",
+        "satellite_inverse_volatility",
+    }:
         satellite_funds = allocation_engine["satellite_funds"]
         assert isinstance(satellite_funds, Mapping)
         satellite_signal_series = {
@@ -1002,11 +1140,51 @@ def run_local_dca_research(
                     review_date=planned,
                     satellite_series=satellite_signal_series,
                     strategic_weights=profile_weights,
+                    controlled_satellite_sleeves=allocation_engine.get(
+                        "controlled_satellite_sleeves"
+                    ),
                     released_weight_destination=str(
                         allocation_engine["released_weight_destination"]
                     ),
                     **{
-                        str(key): int(value)
+                        str(key): (
+                            str(value)
+                            if str(key) == "factor_mode"
+                            else Decimal(str(value))
+                            if str(key) == "strategic_floor_multiplier"
+                            else int(value)
+                        )
+                        for key, value in raw_signal_parameters.items()
+                    },
+                )
+                weights = {
+                    key: Decimal(str(value))
+                    for key, value in signal["effective_target_weights"].items()
+                }
+                monthly_signal_ledger.append(signal)
+            elif allocation_mode == "satellite_inverse_volatility":
+                raw_signal_parameters = allocation_engine.get(
+                    "signal_parameters", {}
+                )
+                assert isinstance(raw_signal_parameters, Mapping)
+                integer_parameters = {
+                    "lookback_return_observations",
+                    "minimum_observations",
+                    "maximum_staleness_days",
+                }
+                signal = build_satellite_risk_budget_signal(
+                    review_date=planned,
+                    satellite_series=satellite_signal_series,
+                    strategic_weights=profile_weights,
+                    concentration_group_sleeves=allocation_engine[
+                        "concentration_group_sleeves"
+                    ],
+                    **{
+                        str(key): (
+                            int(value)
+                            if str(key) in integer_parameters
+                            else Decimal(str(value))
+                        )
                         for key, value in raw_signal_parameters.items()
                     },
                 )
@@ -1027,10 +1205,7 @@ def run_local_dca_research(
                     navs=navs,
                     distributions=distributions,
                 )
-                if allocation_mode in {
-                    "revalidated_target_gap",
-                    "satellite_traffic_light",
-                }:
+                if allocation_mode in STATE_AWARE_TARGET_GAP_MODES:
                     (
                         pre_value,
                         current_values,
@@ -1095,10 +1270,7 @@ def run_local_dca_research(
                     strategy_spec_sha256=strategy_hash,
                     remainder_sleeve=str(allocation_engine["fallback_sleeve"]),
                 )
-            elif allocation_mode in {
-                "revalidated_target_gap",
-                "satellite_traffic_light",
-            }:
+            elif allocation_mode in STATE_AWARE_TARGET_GAP_MODES:
                 allocation = build_state_adjusted_target_gap_allocation(
                     planned_date=planned,
                     pre_contribution_portfolio_value_cny=pre_value,

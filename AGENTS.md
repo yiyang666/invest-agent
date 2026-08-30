@@ -15,6 +15,8 @@
 
 - 新增实现或改用网页手工分析前，先检查 `docs/capabilities.md` 中已有的 CLI、项目级 Skill 和 MCP。
 - 基金数据更新走 `fund-data-collect` 和数据CLI；指标、回测、风控、报告与归因只读取通过门禁的本地数据。
+- 市场背景即时查询走 `market-context-research`；凡进入策略、风控、报告、归因或调仓建议的市场数据，先走 `market-data-collect` 归档并发布到本地市场数据表。
+- 日、周、月、季数据维护统一走 `invest_agent.automation.maintenance_cli`；不要为每种频率建立独立Agent会话或让LLM承担数据库写入。
 - 当前渠道交易规则走 `verify-fund-trading-rules`，优先使用爱基金CLI只读预检，不用申购/赎回试单取数。
 - 新策略走 `design-fund-strategy`；规则和比较协议先冻结，再运行回测与 `invest_agent.attribution`。
 - MCP与网页只负责发现和采集，不能在推理时越过本地仓直接生成指标、策略、归因或订单。

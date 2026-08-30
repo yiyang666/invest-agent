@@ -4,6 +4,8 @@ import tempfile
 import unittest
 
 from invest_agent.attribution import (
+    analyze_traffic_light_forward_returns,
+    attribute_buy_only_sleeve_pnl,
     attribute_sleeves_brinson,
     calculate_cashflow_attribution,
     compare_cashflow_matched_paths,
@@ -61,6 +63,112 @@ def _benchmark_periods() -> list[dict[str, object]]:
 
 
 class Phase8AttributionTests(unittest.TestCase):
+    def test_traffic_light_event_study_uses_future_only_for_evaluation(self) -> None:
+        from datetime import date, timedelta
+        from decimal import Decimal
+        from invest_agent.metrics.fund import NavPoint
+
+        points = tuple(
+            NavPoint(
+                nav_date=date(2026, 1, 1) + timedelta(days=index),
+                nav=Decimal("1") + Decimal(index) / Decimal("100"),
+                visibility_status="historical_visibility_assumed",
+                batch_id="batch",
+                content_sha256="a" * 64,
+            )
+            for index in range(100)
+        )
+        ledger = [
+            {
+                "signal_cutoff_date": "2026-01-31",
+                "satellite_evaluations": [
+                    {
+                        "sleeve": "theme",
+                        "fund_code": "000001",
+                        "state": "red",
+                        "effective_nav_date": "2026-01-31",
+                        "features": {"latest_nav": "1.30"},
+                    }
+                ],
+            }
+        ]
+        studied = analyze_traffic_light_forward_returns(
+            signal_ledger=ledger,
+            theme_series={"theme": ("000001", points)},
+            defensive_series={"bond": points, "gold": points},
+            defensive_weights={"bond": Decimal("0.6666666666666666666666666667"), "gold": Decimal("0.3333333333333333333333333333")},
+            evaluation_end_date=date(2026, 4, 10),
+            horizons_months=[1],
+        )
+        self.assertEqual(len(studied["events"]), 1)
+        self.assertEqual(
+            studied["events"][0]["theme_minus_defensive_return"],
+            "0E-12",
+        )
+        self.assertTrue(
+            studied["interpretation"]["future_returns_used_for_evaluation_only"]
+        )
+
+    def test_buy_only_sleeve_pnl_audit_reconciles_cash_and_distributions(self) -> None:
+        result = {
+            "mode": "research_only",
+            "scenario_id": "example",
+            "profile_results": [
+                {
+                    "metrics": {"final_value_cny": "165.00", "purchase_fees_cny": "1.00"},
+                    "subscription_result": {
+                        "final_state": {
+                            "pending_subscriptions": [],
+                            "pending_redemptions": [],
+                            "pending_subscription_cash_cny": "0",
+                        },
+                        "ledger": [
+                            {"event_type": "cash_contributed", "amount_cny": "150"},
+                            {
+                                "event_type": "subscription_confirmed",
+                                "event_id": "one",
+                                "fund_code": "000001",
+                                "gross_amount_cny": "100",
+                                "purchase_fee_cny": "1",
+                            },
+                        ],
+                    },
+                    "valuation_result": {
+                        "daily_valuations": [
+                            {
+                                "available_cash_cny": "55",
+                                "pending_subscription_cash_cny": "0",
+                                "distribution_receivable_cny": "0",
+                                "positions": [
+                                    {"fund_code": "000001", "market_value_cny": "110"}
+                                ],
+                                "total_value_cny": "165",
+                            }
+                        ],
+                        "distribution_ledger": [
+                            {
+                                "event_type": "cash_distribution_paid",
+                                "fund_code": "000001",
+                                "amount_cny": "5",
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+        audited = attribute_buy_only_sleeve_pnl(
+            backtest_result=result,
+            routes=[{"fund_code": "000001", "sleeve": "equity"}],
+            sleeve_groups={"equity": "risk"},
+        )
+        self.assertEqual(audited["sleeves"][0]["holding_pnl_cny"], "15.00")
+        self.assertEqual(audited["summary"]["ending_cash_cny"], "55.00")
+        self.assertTrue(
+            audited["identity_checks"][
+                "external_principal_plus_holding_pnl_and_rounding_residual_equals_final_value"
+            ]
+        )
+
     def test_phase8_closure_is_research_only_and_fully_audited(self) -> None:
         audit = json.loads(
             (ROOT / "config/phase8_closure_audit_v1.json").read_text(

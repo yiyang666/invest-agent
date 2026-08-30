@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "protocol_id": "hierarchical_d3_factor_ablation_v1",
+  "status": "frozen_before_same_universe_performance_run",
+  "frozen_date": "2026-08-30",
+  "strategy_id": "hierarchical_risk_budget_valuation",
+  "strategy_version": "0.2.0",
+  "hypothesis": "现有双因子红灯可能因长期均线或6个月动量之一错误过滤高波动主题；单因子消融用于定位问题，不用于窗口搜索或自动替换原版本。",
+  "primary_same_universe_control": {
+    "scenario_id": "hierarchical_risk_budget_valuation_a1_fixed_40_20_40_v1",
+    "role": "424_dca_baseline"
+  },
+  "allowed_candidate_scenario_ids": [
+    "hierarchical_d3_long_average_only_v1",
+    "hierarchical_d3_momentum_only_v1"
+  ],
+  "existing_dual_factor_reference": {
+    "scenario_id": "hierarchical_risk_budget_valuation_a2_satellite_traffic_light_bond_gold_sensitivity_v1",
+    "role": "previously_observed_reference_not_reranked_as_preperformance"
+  },
+  "required_invariants": {
+    "identical_route_payloads": true,
+    "identical_strategic_sleeve_weights": true,
+    "identical_provider": true,
+    "identical_period": true,
+    "identical_calendar_day": true,
+    "identical_monthly_external_cashflows": true,
+    "same_initial_state": "zero_holdings_zero_cash",
+    "same_strategy_spec_bytes": true,
+    "no_real_orders": true
+  },
+  "frozen_common_contract": {
+    "long_average_observations": 200,
+    "momentum_lookback_observations": 126,
+    "minimum_observations": 201,
+    "maximum_staleness_days": 10,
+    "controlled_satellite_sleeves": "all_four",
+    "released_weight_destination": "bond_gold_2_to_1",
+    "single_factor_positive_multiplier": "1",
+    "single_factor_nonpositive_multiplier": "0",
+    "yellow_state_in_single_factor_variants": false
+  },
+  "only_allowed_difference": "allocation_engine.signal_parameters.factor_mode",
+  "interpretation_limits": [
+    "diagnostic_ablation_not_candidate_selection",
+    "short_window_only",
+    "counterfactual_execution",
+    "no_window_or_threshold_search",
+    "no_automatic_promotion"
+  ]
+}

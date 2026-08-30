@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "protocol_id": "hierarchical_d4_satellite_strategic_floor_v1",
+  "status": "frozen_before_same_universe_performance_run",
+  "frozen_date": "2026-08-30",
+  "strategy_id": "hierarchical_risk_budget_valuation",
+  "strategy_version": "0.2.0",
+  "hypothesis": "双因子状态可用于限制卫星新增资金强度，但不应让高波动主题目标归零；50%长期底仓用于保留恢复期暴露，50%战术仓用于维持风险纪律。",
+  "primary_same_universe_control": {
+    "scenario_id": "hierarchical_risk_budget_valuation_a1_fixed_40_20_40_v1",
+    "role": "424_dca_baseline"
+  },
+  "allowed_candidate_scenario_ids": [
+    "hierarchical_d4_satellite_strategic_floor_v1"
+  ],
+  "existing_dual_factor_reference": {
+    "scenario_id": "hierarchical_risk_budget_valuation_a2_satellite_traffic_light_bond_gold_sensitivity_v1",
+    "role": "zero_floor_reference"
+  },
+  "required_invariants": {
+    "identical_route_payloads": true,
+    "identical_strategic_sleeve_weights": true,
+    "identical_provider": true,
+    "identical_period": true,
+    "identical_calendar_day": true,
+    "identical_monthly_external_cashflows": true,
+    "same_initial_state": "zero_holdings_zero_cash",
+    "same_strategy_spec_bytes": true,
+    "no_real_orders": true
+  },
+  "frozen_contract": {
+    "strategic_floor_multiplier": "0.5",
+    "tactical_share_of_satellite_target": "0.5",
+    "effective_state_multipliers": {
+      "green": "1.0",
+      "yellow": "0.75",
+      "red": "0.5",
+      "ineligible": "0.5"
+    },
+    "released_weight_destination": "bond_gold_2_to_1",
+    "selling_allowed": false,
+    "no_window_or_threshold_change": true
+  },
+  "only_allowed_difference_from_zero_floor_reference": "allocation_engine.signal_parameters.strategic_floor_multiplier",
+  "interpretation_limits": [
+    "single_precommitted_floor_only",
+    "short_window_only",
+    "counterfactual_execution",
+    "no_floor_grid_search",
+    "no_automatic_promotion"
+  ]
+}

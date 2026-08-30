@@ -51,7 +51,10 @@ def evaluate_satellite_traffic_light(
     momentum_lookback_observations: int = 126,
     minimum_observations: int = 201,
     maximum_staleness_days: int = 10,
+    factor_mode: str = "dual",
 ) -> dict[str, object]:
+    if factor_mode not in {"dual", "long_average_only", "momentum_only"}:
+        raise ValueError("unsupported traffic-light factor mode")
     required = max(long_average_observations, momentum_lookback_observations + 1)
     if min(
         long_average_observations,
@@ -108,8 +111,22 @@ def evaluate_satellite_traffic_light(
     momentum_return = latest.nav / momentum_start.nav - ONE
     long_trend_positive = latest.nav > long_average
     momentum_positive = momentum_return > 0
-    condition_count = int(long_trend_positive) + int(momentum_positive)
-    state = "green" if condition_count == 2 else "yellow" if condition_count == 1 else "red"
+    if factor_mode == "dual":
+        condition_count = int(long_trend_positive) + int(momentum_positive)
+        state = (
+            "green"
+            if condition_count == 2
+            else "yellow"
+            if condition_count == 1
+            else "red"
+        )
+    else:
+        selected_positive = (
+            long_trend_positive
+            if factor_mode == "long_average_only"
+            else momentum_positive
+        )
+        state = "green" if selected_positive else "red"
     reasons = []
     reasons.append(
         "nav_above_long_average" if long_trend_positive else "nav_not_above_long_average"
@@ -117,7 +134,7 @@ def evaluate_satellite_traffic_light(
     reasons.append(
         "momentum_positive" if momentum_positive else "momentum_not_positive"
     )
-    return {
+    result = {
         "sleeve": sleeve,
         "fund_code": fund_code,
         "state": state,
@@ -150,6 +167,9 @@ def evaluate_satellite_traffic_light(
             ),
         },
     }
+    if factor_mode != "dual":
+        result["factor_mode"] = factor_mode
+    return result
 
 
 def build_satellite_traffic_light_signal(
@@ -157,14 +177,20 @@ def build_satellite_traffic_light_signal(
     review_date: date,
     satellite_series: Mapping[str, tuple[str, Sequence[NavPoint]]],
     strategic_weights: Mapping[str, Decimal],
+    controlled_satellite_sleeves: Sequence[str] | None = None,
     released_weight_destination: str = "cash",
     long_average_observations: int = 200,
     momentum_lookback_observations: int = 126,
     minimum_observations: int = 201,
     maximum_staleness_days: int = 10,
+    factor_mode: str = "dual",
+    strategic_floor_multiplier: Decimal | str = Decimal("0"),
 ) -> dict[str, object]:
     if released_weight_destination not in {"cash", "bond_gold_2_to_1"}:
         raise ValueError("unsupported released-weight destination")
+    floor_multiplier = Decimal(str(strategic_floor_multiplier))
+    if floor_multiplier < 0 or floor_multiplier > ONE:
+        raise ValueError("strategic floor multiplier must be between zero and one")
     weights = {sleeve: Decimal(value) for sleeve, value in strategic_weights.items()}
     if not weights or any(weight < 0 for weight in weights.values()):
         raise ValueError("strategic weights must be non-negative")
@@ -172,6 +198,13 @@ def build_satellite_traffic_light_signal(
         raise ValueError("strategic weights must sum to one")
     if set(satellite_series) - set(weights):
         raise ValueError("all satellite sleeves must exist in strategic weights")
+    controlled = (
+        set(satellite_series)
+        if controlled_satellite_sleeves is None
+        else {str(sleeve) for sleeve in controlled_satellite_sleeves}
+    )
+    if not controlled or controlled - set(satellite_series):
+        raise ValueError("controlled satellite sleeves must be a non-empty signal subset")
     if released_weight_destination == "bond_gold_2_to_1" and not {
         "defensive_bond",
         "gold_stabilizer",
@@ -179,7 +212,7 @@ def build_satellite_traffic_light_signal(
         raise ValueError("bond/gold parking requires both defensive sleeves")
 
     cutoff = review_date - timedelta(days=1)
-    evaluations = [
+    raw_evaluations = [
         evaluate_satellite_traffic_light(
             sleeve=sleeve,
             fund_code=fund_code,
@@ -189,14 +222,30 @@ def build_satellite_traffic_light_signal(
             momentum_lookback_observations=momentum_lookback_observations,
             minimum_observations=minimum_observations,
             maximum_staleness_days=maximum_staleness_days,
+            factor_mode=factor_mode,
         )
         for sleeve, (fund_code, points) in sorted(satellite_series.items())
+    ]
+    evaluations = [
+        {
+            **item,
+            "controlled": str(item["sleeve"]) in controlled,
+            "applied_multiplier": (
+                str(
+                    floor_multiplier
+                    + (ONE - floor_multiplier) * Decimal(str(item["multiplier"]))
+                )
+                if str(item["sleeve"]) in controlled
+                else "1"
+            ),
+        }
+        for item in raw_evaluations
     ]
     effective = dict(weights)
     released = Decimal("0")
     for item in evaluations:
         sleeve = str(item["sleeve"])
-        multiplier = Decimal(str(item["multiplier"]))
+        multiplier = Decimal(str(item["applied_multiplier"]))
         scaled = weights[sleeve] * multiplier
         released += weights[sleeve] - scaled
         effective[sleeve] = scaled
@@ -209,18 +258,32 @@ def build_satellite_traffic_light_signal(
     if cash_target < Decimal("-0.00000001"):
         raise ValueError("effective targets cannot exceed the full portfolio")
     cash_target = max(Decimal("0"), cash_target)
+    signal_parameters: dict[str, object] = {
+        "long_average_observations": long_average_observations,
+        "momentum_lookback_observations": momentum_lookback_observations,
+        "minimum_observations": minimum_observations,
+        "maximum_staleness_days": maximum_staleness_days,
+    }
+    if factor_mode != "dual":
+        signal_parameters["factor_mode"] = factor_mode
+    if floor_multiplier != 0:
+        signal_parameters["strategic_floor_multiplier"] = str(floor_multiplier)
+    if factor_mode != "dual" and floor_multiplier != 0:
+        model_version = "satellite_traffic_light_single_factor_strategic_floor_v1"
+    elif factor_mode != "dual":
+        model_version = "satellite_traffic_light_single_factor_ablation_v1"
+    elif floor_multiplier != 0:
+        model_version = "satellite_traffic_light_strategic_floor_v1"
+    else:
+        model_version = MODEL_VERSION
     payload: dict[str, object] = {
-        "model_version": MODEL_VERSION,
+        "model_version": model_version,
         "mode": "research_only",
         "review_date": review_date.isoformat(),
         "signal_cutoff_date": cutoff.isoformat(),
         "signal_nav_field": "accumulated_nav",
-        "signal_parameters": {
-            "long_average_observations": long_average_observations,
-            "momentum_lookback_observations": momentum_lookback_observations,
-            "minimum_observations": minimum_observations,
-            "maximum_staleness_days": maximum_staleness_days,
-        },
+        "signal_parameters": signal_parameters,
+        "controlled_satellite_sleeves": sorted(controlled),
         "satellite_evaluations": evaluations,
         "state_counts": {
             state: sum(item["state"] == state for item in evaluations)

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "model_id": "global_market_state_snapshot@0.5.0",
+  "minimum_coverage_for_state": 0.60,
+  "source_diversity_target": 2,
+  "allow_historical_visibility_assumed": true,
+  "axes": [
+    {
+      "axis_id": "trend",
+      "label": "跨市场价格趋势",
+      "weight": 0.25,
+      "features": [
+        {"feature_id": "china_equity_trend", "region": "china", "weight": 0.25, "calculation": "moving_average_gap_threshold", "series_ids": ["fund_proxy:china:110020:accumulated_nav"], "max_age_days": 7, "window_observations": 120, "output_unit": "%", "proxy_note": "沪深300ETF联接累计净值代理，非官方指数点位", "bands": {"low_max": -3.0, "high_min": 3.0, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}},
+        {"feature_id": "hong_kong_equity_trend", "region": "hong_kong", "weight": 0.15, "calculation": "moving_average_gap_threshold", "series_ids": ["fund_proxy:hong_kong:000071:accumulated_nav"], "max_age_days": 10, "window_observations": 120, "output_unit": "%", "proxy_note": "恒生指数人民币ETF联接累计净值代理，包含汇率、费用和QDII净值发布滞后", "bands": {"low_max": -3.0, "high_min": 3.0, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}},
+        {"feature_id": "united_states_equity_trend", "region": "united_states", "weight": 0.30, "calculation": "moving_average_gap_threshold", "series_ids": ["fund_proxy:united_states:017641:accumulated_nav"], "max_age_days": 10, "window_observations": 120, "output_unit": "%", "proxy_note": "标普500人民币QDII累计净值代理，包含汇率、费用和净值发布滞后", "bands": {"low_max": -3.0, "high_min": 3.0, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}},
+        {"feature_id": "europe_equity_trend", "region": "europe", "weight": 0.15, "calculation": "moving_average_gap_threshold", "series_ids": ["fund_proxy:europe:000614:accumulated_nav"], "max_age_days": 10, "window_observations": 120, "output_unit": "%", "proxy_note": "德国DAX人民币QDII累计净值代理，不能代表全部欧洲", "bands": {"low_max": -3.0, "high_min": 3.0, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}},
+        {"feature_id": "japan_equity_trend", "region": "japan", "weight": 0.15, "calculation": "moving_average_gap_threshold", "series_ids": ["fund_proxy:japan:020712:accumulated_nav"], "max_age_days": 10, "window_observations": 120, "output_unit": "%", "proxy_note": "日经225人民币QDII累计净值代理，包含汇率、费用和净值发布滞后", "bands": {"low_max": -3.0, "high_min": 3.0, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}}
+      ]
+    },
+    {
+      "axis_id": "valuation",
+      "label": "主要权益市场估值",
+      "weight": 0.15,
+      "features": [
+        {"feature_id": "china_valuation", "region": "china", "weight": 0.30, "calculation": "latest_threshold", "series_ids": ["index_valuation:000300:pe_percentile"], "max_age_days": 14, "output_unit": "%", "bands": {"low_max": 35, "high_min": 70, "low_state": "supportive", "middle_state": "balanced", "high_state": "restrictive"}},
+        {"feature_id": "hong_kong_valuation", "region": "hong_kong", "weight": 0.15, "calculation": "latest_threshold", "series_ids": ["index_valuation:H30184:pe_percentile"], "max_age_days": 14, "output_unit": "%", "bands": {"low_max": 35, "high_min": 70, "low_state": "supportive", "middle_state": "balanced", "high_state": "restrictive"}},
+        {"feature_id": "united_states_valuation", "region": "united_states", "weight": 0.30, "calculation": "latest_threshold", "series_ids": ["index_valuation:INX:pe_percentile"], "max_age_days": 14, "output_unit": "%", "bands": {"low_max": 35, "high_min": 70, "low_state": "supportive", "middle_state": "balanced", "high_state": "restrictive"}},
+        {"feature_id": "europe_valuation", "region": "europe", "weight": 0.15, "calculation": "latest_threshold", "series_ids": ["index_valuation:GDAXI:pe_pct"], "max_age_days": 14, "output_unit": "%", "proxy_note": "德国DAX估值分位作为欧洲代表性代理；不代表整个欧洲市场", "bands": {"low_max": 35, "high_min": 70, "low_state": "supportive", "middle_state": "balanced", "high_state": "restrictive"}},
+        {"feature_id": "japan_valuation", "region": "japan", "weight": 0.10, "calculation": "latest_threshold", "series_ids": ["index_valuation:N225:pe_percentile"], "max_age_days": 14, "output_unit": "%", "bands": {"low_max": 35, "high_min": 70, "low_state": "supportive", "middle_state": "balanced", "high_state": "restrictive"}}
+      ]
+    },
+    {
+      "axis_id": "macro_growth",
+      "label": "宏观增长与就业",
+      "weight": 0.15,
+      "features": [
+        {"feature_id": "china_manufacturing_pmi", "region": "china", "weight": 0.50, "calculation": "latest_threshold", "series_ids": ["macro:pmi_make"], "max_age_days": 75, "output_unit": "index", "bands": {"low_max": 49.5, "high_min": 50.5, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}},
+        {"feature_id": "united_states_payroll_cycle", "region": "united_states", "weight": 0.18, "calculation": "trailing_percentile_threshold", "series_ids": ["macro:nfp_change"], "max_age_days": 75, "minimum_history_points": 120, "history_observations": 500, "output_unit": "percentile", "proxy_note": "美国非农新增就业人数的历史分位；低分位表示就业增量偏弱，不单独定义衰退", "bands": {"low_max": 20, "high_min": 80, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}},
+        {"feature_id": "united_states_unemployment_cycle", "region": "united_states", "weight": 0.12, "calculation": "trailing_percentile_threshold", "series_ids": ["macro:unemployment"], "max_age_days": 75, "minimum_history_points": 120, "history_observations": 500, "output_unit": "percentile", "proxy_note": "美国失业率的历史分位；低分位相对支持、高分位相对限制", "bands": {"low_max": 40, "high_min": 80, "low_state": "supportive", "middle_state": "balanced", "high_state": "restrictive"}},
+        {"feature_id": "europe_japan_growth_cycle", "region": "europe_japan", "weight": 0.20, "calculation": "not_connected", "missing_reason": "regional_growth_series_not_connected"}
+      ]
+    },
+    {
+      "axis_id": "liquidity_rates",
+      "label": "流动性、利率与美元条件",
+      "weight": 0.15,
+      "features": [
+        {"feature_id": "china_yield_curve", "region": "china", "weight": 0.35, "calculation": "spread_threshold", "series_ids": ["market_series:bond_yield:CN_10Y", "market_series:bond_yield:CN_2Y"], "max_age_days": 7, "max_alignment_days": 3, "output_unit": "pct_point", "bands": {"low_max": 0.0, "high_min": 0.25, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}},
+        {"feature_id": "united_states_yield_curve", "region": "united_states", "weight": 0.35, "calculation": "spread_threshold", "series_ids": ["market_series:bond_yield:US_10Y", "market_series:bond_yield:US_2Y"], "max_age_days": 7, "max_alignment_days": 3, "output_unit": "pct_point", "bands": {"low_max": 0.0, "high_min": 0.25, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}},
+        {"feature_id": "global_dollar_condition", "region": "global", "weight": 0.30, "calculation": "trailing_return_threshold", "series_ids": ["market_series:forex:dxy"], "max_age_days": 14, "lookback_observations": 60, "output_unit": "%", "bands": {"low_max": -3.0, "high_min": 3.0, "low_state": "supportive", "middle_state": "balanced", "high_state": "restrictive"}}
+      ]
+    },
+    {
+      "axis_id": "risk_stress",
+      "label": "市场风险与压力",
+      "weight": 0.15,
+      "features": [
+        {"feature_id": "global_equity_drawdown", "region": "global", "weight": 0.45, "calculation": "panel_average_drawdown_threshold", "series_ids": ["fund_proxy:china:110020:accumulated_nav", "fund_proxy:hong_kong:000071:accumulated_nav", "fund_proxy:united_states:017641:accumulated_nav", "fund_proxy:europe:000614:accumulated_nav", "fund_proxy:japan:020712:accumulated_nav"], "max_age_days": 10, "max_alignment_days": 7, "window_observations": 252, "output_unit": "%", "proxy_note": "中港美欧日五只可投资基金代理的252观察等权平均回撤；含基金费用、跟踪误差、汇率和QDII净值滞后", "bands": {"low_max": -15, "high_min": -5, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}},
+        {"feature_id": "us_financial_conditions", "region": "global_us_proxy", "weight": 0.35, "calculation": "latest_threshold", "series_ids": ["financial_conditions:us:NFCI"], "max_age_days": 14, "output_unit": "index", "proxy_note": "美国金融系统条件代理；负值较宽松、正值较紧张", "bands": {"low_max": -0.25, "high_min": 0.25, "low_state": "supportive", "middle_state": "balanced", "high_state": "restrictive"}},
+        {"feature_id": "china_margin_leverage", "region": "china", "weight": 0.20, "calculation": "trailing_percentile_threshold", "series_ids": ["market_series:margin:leverage_pct"], "max_age_days": 7, "minimum_history_points": 120, "history_observations": 500, "output_unit": "percentile", "bands": {"low_max": 40, "high_min": 80, "low_state": "supportive", "middle_state": "balanced", "high_state": "restrictive"}}
+      ]
+    },
+    {
+      "axis_id": "breadth",
+      "label": "市场宽度",
+      "weight": 0.10,
+      "features": [
+        {"feature_id": "china_market_breadth", "region": "china_all_a", "weight": 0.50, "calculation": "latest_threshold", "series_ids": ["breadth:china:all_a:guchacha:advance_share_pct"], "max_age_days": 7, "output_unit": "%", "proxy_note": "股叉叉公开总览页报告的全A股上涨家数占比；分母为上涨、下跌和平盘家数之和，未分类证券显式排除", "bands": {"low_max": 45, "high_min": 55, "low_state": "restrictive", "middle_state": "balanced", "high_state": "supportive"}},
+        {"feature_id": "global_market_breadth", "region": "global", "weight": 0.50, "calculation": "not_connected", "missing_reason": "cross_market_breadth_history_not_connected"}
+      ]
+    },
+    {
+      "axis_id": "positioning_flows",
+      "label": "拥挤度与资金流",
+      "weight": 0.05,
+      "features": [
+        {"feature_id": "china_industry_crowding_distribution", "region": "china", "weight": 0.60, "calculation": "cross_section_median_threshold", "series_id_prefix": "industry_crowding:", "series_id_suffix": ":composite", "minimum_series": 25, "max_age_days": 14, "max_alignment_days": 3, "output_unit": "%", "proxy_note": "申万一级行业综合拥挤度横截面中位数；描述拥挤分布，不预测收益", "bands": {"low_max": 40, "high_min": 70, "low_state": "supportive", "middle_state": "balanced", "high_state": "restrictive"}},
+        {"feature_id": "cross_market_fund_flows", "region": "global", "weight": 0.40, "calculation": "not_connected", "missing_reason": "validated_cross_market_flow_history_not_connected"}
+      ]
+    }
+  ],
+  "guardrails": {
+    "prediction_allowed": false,
+    "strategy_signal_generation_allowed": false,
+    "order_generation_allowed": false
+  }
+}

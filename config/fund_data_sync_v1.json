@@ -14,10 +14,13 @@
       {"fund_code": "019861", "reason": "domestic_growth_policy_route"},
       {"fund_code": "006932", "reason": "defensive_policy_route"},
       {"fund_code": "160646", "reason": "technology_satellite_policy_route"},
+      {"fund_code": "000071", "reason": "hong_kong_broad_market_state_proxy"},
       {"fund_code": "000216", "reason": "hierarchical_strategy_research_candidate"},
       {"fund_code": "007300", "reason": "hierarchical_strategy_research_candidate"},
       {"fund_code": "008114", "reason": "hierarchical_strategy_research_candidate"},
-      {"fund_code": "014880", "reason": "hierarchical_strategy_research_candidate"}
+      {"fund_code": "014880", "reason": "hierarchical_strategy_research_candidate"},
+      {"fund_code": "011035", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "012636", "reason": "satellite_theme_observation_candidate"}
     ],
     "research_candidate_funds": [
       {"fund_code": "006282", "current_channel_availability": "limited", "channel_checked_at": "2026-08-24T00:00:00+08:00"},

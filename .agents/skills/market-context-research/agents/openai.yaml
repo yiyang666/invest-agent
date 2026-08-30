@@ -1,0 +1,4 @@
+interface:
+  display_name: "Market Context Research"
+  short_description: "Route and explain validated market-context evidence"
+  default_prompt: "Use $market-context-research to inspect current valuation, rates, FX, leverage, macro, or industry crowding with the correct evidence mode."

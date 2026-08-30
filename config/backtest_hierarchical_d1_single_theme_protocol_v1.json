@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "protocol_id": "hierarchical_d1_single_theme_traffic_light_ablation_v1",
+  "status": "frozen_before_same_universe_performance_run",
+  "frozen_date": "2026-08-29",
+  "strategy_id": "hierarchical_risk_budget_valuation",
+  "strategy_version": "0.2.0",
+  "hypothesis": "四主题同时门控的增量可能由不同主题贡献抵消；逐次只控制一个主题可识别主题异质性，但不用于事后挑选赢家替换主策略。",
+  "primary_same_universe_control": {
+    "scenario_id": "hierarchical_risk_budget_valuation_a1_fixed_40_20_40_v1",
+    "role": "424_dca_baseline"
+  },
+  "allowed_candidate_scenario_ids": [
+    "hierarchical_d1_single_theme_global_technology_v1",
+    "hierarchical_d1_single_theme_semiconductor_v1",
+    "hierarchical_d1_single_theme_robotics_v1",
+    "hierarchical_d1_single_theme_biotechnology_v1"
+  ],
+  "required_invariants": {
+    "identical_route_payloads": true,
+    "identical_strategic_sleeve_weights": true,
+    "identical_provider": true,
+    "identical_period": true,
+    "identical_calendar_day": true,
+    "identical_monthly_external_cashflows": true,
+    "same_initial_state": "zero_holdings_zero_cash",
+    "same_strategy_spec_bytes": true,
+    "no_real_orders": true
+  },
+  "frozen_signal_parameters": {
+    "long_average_observations": 200,
+    "momentum_lookback_observations": 126,
+    "minimum_observations": 201,
+    "maximum_staleness_days": 10,
+    "released_weight_destination": "bond_gold_2_to_1"
+  },
+  "only_allowed_difference": "allocation_engine.controlled_satellite_sleeves contains exactly one named theme",
+  "interpretation_limits": [
+    "diagnostic_ablation_not_candidate_selection",
+    "short_window_only",
+    "counterfactual_execution",
+    "no_parameter_search",
+    "no_automatic_promotion"
+  ]
+}

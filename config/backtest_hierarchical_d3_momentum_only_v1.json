@@ -1,0 +1,13 @@
+{
+  "extends": "backtest_hierarchical_a2_bond_gold_sensitivity_v1.json",
+  "overrides": {
+    "scenario_id": "hierarchical_d3_momentum_only_v1",
+    "research_stage": "D3_momentum_only",
+    "purpose": "D3预冻结因子消融：四个卫星主题只使用126观察期动量；收益为正为绿灯100%，否则为红灯0%，不产生黄灯。200日均线仍计算但不参与决策，201最小观察数和债券黄金2:1去向保持不变。",
+    "allocation_engine": {
+      "signal_parameters": {
+        "factor_mode": "momentum_only"
+      }
+    }
+  }
+}

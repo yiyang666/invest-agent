@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "schedule_id": "market_data_sync_v1",
+  "timezone": "Asia/Shanghai",
+  "database_path": "data/private/invest_agent.sqlite3",
+  "raw_root": "data/raw",
+  "provider": {
+    "provider_id": "guchacha_mcp",
+    "endpoint": "https://guchacha.com/mcp",
+    "credential_environment_variable": "GUCHACHA_MCP_TOKEN",
+    "timeout_seconds": 30,
+    "max_attempts": 1
+  },
+  "fund_proxy_policy": {
+    "enabled": true,
+    "role": "research_only_investable_market_trend_proxy",
+    "proxies": [
+      {
+        "region": "china",
+        "fund_code": "110020",
+        "fund_name": "易方达沪深300ETF联接A",
+        "provider_id": "akshare_eastmoney",
+        "nav_field": "accumulated_nav",
+        "local_series_id": "fund_proxy:china:110020:accumulated_nav",
+        "proxy_role": "沪深300"
+      },
+      {
+        "region": "hong_kong",
+        "fund_code": "000071",
+        "fund_name": "华夏恒生ETF联接A（人民币）",
+        "provider_id": "akshare_eastmoney",
+        "nav_field": "accumulated_nav",
+        "local_series_id": "fund_proxy:hong_kong:000071:accumulated_nav",
+        "proxy_role": "经人民币汇率调整的恒生指数"
+      },
+      {
+        "region": "united_states",
+        "fund_code": "017641",
+        "fund_name": "摩根标普500指数(QDII)人民币A",
+        "provider_id": "akshare_eastmoney",
+        "nav_field": "accumulated_nav",
+        "local_series_id": "fund_proxy:united_states:017641:accumulated_nav",
+        "proxy_role": "标普500人民币QDII"
+      },
+      {
+        "region": "europe",
+        "fund_code": "000614",
+        "fund_name": "华安国际龙头(DAX)ETF联接A",
+        "provider_id": "akshare_eastmoney",
+        "nav_field": "accumulated_nav",
+        "local_series_id": "fund_proxy:europe:000614:accumulated_nav",
+        "proxy_role": "德国DAX人民币QDII"
+      },
+      {
+        "region": "japan",
+        "fund_code": "020712",
+        "fund_name": "华安三菱日联日经225ETF发起式联接A",
+        "provider_id": "akshare_eastmoney",
+        "nav_field": "accumulated_nav",
+        "local_series_id": "fund_proxy:japan:020712:accumulated_nav",
+        "proxy_role": "日经225人民币QDII"
+      }
+    ]
+  },
+  "fred_policy": {
+    "enabled": true,
+    "transport": "public_graph_csv_download",
+    "usage_scope": "personal_research_local_only",
+    "redistribution_allowed": false,
+    "series": {
+      "NFCI": {
+        "local_series_id": "financial_conditions:us:NFCI",
+        "label": "芝加哥联储全国金融状况指数",
+        "unit": "index",
+        "frequency": "weekly",
+        "source_owner": "Federal Reserve Bank of Chicago",
+        "citation_url": "https://fred.stlouisfed.org/series/NFCI",
+        "usage_scope": "personal_research_local_only"
+      }
+    }
+  },
+  "sse_breadth_policy": {
+    "enabled": true,
+    "endpoint": "https://yunhq.sse.com.cn:32042/v1/sh1/list/exchange/equity",
+    "source_page": "https://www.sse.com.cn/market/price/trends/",
+    "source_owner": "Shanghai Stock Exchange",
+    "usage_scope": "personal_research_local_only",
+    "universe": "equity_excluding_b_shares",
+    "max_records": 4000,
+    "minimum_final_time": "15:00:00",
+    "history_policy": "accumulate_strict_observations_from_first_successful_collection",
+    "coverage_limitation": "Shanghai exchange only; Shenzhen and Beijing exchanges are not included"
+  },
+  "guchacha_breadth_policy": {
+    "enabled": true,
+    "endpoint": "https://guchacha.com/dashboard",
+    "source_owner": "Guchacha",
+    "upstream_label": "东方财富全市场",
+    "usage_scope": "personal_research_local_only",
+    "universe": "provider_reported_all_a_shares",
+    "minimum_final_time": "15:00:00",
+    "history_policy": "accumulate_strict_observations_from_first_successful_collection",
+    "denominator_policy": "advancers_plus_decliners_plus_unchanged"
+  },
+  "tool_policy": {
+    "enabled_tools": [
+      "list_datasets",
+      "get_index_valuation",
+      "get_index_weight",
+      "get_index_forward_pe",
+      "get_industry_crowding",
+      "get_market_series",
+      "get_macro"
+    ],
+    "allowed_market_series_datasets": ["bond_yield", "forex", "margin"],
+    "allowed_market_series_keys": {
+      "bond_yield": ["CN_2Y", "CN_10Y", "US_2Y", "US_10Y", "JP_2Y", "JP_10Y"],
+      "forex": ["usdjpy", "eurusd", "gbpusd", "usdcny", "dxy"],
+      "margin": ["margin_bal", "leverage_pct"]
+    },
+    "allowed_macro_indicators": ["cpi", "ppi", "pmi", "gdp", "buffett", "nonfarm"]
+  },
+  "bootstrap_commands": [
+    {"operation": "audit_schema"},
+    {"operation": "publish_fund_proxies", "arguments": {"history": true}},
+    {"operation": "collect_fred", "arguments": {"series": "NFCI", "lookback_days": 0}},
+    {"operation": "collect_guchacha_breadth"},
+    {"tool": "get_index_valuation", "arguments": {"index_code": "000300", "metric": "pe_ttm", "window": "since", "history": true}},
+    {"tool": "get_index_valuation", "arguments": {"index_code": "000688", "metric": "pe_ttm", "window": "since", "history": true}},
+    {"tool": "get_index_valuation", "arguments": {"index_code": "399006", "metric": "pe_ttm", "window": "since", "history": true}},
+    {"tool": "get_index_valuation", "arguments": {"index_code": "H30184", "metric": "pe_ttm", "window": "since", "history": true}},
+    {"tool": "get_index_valuation", "arguments": {"index_code": "INX", "metric": "pe_ttm", "window": "since", "history": true}},
+    {"tool": "get_index_valuation", "arguments": {"index_code": "NDX", "metric": "pe_ttm", "window": "since", "history": true}},
+    {"tool": "get_index_valuation", "arguments": {"index_code": "FTSE", "metric": "pe_ttm", "window": "since", "history": true}},
+    {"tool": "get_index_valuation", "arguments": {"index_code": "N225", "metric": "pe_ttm", "window": "since", "history": true}},
+    {"tool": "get_industry_crowding", "arguments": {"industry": "电子", "angle": "composite", "history": true}},
+    {"tool": "get_industry_crowding", "arguments": {"industry": "通信", "angle": "composite", "history": true}},
+    {"tool": "get_industry_crowding", "arguments": {"industry": "计算机", "angle": "composite", "history": true}},
+    {"tool": "get_industry_crowding", "arguments": {"industry": "机械设备", "angle": "composite", "history": true}},
+    {"tool": "get_industry_crowding", "arguments": {"industry": "汽车", "angle": "composite", "history": true}},
+    {"tool": "get_industry_crowding", "arguments": {"industry": "医药生物", "angle": "composite", "history": true}},
+    {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "CN_2Y", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "CN_10Y", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "US_2Y", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "US_10Y", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "JP_2Y", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "JP_10Y", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "usdjpy", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "eurusd", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "gbpusd", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "usdcny", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "dxy", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "margin", "key": "margin_bal", "limit": 500}},
+    {"tool": "get_market_series", "arguments": {"dataset": "margin", "key": "leverage_pct", "limit": 500}},
+    {"tool": "get_macro", "arguments": {"indicator": "cpi", "limit": 500}},
+    {"tool": "get_macro", "arguments": {"indicator": "ppi", "limit": 500}},
+    {"tool": "get_macro", "arguments": {"indicator": "pmi", "limit": 500}},
+    {"tool": "get_macro", "arguments": {"indicator": "gdp", "limit": 500}},
+    {"tool": "get_macro", "arguments": {"indicator": "buffett", "limit": 500}},
+    {"tool": "get_macro", "arguments": {"indicator": "nonfarm", "limit": 500}}
+  ],
+  "jobs": [
+    {
+      "job_id": "market_daily_series",
+      "cadence": "business_daily",
+      "local_time": "23:35",
+      "commands": [
+        {"operation": "publish_fund_proxies", "arguments": {"history": false}},
+        {"operation": "collect_guchacha_breadth"},
+        {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "CN_2Y", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "CN_10Y", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "US_2Y", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "US_10Y", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "JP_2Y", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "JP_10Y", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "usdjpy", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "eurusd", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "gbpusd", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "usdcny", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "dxy", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "margin", "key": "margin_bal", "limit": 10}},
+        {"tool": "get_market_series", "arguments": {"dataset": "margin", "key": "leverage_pct", "limit": 10}}
+      ]
+    },
+    {
+      "job_id": "market_weekly_context",
+      "cadence": "weekly",
+      "weekday": "FR",
+      "local_time": "23:50",
+      "commands": [
+        {"operation": "audit_schema"},
+        {"operation": "collect_fred", "arguments": {"series": "NFCI", "lookback_days": 120}},
+        {"tool": "list_datasets", "arguments": {}},
+        {"tool": "get_index_valuation", "arguments": {}},
+        {"tool": "get_index_forward_pe", "arguments": {}},
+        {"tool": "get_industry_crowding", "arguments": {"angle": "composite", "history": false}}
+      ]
+    },
+    {
+      "job_id": "market_monthly_context",
+      "cadence": "monthly",
+      "calendar_day": 2,
+      "local_time": "09:15",
+      "commands": [
+        {"tool": "get_index_weight", "arguments": {"index_code": "000016", "limit": 500}},
+        {"tool": "get_index_weight", "arguments": {"index_code": "000300", "limit": 500}},
+        {"tool": "get_index_weight", "arguments": {"index_code": "000688", "limit": 500}},
+        {"tool": "get_index_weight", "arguments": {"index_code": "399006", "limit": 500}},
+        {"tool": "get_macro", "arguments": {"indicator": "cpi", "limit": 24}},
+        {"tool": "get_macro", "arguments": {"indicator": "ppi", "limit": 24}},
+        {"tool": "get_macro", "arguments": {"indicator": "pmi", "limit": 24}},
+        {"tool": "get_macro", "arguments": {"indicator": "buffett", "limit": 40}},
+        {"tool": "get_macro", "arguments": {"indicator": "nonfarm", "limit": 24}}
+      ]
+    },
+    {
+      "job_id": "market_quarterly_context",
+      "cadence": "quarterly",
+      "months": [1, 4, 7, 10],
+      "calendar_day": 20,
+      "local_time": "09:30",
+      "commands": [
+        {"tool": "get_macro", "arguments": {"indicator": "gdp", "limit": 20}}
+      ]
+    }
+  ],
+  "safety": {
+    "trading_allowed": false,
+    "strategy_inference_allowed": false,
+    "fallback_to_mock_data": false,
+    "publish_failed_batches": false,
+    "codex_required_for_collection": false
+  }
+}

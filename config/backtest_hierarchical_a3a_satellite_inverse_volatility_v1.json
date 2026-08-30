@@ -1,0 +1,31 @@
+{
+  "extends": "backtest_hierarchical_a1_v1.json",
+  "overrides": {
+    "scenario_id": "hierarchical_a3a_satellite_inverse_volatility_only_v1",
+    "research_stage": "A3a_satellite_inverse_volatility_only",
+    "purpose": "A3a预冻结卫星内部风险预算：保持40/20/40、基金池、现金流和只买不卖语义不变，卫星总目标持续为20%；每季度使用上季度末前可见的252个收益观察计算有界逆波动权重，每主题占卫星15%-35%，全球科技、半导体、机器人合计不超过70%。不使用红绿灯、恢复锁、估值或参数搜索。",
+    "allocation_engine": {
+      "mode": "satellite_inverse_volatility",
+      "signal_nav_field": "accumulated_nav",
+      "satellite_funds": {
+        "global_technology_satellite": "100055",
+        "semiconductor_satellite": "007300",
+        "robotics_satellite": "014880",
+        "biotechnology_satellite": "017894"
+      },
+      "concentration_group_sleeves": [
+        "global_technology_satellite",
+        "semiconductor_satellite",
+        "robotics_satellite"
+      ],
+      "signal_parameters": {
+        "lookback_return_observations": 252,
+        "minimum_observations": 253,
+        "maximum_staleness_days": 10,
+        "minimum_theme_share": "0.15",
+        "maximum_theme_share": "0.35",
+        "concentration_group_cap": "0.70"
+      }
+    }
+  }
+}

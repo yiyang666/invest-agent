@@ -47,28 +47,72 @@
 
 增量同步的基金全集由四部分组成：政策中的非QDII基金、当前购买路由池、当前渠道可交易的研究候选、最新真实持仓。购买路由池和研究候选只接受 `open/limited`；暂停、不支持、关闭或未知路由不会进入候选。若这些基金仍在真实持仓中，系统仍会更新其净值用于风险监控。研究候选只获得数据，不会自动晋级为购买路线。每只基金先归档原始响应，再标准化并通过质量门禁；单只失败会使运行降级或失败，不会用模拟数据补洞。
 
-默认建议在工作日23:15（Asia/Shanghai）执行。进程锁会阻止重叠运行；每次结果写入Git忽略的 `data/private/sync/`。该任务只更新数据，不自动运行策略、报告或交易。
-
-### macOS 工作日定时同步
-
-本机使用 `launchd` 标签 `com.ethan.invest-agent.fund-data-sync`，在周一至周五23:15（Asia/Shanghai）调用：
-
-```bash
-scripts/run_scheduled_fund_data_sync.sh
-```
-
-脚本先直接运行上述确定性同步命令；同步完成后，若 `data/private/automation/codex-session-id` 存在，则通过本机 Codex CLI 将只读结果回报到绑定会话。Codex 不参与采集、校验或数据库写入，回报失败也不改变同步结果。会话ID、运行日志和同步报告均位于 Git 忽略的 `data/private/`。
-
-检查本机任务和最近日志：
-
-```bash
-launchctl print gui/$(id -u)/com.ethan.invest-agent.fund-data-sync
-tail -n 50 data/private/automation/fund-data-sync.stderr.log
-```
-
-Mac关机时任务不会运行；睡眠期间错过的日历任务通常会在唤醒后执行。若本机代理 `127.0.0.1:7897` 未运行，远端采集会失败关闭，不会发布模拟或陈旧结果，也不会自动进行额外重试。
+基金单域命令可继续手工执行；自动维护统一由下文的多频率入口负责。进程锁会阻止重叠运行；任务只更新数据，不自动运行策略、报告或交易。
 
 QDII当前路由事实位于 `config/qdii_purchase_route_pool_v1.json`。同一袖套可以登记多个已核验路由；各路由每日限额分别消耗，未完成预算跨日、跨月继续排队。系统不会因为某条路线不可买而自行换基金。
+
+## 市场背景数据
+
+股叉叉只补充指数估值/权重、利率、汇率、杠杆、宏观与行业拥挤度。它不替代基金净值，也不是天气预言机。
+
+```bash
+# 初始化隔离表、查看已发布批次和序列
+.conda-env/bin/python -m invest_agent.market_data.cli init-store
+.conda-env/bin/python -m invest_agent.market_data.cli inspect
+
+# 单次证据采集：先归档，再标准化和发布
+.conda-env/bin/python -m invest_agent.market_data.cli collect \
+  --tool get_index_valuation \
+  --arguments '{"index_code":"000300","metric":"pe_ttm","window":"since","history":true}'
+
+.conda-env/bin/python -m invest_agent.market_data.cli publish-fund-proxies --history
+
+.conda-env/bin/python -m invest_agent.market_data.cli collect-fred \
+  --series NFCI --lookback-days 120
+
+.conda-env/bin/python -m invest_agent.market_data.cli collect-guchacha-breadth
+
+# 一次性历史回填（包含schema审计、基金代理、NFCI、全A聚合宽度及已审查市场命令）
+.conda-env/bin/python -m invest_agent.automation.maintenance_cli run-bootstrap
+```
+
+`probe`只用于schema排查，归档但不发布；进入策略、风险、报告、归因或调仓建议的值必须由`collect`、`publish-fund-proxies`、`collect-fred`、`collect-guchacha-breadth`或定时维护写入本地市场数据表。基金代理不是官方指数；FRED与股叉叉聚合宽度仅限个人本地研究并要求引用。`collect-sse-breadth`保留为手工校验，不在默认计划中。精确允许列表见`config/market_data_sync_v1.json`。
+
+## 可观察的日/周/月/季统一数据维护
+
+系统不为四种频率创建四个会话。一个名为`Invest Agent 数据更新总控`的Codex heartbeat在工作日23:55返回固定维护会话，只依次运行`plan`和`run-due`；确定性代码根据本地状态判断应运行哪些作业：
+
+- 工作日：基金净值、股叉叉全A股聚合宽度、国债收益率、外汇和两融；
+- 每周：数据目录、指数估值、前瞻PE和行业拥挤度；
+- 每月：指数权重及CPI/PPI/PMI/非农/巴菲特指标；
+- 每季：GDP。
+
+```bash
+# 只读预览当前到期作业
+.conda-env/bin/python -m invest_agent.automation.maintenance_cli plan
+
+# 手工运行到期作业
+.conda-env/bin/python -m invest_agent.automation.maintenance_cli run-due
+
+# 诊断单个作业
+.conda-env/bin/python -m invest_agent.automation.maintenance_cli \
+  run-job --job-id market_weekly_context
+```
+
+Codex任务的版本化提示词位于`config/codex_data_update_automation_v1.md`。Agent只展示计划和解释汇总报告；共享锁、频率状态、采集、门禁与写库均由`maintenance_cli`完成。任务状态和历史在Codex的Scheduled页面及固定会话查看，本地状态位于`data/private/automation/data-maintenance-state.json`。
+
+“今天该跑什么”不是Agent判断：CLI以`Asia/Shanghai`当前时间（或显式`--as-of`）检查每个作业的频率、目标星期/日期/时间，生成日、ISO周、月或季度周期键，再与状态文件中的`last_success_period`比较。只有已到时且本周期尚未成功的作业进入`due_jobs`。当前heartbeat是周一至周五；基金净值和高频市场序列均按工作日运行，月/季任务在标称日期落到周末时于下个工作日补跑。市场序列每次读取最近窗口，能补入期间遗漏的观察，但补采不能伪装成当日首次观测；完全错过的周频快照也不能在下周一还原。
+
+`scripts/run_scheduled_data_maintenance.sh`及`config/launchd/com.example.invest-agent.data-maintenance.plist.example`保留为未来零LLM备用，当前不得加载。若未来切换到launchd，先暂停Codex数据总控，再完成Keychain凭证与本地任务验收；两个触发器不能并行。
+
+检查本地备用任务是否误加载：
+
+```bash
+launchctl print gui/$(id -u)/com.ethan.invest-agent.data-maintenance
+tail -n 50 data/private/automation/data-maintenance.stderr.log
+```
+
+本地项目的Codex定时任务要求电脑开机且应用运行。远端失败会记录并失败关闭，不发布模拟数据、不触发策略或交易，也不自动重试含糊失败。任务停用不会影响CLI手工运行。
 
 ## 指标与体检
 
@@ -104,7 +148,7 @@ QDII当前路由事实位于 `config/qdii_purchase_route_pool_v1.json`。同一�
 
 ## 当前能力边界
 
-已具备：真实只读账户、本地数据、一键增量同步、风险指标、研究回测、策略注册、证据报告、QDII可购路由容量、费用感知的调整草案、持久化逐笔批准与受控申购，以及确定性归因和策略生命周期评价。
+已具备：真实只读账户、本地基金与市场数据、统一多频率维护、风险指标、研究回测、策略注册、证据报告、QDII可购路由容量、费用感知的调整草案、持久化逐笔批准与受控申购，以及确定性归因和策略生命周期评价。
 
 尚未具备：
 

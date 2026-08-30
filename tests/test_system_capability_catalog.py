@@ -20,6 +20,8 @@ class SystemCapabilityCatalogTests(unittest.TestCase):
                 "design-fund-strategy",
                 "fund-data-collect",
                 "fund-metric-calc",
+                "market-context-research",
+                "market-data-collect",
                 "thsfund",
                 "verify-fund-trading-rules",
             ],
@@ -40,6 +42,9 @@ class SystemCapabilityCatalogTests(unittest.TestCase):
                 "get_index_valuation",
                 "get_index_weight",
                 "get_index_forward_pe",
+                "get_industry_crowding",
+                "get_market_series",
+                "get_macro",
             },
         )
 
@@ -48,6 +53,17 @@ class SystemCapabilityCatalogTests(unittest.TestCase):
         read_first = agents.split("## Safety invariants", maxsplit=1)[0]
         self.assertIn("`docs/capabilities.md`", read_first)
         self.assertIn("docs/capabilities.md", (ROOT / "README.md").read_text())
+
+    def test_visible_data_update_automation_uses_only_unified_runner(self) -> None:
+        prompt = (ROOT / "config/codex_data_update_automation_v1.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("maintenance_cli plan", prompt)
+        self.assertIn("maintenance_cli run-due", prompt)
+        self.assertIn("不得绕过统一维护CLI", prompt)
+        self.assertIn("禁止刷新爱基金账户", prompt)
+        self.assertIn("禁止用模拟", prompt)
+        self.assertFalse((ROOT / "scripts/run_scheduled_fund_data_sync.sh").exists())
 
     def test_reviewed_aijijin_artifact_matches_committed_lock(self) -> None:
         wheel = ROOT / ".agents/skills/thsfund/vendor/aijijin_sdk-0.2.0-py3-none-any.whl"
