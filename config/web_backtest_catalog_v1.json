@@ -1,0 +1,6 @@
+{"schema_version":1,"results":[
+  {"strategy_id":"dca_baseline","strategy_version":"1.5.0","label":"631 可执行路由基准","report_path":"data/private/reports/dca-baseline-v1-5-route-pool-candidate-20260825-r2.json"},
+  {"strategy_id":"new_money_trend_rs","strategy_version":"1.0.0","label":"趋势与相对强弱主测试","report_path":"data/private/reports/phase-4-trend-rs-primary-s2-3-2026-08-16.json"},
+  {"strategy_id":"drawdown_budget_add","strategy_version":"1.0.0","label":"回撤预算加仓主测试","report_path":"data/private/reports/phase-4-drawdown-budget-add-primary-s3-3-2026-08-16.json"},
+  {"strategy_id":"hierarchical_risk_budget_valuation","strategy_version":"0.2.0","label":"分层风险预算 A1","report_path":"data/private/reports/hierarchical-risk-budget-a1-full-20260829-d0.json"}
+]}

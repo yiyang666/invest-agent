@@ -186,7 +186,29 @@ class Dashboard:
               PARTITION BY n.nav_date ORDER BY b.fetched_at DESC,n.batch_id DESC) AS rn
             FROM fund_nav_observations n JOIN data_batches b USING(batch_id)
             WHERE n.fund_code=? AND n.provider_id='akshare_eastmoney'
-              AND b.quality_status IN ('pass','partial')) WHERE rn=1 ORDER BY nav_date DESC LIMIT 180""", (code,))[::-1]
+              AND b.quality_status IN ('pass','partial')) WHERE rn=1 ORDER BY nav_date""", (code,))
+
+    def backtests(self):
+        catalog = self.json("config/web_backtest_catalog_v1.json", {"results": []})
+        results = {}
+        for entry in catalog.get("results", []):
+            path = self.root / entry.get("report_path", "")
+            if not path.is_file():
+                continue
+            report = json.loads(path.read_text())
+            profiles = report.get("profile_results") or []
+            if not profiles or not isinstance(profiles[0].get("metrics"), dict):
+                continue
+            metrics = profiles[0]["metrics"]
+            key = (entry.get("strategy_id"), entry.get("strategy_version"))
+            results[key] = {"label": entry.get("label"), "scenario_id": report.get("scenario_id"),
+                "mode": report.get("mode"), "classification": report.get("classification"),
+                "gate": report.get("official_rule_gate"), "profile_id": profiles[0].get("allocation_profile_id"),
+                "metrics": {name: metrics.get(name) for name in ("start_date", "end_date",
+                    "time_weighted_return_pct", "xirr_pct", "annualized_return_pct",
+                    "annualized_volatility_pct", "maximum_drawdown_pct", "contributions_cny",
+                    "final_value_cny", "purchase_fees_cny")}, "report_path": entry.get("report_path")}
+        return results
 
     def strategies(self):
         registry = load_strategy_registry(self.root / "strategies/registry.json")
@@ -196,6 +218,7 @@ class Dashboard:
         except ValueError:
             registry_valid = False
         registrations = {(r["strategy_id"], r["strategy_version"]): r for r in registry["strategies"]}
+        backtests = self.backtests()
         items = []
         for path in sorted((self.root / "strategies/specs").glob("*.json")):
             spec = json.loads(path.read_text())
@@ -205,7 +228,7 @@ class Dashboard:
                           "strategy_id": key[0], "version": key[1],
                           "purpose": spec.get("purpose", ""), "registered": registration is not None,
                           "is_benchmark": bool(registration and registration.get("decision_permissions", {}).get("target_allocation_authority")),
-                          "mode": spec.get("mode"), "status": spec.get("status"),
+                          "mode": spec.get("mode"), "status": spec.get("status"), "backtest": backtests.get(key),
                           "registration": registration, "spec": spec,
                           "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
         items.sort(key=lambda x: (not x["is_benchmark"], not x["registered"], x["name"], x["version"] or ""))
