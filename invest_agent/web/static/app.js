@@ -27,7 +27,46 @@ async function load(){const b=$('#refresh');b.disabled=true;try{const r=await fe
 function lineChart(points,valueKey,label,color='#438773'){const values=points.map(p=>Number(p[valueKey])).filter(Number.isFinite);if(values.length<2)return empty(`暂无足够数据计算${label}`);const lo=Math.min(...values),hi=Math.max(...values),range=hi-lo||1;const valid=points.filter(p=>Number.isFinite(Number(p[valueKey]))),line=valid.map((p,i)=>`${20+i/(valid.length-1||1)*660},${200-(Number(p[valueKey])-lo)/range*170}`).join(' ');return `<svg class="chart" viewBox="0 0 700 230" role="img" aria-label="${esc(label)}"><path d="M20 200H680 M20 115H680 M20 30H680" stroke="#e2e9e6" fill="none"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/></svg><div class="chart-caption"><span>${esc(valid[0].nav_date)}</span><span>${label} ${lo.toFixed(2)} — ${hi.toFixed(2)}</span><span>${esc(valid.at(-1).nav_date)}</span></div>`;}
 function dailyChanges(points){const result=[];for(let i=1;i<points.length;i++)result.push({nav_date:points[i].nav_date,change:(Number(points[i].unit_nav)/Number(points[i-1].unit_nav)-1)*100});return result;}
 function filterPeriod(points,months){if(!months||!points.length)return points;const end=new Date(points.at(-1).nav_date+'T00:00:00'),start=new Date(end);start.setMonth(start.getMonth()-months);return points.filter(p=>new Date(p.nav_date+'T00:00:00')>=start);}
-function drawFundCharts(all,months){const points=filterPeriod(all,months),target=$('#curve');if(!target)return;const values=points.map(p=>Number(p.unit_nav)),lo=Math.min(...values),hi=Math.max(...values),current=values.at(-1),position=hi===lo?50:(current-lo)/(hi-lo)*100,zone=position<33.33?'低位区':position<66.66?'中位区':'高位区';target.innerHTML=`<div class="chart-tools">${[[1,'近1月'],[3,'近3月'],[6,'近6月'],[12,'近1年'],[0,'全部']].map(([n,t])=>`<button data-nav-period="${n}" class="${months===n?'active':''}">${t}</button>`).join('')}</div><div class="position-zone"><div class="zone-labels"><span>低位区</span><span>中位区</span><span>高位区</span></div><div class="zone-track"><i style="left:calc(${Math.min(100,Math.max(0,position))}% - 2px)"></i></div><p class="muted">当前净值 ${current.toFixed(4)}，位于所选区间最低 ${lo.toFixed(4)} 至最高 ${hi.toFixed(4)} 的 ${position.toFixed(1)}% · ${zone}</p></div><div class="chart-block"><h3>单位净值</h3>${lineChart(points,'unit_nav','单位净值')}</div><div class="chart-block"><h3>每日净值涨跌幅</h3>${lineChart(dailyChanges(points),'change','每日涨跌幅（%）','#c28b4e')}</div><p class="muted chart-note">每日涨跌幅 = 当日单位净值 ÷ 上一已发布单位净值 − 1。高低位按所选区间的最低、最高单位净值等分为三段；分红或拆分可能影响单位净值位置，不代表估值高低。</p>`;target.querySelectorAll('[data-nav-period]').forEach(b=>b.onclick=()=>drawFundCharts(all,Number(b.dataset.navPeriod)));}
+// 单位净值图：所选区间高低点三等分色带叠在纵轴，当前净值虚线标出
+function navLineChart(points){
+  const values=points.map(p=>Number(p.unit_nav)).filter(Number.isFinite);
+  if(values.length<2)return empty('暂无足够数据计算单位净值');
+  const lo=Math.min(...values),hi=Math.max(...values),range=hi-lo||1;
+  const current=values.at(-1),position=hi===lo?50:(current-lo)/range*100;
+  const zone=position<33.33?'低位区':position<66.66?'中位区':'高位区';
+  const valid=points.filter(p=>Number.isFinite(Number(p.unit_nav)));
+  const left=72,top=28,plotW=620,plotH=180,bottom=top+plotH,right=left+plotW,axisW=10;
+  const yAt=v=>bottom-(Number(v)-lo)/range*plotH;
+  const xAt=i=>left+i/(valid.length-1||1)*plotW;
+  const line=valid.map((p,i)=>`${xAt(i)},${yAt(p.unit_nav)}`).join(' ');
+  const yCurrent=yAt(current),band=plotH/3;
+  const zones=[
+    {label:'高位区',y:top,fill:'#d7836f38',solid:'#c46a56',text:'#a04f3e'},
+    {label:'中位区',y:top+band,fill:'#dbc47e3d',solid:'#c9ad5e',text:'#8a6e2f'},
+    {label:'低位区',y:top+band*2,fill:'#77b99b3a',solid:'#5fa888',text:'#2f6b52'},
+  ];
+  const bandSvg=zones.map(z=>`<rect x="${left}" y="${z.y}" width="${plotW}" height="${band}" fill="${z.fill}"/><rect x="${left-axisW}" y="${z.y}" width="${axisW}" height="${band}" fill="${z.solid}"/><text x="${left-axisW-8}" y="${z.y+band/2}" text-anchor="end" dominant-baseline="middle" fill="${z.text}" font-size="11" font-weight="500">${z.label}</text>`).join('');
+  const splitY1=top+band,splitY2=top+band*2,lineColor='#c45a4a';
+  return `<svg class="chart nav-chart" viewBox="0 0 760 250" role="img" aria-label="单位净值与高低位区间">
+    ${bandSvg}
+    <path d="M${left} ${bottom}H${right} M${left} ${splitY1}H${right} M${left} ${splitY2}H${right} M${left} ${top}H${right}" stroke="#e2e9e6" fill="none"/>
+    <line x1="${left}" y1="${yCurrent}" x2="${right}" y2="${yCurrent}" stroke="#233f3b" stroke-width="1.2" stroke-dasharray="4 3" opacity=".75"/>
+    <polyline points="${line}" fill="none" stroke="${lineColor}" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="${xAt(valid.length-1)}" cy="${yCurrent}" r="4.5" fill="${lineColor}" stroke="#fff" stroke-width="2"/>
+    <text x="${right+8}" y="${yCurrent}" dominant-baseline="middle" fill="${lineColor}" font-size="11">${current.toFixed(4)}</text>
+    <text x="${left}" y="${bottom+16}" fill="#738583" font-size="11">${esc(valid[0].nav_date)}</text>
+    <text x="${right}" y="${bottom+16}" text-anchor="end" fill="#738583" font-size="11">${esc(valid.at(-1).nav_date)}</text>
+    <text x="${(left+right)/2}" y="${bottom+16}" text-anchor="middle" fill="#738583" font-size="11">单位净值 ${lo.toFixed(4)} — ${hi.toFixed(4)}</text>
+  </svg>
+  <p class="zone-caption muted">当前净值 ${current.toFixed(4)}，位于所选区间的 ${position.toFixed(1)}% · ${zone}</p>`;
+}
+function drawFundCharts(all,months){const points=filterPeriod(all,months),target=$('#curve');if(!target)return;
+  target.innerHTML=`<div class="chart-tools">${[[1,'近1月'],[3,'近3月'],[6,'近6月'],[12,'近1年'],[0,'全部']].map(([n,t])=>`<button data-nav-period="${n}" class="${months===n?'active':''}">${t}</button>`).join('')}</div>
+    <div class="chart-block"><h3>单位净值</h3>${navLineChart(points)}</div>
+    <div class="chart-block"><h3>每日净值涨跌幅</h3>${lineChart(dailyChanges(points),'change','每日涨跌幅（%）','#c28b4e')}</div>
+    <p class="muted chart-note">每日涨跌幅 = 当日单位净值 ÷ 上一已发布单位净值 − 1。高低位按所选区间的最低、最高单位净值等分三段，叠在单位净值纵轴上；分红或拆分可能影响单位净值位置，不代表估值高低。</p>`;
+  target.querySelectorAll('[data-nav-period]').forEach(b=>b.onclick=()=>drawFundCharts(all,Number(b.dataset.navPeriod)));
+}
 async function showFund(code){const f=data.funds.find(f=>f.code===code);$('#detail-content').innerHTML=`<h2>${esc(f?.name||code)}</h2><p>${badge(f?.fund_type||'待分类')} ${badge(f?.position_bucket||'待归属','good')}</p><p class="muted">${esc(code)} · 类型来源：${esc(f?.fund_type_source||'未登记')} · 仓位来源：${esc(f?.position_bucket_source||'未登记')}</p><div id="curve">正在读取本地净值…</div>`;$('#detail').showModal();try{const r=await fetch(`/api/nav?code=${encodeURIComponent(code)}`);if(!r.ok)throw Error();const payload=await r.json(),points=Array.isArray(payload)?payload:payload.series;if(!points?.length){$('#curve').innerHTML=empty('暂无可用净值');return;}drawFundCharts(points,3);}catch(e){const t=$('#curve');if(t)t.textContent='净值读取失败，请稍后重试。';}}
 function ruleTree(value){if(value===null)return '—';if(typeof value!=='object')return esc(typeof value==='boolean'?(value?'是':'否'):value);if(Array.isArray(value))return '<ul>'+value.map(v=>'<li>'+ruleTree(v)+'</li>').join('')+'</ul>';const labels={signal:'信号',cash_flow:'资金规则',buy_only_allocation:'新增资金配置',instrument_routing:'基金路由',risk_boundary:'风险边界',contribution_cny:'每月投入金额',canonical:'基准金额',sensitivity:'比较金额',schedule:'执行节奏',budget_freeze_calendar_day:'每月预算确定日',limited_fund_start_calendar_day:'限额基金开始日',unlimited_fund_tranche_calendar_days:'非限额基金分批日',allocation:'配置比例',timezone:'时区',data_source:'数据来源',selling_allowed:'允许卖出',borrowing_or_leverage:'允许借款或杠杆',automatic_fund_substitution:'自动替换基金',depends_on_market_state:'依赖市场状态',depends_on_nav_or_return:'依赖净值或收益',generated_once_per_calendar_month:'每月只生成一次计划',target_maximum_drawdown_pct:'目标最大回撤（%）',stress_limit_drawdown_pct:'压力回撤参考（%）',policy_limits_are_external_vetoes:'政策限制具有否决权'};return Object.entries(value).map(([k,v])=>`<div class="rule-item"><strong>${esc(labels[k]||k.replaceAll('_',' '))}</strong><div>${ruleTree(v)}</div></div>`).join('');}
 function backtestView(b){if(!b)return `<div class="notice">尚未在网页回测目录中绑定可展示的结果。</div>`;const m=b.metrics,pct=v=>v==null?'—':`${Number(v).toFixed(2)}%`;return `<h3>回测表现 · ${esc(b.label)}</h3><p>${badge(b.mode==='research_only'?'研究回测':'回测')} ${badge(b.gate?.status==='blocked'?'生产门禁未通过':b.gate?.status||'门禁未知','warn')}</p><div class="backtest-metrics"><div><small>年化收益</small><strong>${pct(m.annualized_return_pct)}</strong></div><div><small>资金加权收益 XIRR</small><strong>${pct(m.xirr_pct)}</strong></div><div><small>年化波动</small><strong>${pct(m.annualized_volatility_pct)}</strong></div><div><small>最大回撤</small><strong>${pct(m.maximum_drawdown_pct)}</strong></div><div><small>期末价值</small><strong>¥ ${money(m.final_value_cny)}</strong></div><div><small>回测期间</small><strong>${date(m.start_date)} — ${date(m.end_date)}</strong></div></div><p class="muted">${esc(b.gate?.reason||'未提供门禁说明')}<br>结果来源：${esc(b.report_path)}</p>`;}

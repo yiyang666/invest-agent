@@ -121,6 +121,8 @@ class FundWatchCatalogTests(unittest.TestCase):
         series = Dashboard(Path('.')).series('000071')
         self.assertGreater(len(series), 180)
         self.assertLess(series[0]['nav_date'], series[-1]['nav_date'])
+        self.assertIn('accumulated_nav', series[0])
+        self.assertIsNotNone(series[0]['accumulated_nav'])
 
     def test_latest_fund_income_excludes_cash_and_reports_missing_date(self):
         snapshot = sample()

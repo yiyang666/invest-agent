@@ -196,8 +196,9 @@ class Dashboard:
         return funds
 
     def series(self, code: str):
-        return self.rows("""SELECT nav_date,unit_nav FROM (
-            SELECT n.nav_date,n.unit_nav, ROW_NUMBER() OVER (
+        # 分位图优先用累计净值，避免分红把单位净值整体下移造成假低位
+        return self.rows("""SELECT nav_date,unit_nav,accumulated_nav FROM (
+            SELECT n.nav_date,n.unit_nav,n.accumulated_nav, ROW_NUMBER() OVER (
               PARTITION BY n.nav_date ORDER BY b.fetched_at DESC,n.batch_id DESC) AS rn
             FROM fund_nav_observations n JOIN data_batches b USING(batch_id)
             WHERE n.fund_code=? AND n.provider_id='akshare_eastmoney'
