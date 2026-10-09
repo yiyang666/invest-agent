@@ -12,6 +12,9 @@ from invest_agent.decision.reporting import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+HAS_PRIVATE_DECISION_PACK = (
+    ROOT / "data/private/reports/monthly-research-decision-pack-v1-5-current-2026-08-25.json"
+).is_file()
 
 
 class ResearchReportTests(unittest.TestCase):
@@ -21,6 +24,7 @@ class ResearchReportTests(unittest.TestCase):
             (ROOT / "config/research_report_v1.json").read_text(encoding="utf-8")
         )
 
+    @unittest.skipUnless(HAS_PRIVATE_DECISION_PACK, "requires local private decision pack")
     def test_builds_evidence_bound_non_executable_report(self) -> None:
         report = build_research_report(self.config, workspace_root=ROOT)
 
@@ -40,6 +44,7 @@ class ResearchReportTests(unittest.TestCase):
         )
         self.assertIn("/accepted_signals/", authority_claim["source"]["json_pointer"])
 
+    @unittest.skipUnless(HAS_PRIVATE_DECISION_PACK, "requires local private decision pack")
     def test_same_locked_inputs_produce_identical_report(self) -> None:
         first = build_research_report(self.config, workspace_root=ROOT)
         second = build_research_report(self.config, workspace_root=ROOT)
@@ -50,6 +55,7 @@ class ResearchReportTests(unittest.TestCase):
             second["reproducibility"]["evidence_bundle_sha256"],
         )
 
+    @unittest.skipUnless(HAS_PRIVATE_DECISION_PACK, "requires local private decision pack")
     def test_source_hash_drift_fails_closed(self) -> None:
         config = copy.deepcopy(self.config)
         config["sources"]["decision_pack"]["sha256"] = "0" * 64
@@ -74,6 +80,7 @@ class ResearchReportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not exist"):
             _pointer({"known": 1}, "/missing")
 
+    @unittest.skipUnless(HAS_PRIVATE_DECISION_PACK, "requires local private decision pack")
     def test_renderer_rejects_execution_tampering(self) -> None:
         report = build_research_report(self.config, workspace_root=ROOT)
         report["execution"]["real_trading_enabled"] = True
@@ -81,6 +88,7 @@ class ResearchReportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cannot render"):
             render_research_report_markdown(report)
 
+    @unittest.skipUnless(HAS_PRIVATE_DECISION_PACK, "requires local private decision pack")
     def test_renderer_contains_limits_without_external_news(self) -> None:
         report = build_research_report(self.config, workspace_root=ROOT)
         markdown = render_research_report_markdown(report)
