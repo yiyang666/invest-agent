@@ -30,7 +30,7 @@
 | 账户快照 | `invest_agent.domain.portfolio` | `scripts/capture_portfolio_snapshot.py` | 爱基金只读账户 → 脱敏`PortfolioSnapshot` | 只读账户；输出仅进`data/private/` |
 | 数据采集 | `invest_agent.data` | `python -m invest_agent.data.cli` | 公开响应/授权CSV → 原始批次、质量报告、本地SQLite | 采集命令可联网；不运行策略或交易 |
 | 数据同步 | `invest_agent.data.sync` | `python -m invest_agent.data.sync_cli` | 配置基金全集 → 增量请求、发布/拒绝报告 | 可联网；失败不发布、不补模拟值；自动触发统一走维护CLI |
-| 市场数据 | `invest_agent.market_data` | `python -m invest_agent.market_data.cli` | 股叉叉MCP与公开全A聚合、FRED及本地基金代理 → 估值/权重/趋势/金融条件/利率/汇率/杠杆/宏观/拥挤/宽度隔离表 | 采集可联网；正式计算只读本地表 |
+| 市场数据 | `invest_agent.market_data` | `python -m invest_agent.market_data.cli` | 股叉叉、金十精选报价/欧日发布、公开全A聚合、FRED及本地基金代理 → 隔离市场表 | 采集可联网；正式计算只读本地表 |
 | 全球市场状态 | `invest_agent.market_regime` | `python -m invest_agent.market_regime.cli` | 本地市场表 → 七轴状态、覆盖率、置信度、缺失能力和证据哈希 | 纯本地只读；`research_only`；不预测、不生成信号或订单 |
 | 统一维护 | `invest_agent.automation` | `python -m invest_agent.automation.maintenance_cli`；Codex任务`Invest Agent 数据更新总控` | 基金与市场数据的日/周/月/季作业 → 固定会话中的单一汇总报告 | 可联网；Agent不决定频率或写库；不运行策略、报告或交易 |
 | 指标 | `invest_agent.metrics` | `python -m invest_agent.metrics.cli` | 本地净值/快照 → 收益、波动、回撤、相关性、市场状态 | 纯本地只读 |
@@ -65,6 +65,8 @@
 - `publish-fund-proxies`、`replay-fund-proxies`：把本地已校验指数基金净值发布为显式趋势代理；
 - `collect-fred`、`replay-fred`：采集和重放允许列表内的FRED个人研究序列（当前NFCI）；
 - `collect-guchacha-breadth`、`replay-guchacha-breadth`：采集和重放股叉叉公开总览页的全A股聚合宽度，显式保留未分类证券与分母口径；
+- `collect-jin10-quotes`：采集精选跨资产报价，只发布价格与涨跌幅，不发布单位不明的成交量；
+- `collect-jin10-calendar`、`replay-jin10`：归档本周财经日历，只发布映射明确的欧日关键宏观值与预期差，并支持重放；
 - `collect-sse-breadth`、`replay-sse-breadth`：采集和重放上交所公开日终横截面，排除B股后发布沪市A股宽度；
 - `init-store`、`inspect`：初始化和检查批次/序列覆盖。
 
@@ -111,6 +113,7 @@
 - `report_cli`：生成证据绑定的JSON/Markdown研究报告；
 - `explanation_cli`：生成并验收不篡改数字的解释；
 - `pipeline_cli`：按“决策包→报告→解释→验收→Manifest”运行离线流水线；
+- `brief_cli`：从当月已通过且哈希匹配的 Manifest/报告生成一页结论；
 - `replay_cli`、`closure_cli`：安全故障重放与阶段审计。
 
 ### 2.5 批准、交易和规则核验
@@ -146,22 +149,23 @@
 | `fund-data-collect` | 补数、同步、检查批次或数据质量 | 数据采集/同步CLI | 原始先归档；失败不补模拟数据；不交易 |
 | `fund-metric-calc` | 收益、波动、回撤、相关性、持仓风险 | 指标CLI | 只读本地校验仓，不现场联网 |
 | `design-fund-strategy` | 新策略、新基金、新袖套、对比631、策略回测 | 提案→发现→规格→测试→回测→归因 | `research_only`；结果后改参必须新版本 |
-| `market-context-research` | 指数估值/权重、利率、汇率、两融、宏观、行业拥挤、全球市场状态及其组合含义 | 按用途选择即时查询、证据快照、本地历史或`market_regime`快照 | 不预测市场；正式结论不得直接引用未归档MCP响应 |
-| `market-data-collect` | 市场数据刷新、回填、重放、质量检查或定时任务 | 市场数据CLI与统一维护CLI | 原始先归档；严格允许列表；不生成策略或订单 |
+| `market-context-research` | 指数估值/权重、利率、汇率、两融、宏观、行业拥挤、金十事件检索、跨资产即时状态及全球市场状态 | 按用途选择即时查询、证据快照、本地历史或`market_regime`快照 | 不预测市场；正式结论不得直接引用未归档MCP响应 |
+| `market-data-collect` | 市场数据刷新、回填、重放、金十精选报价/欧日宏观、质量检查或定时任务 | 市场数据CLI与统一维护CLI | 原始先归档；严格允许列表；不生成策略或订单 |
 | `verify-fund-trading-rules` | 可购/限额/申赎费/到账/赎回档位 | 爱基金CLI只读预检优先 | 不用买入试单取数；不保存账户原始响应 |
 | `thsfund` | 持仓、钱包、订单、申购/赎回/撤单意图 | 受审查`aijijin` CLI | 写操作逐笔确认；项目政策优先；禁止自动升级 |
 
-Skill位于`.agents/skills/`。第三方`thsfund`与SDK固定为已审查的0.2.0版本；项目自建Skill可根据真实跑偏案例继续迭代。
+Skill位于`.agents/skills/`。第三方`thsfund`与SDK固定为已审查的0.2.1版本；项目自建Skill可根据真实跑偏案例继续迭代。
 
 ## 4. 当前项目MCP
 
-项目配置文件`.codex/config.toml`当前只登记一个MCP：
+当前股叉叉使用项目级连接，金十使用已安装的用户级连接。金十已完成精简能力审查、本地适配和统一日频采集验收：
 
 | MCP | 已允许工具 | 状态 | 当前用途 |
 |---|---|---|---|
 | 股叉叉 `guchacha` | `list_datasets`、`get_index_valuation`、`get_index_weight`、`get_index_forward_pe`、`get_industry_crowding`、`get_market_series`、`get_macro` | 已注册；Bearer环境变量认证；raw-first适配器与隔离本地表已实现 | 即时市场背景或`research_only`证据采集；不进入交易运行时 |
+| 金十 `jin10` | 正式采集：`get_quote`、`list_calendar`；即时研究：`search_flash`、`search_news`、`get_news` | 用户级连接及raw-first链路已实测；精选报价与财经日历已纳入统一工作日总控 | 跨资产即时状态、欧日关键宏观发布和事件解释；分钟线/全量资讯流关闭 |
 
-即时问答可以直接调用允许工具但不持久化，也不能复用为正式证据。进入策略、风控、报告、归因或调仓建议的数据必须经原始归档、schema/日期/单位/完整性检查后写入隔离市场表；缺少独立第二来源时保持`research_only`，不能成为硬门禁。当前没有把股叉叉接入交易；新会话若不显示MCP工具，应使用已审查的本地CLI/数据仓或重新加载项目，不能假装调用成功。
+即时问答可以直接调用允许工具但不持久化，也不能复用为正式证据。进入策略、风控、报告、归因或调仓建议的数据必须经原始归档、schema/日期/单位/完整性检查后写入隔离市场表；缺少独立第二来源时保持`research_only`，不能成为硬门禁。股叉叉和金十均未接入交易；新会话若不显示MCP工具，应使用已审查的本地CLI/数据仓或重新加载项目，不能假装调用成功。
 
 Codex自身提供的浏览器、网页、文档等通用工具属于运行环境能力，不等于本仓库已接入的投资数据MCP。
 
