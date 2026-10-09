@@ -15,7 +15,7 @@ scripts/run_local_web.sh
 ## 数据来源
 
 - 净值和持仓：`data/private/invest_agent.sqlite3`，Web 只读。
-- 分类与监控集合：现有基金同步配置、研究池、购买路由池、已登记月度持仓分类；未登记的基金显示“待分类”。
+- 分类与监控集合：`config/fund_watch_catalog_v1.json` 提供稳定的监控分类，研究池、购买路由池和已登记月度持仓分类可提供更具体的既有分类；未登记的基金显示“待分类”。
 - 策略：`strategies/registry.json` 与 `strategies/specs/`，检验登记证据，不把研究状态当成实盘执行。
 - 更新记录：统一维护任务私有状态与报告。
 
