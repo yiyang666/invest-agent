@@ -10,7 +10,7 @@
     },
     "research_report": {
       "path": "config/research_report_v1.json",
-      "sha256": "0996bf5400c1f97478241407d06b6bd88cb559e1b6ed8845844953f32935127e"
+      "sha256": "c6e98c575bb94a598130cd06bfb1b7666ab3dc67d5d989bc6ebac380a326abc0"
     },
     "research_explanation": {
       "path": "config/research_explanation_acceptance_v1.json",

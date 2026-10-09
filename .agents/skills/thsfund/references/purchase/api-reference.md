@@ -22,6 +22,50 @@ aijijin <group> <command> [--<named-flag> <value>]... [--json-file <path>|--json
 
 ## CLI 命令清单
 
+### `aijijin trade-account list`
+
+查询某个 `600` 开头交易账户下的虚拟账户。虚拟账户用于分仓管理，一个虚拟账户对应一个持仓。
+
+| 选项 | 必填 | 类型 | 服务端字段 | 说明 |
+|---|---|---|---|---|
+| `--general-trade-id` | 是 | `600` 开头的纯数字字符串 | `generaltradeId` | 虚拟账户绑定的普通交易账户 |
+| `--json-file` / `--stdin` / `--json` | 否 | 通用 JSON 输入 | — | 合并规则见 SKILL.md §2 |
+| `--dry-run` | 否 | 标志 | — | 只校验并输出 `trade_account_list` 请求，不取 Token、不发请求 |
+
+```bash
+aijijin trade-account list --general-trade-id "600110053853"
+```
+
+成功时 CLI 将服务端响应原样放在外层 `data` 中。只消费响应实际返回的虚拟账户，列表项字段固定映射如下：
+
+| 响应字段 | 含义 | 申购流程用途 |
+|---|---|---|
+| `subBusinessUserName` | 策略名称 | 展示分仓名并记录为 `selectedStrategyName`；为空或仅含空白时不展示该项 |
+| `vcTransactionaccountid` | 虚拟交易账户 | 用户选择该分仓后记录为 `selectedTradeId` |
+
+列表为空不是错误，申购流程仍可选择普通持仓或新建分仓；响应容器缺失或格式异常时才按查询失败处理，禁止猜测字段。
+
+### `aijijin trade-account create`
+
+在某个 `600` 开头交易账户下创建虚拟账户。
+
+| 选项 | 必填 | 类型 | 服务端字段 | 说明 |
+|---|---|---|---|---|
+| `--general-trade-id` | 是 | `600` 开头的纯数字字符串 | `generaltradeId` | 虚拟账户绑定的普通交易账户 |
+| `--strategy-name` | 是 | 非空字符串 | `strategyName` | 分仓名称；创建前须先调用 list 校验重名 |
+| `--json-file` / `--stdin` / `--json` | 否 | 通用 JSON 输入 | — | 合并规则见 SKILL.md §2 |
+| `--dry-run` | 否 | 标志 | — | 只校验并输出 `trade_account_create` 请求，不取 Token、不发请求 |
+
+```bash
+aijijin trade-account create \
+  --general-trade-id "600110053853" \
+  --strategy-name "净值波动"
+```
+
+创建成功后必须从实际响应取得非空 `tradeId`；缺失时结果不明确，禁止继续下单。该创建命令不可安全重放，包括 HTTP 401、网络错误、5xx、响应异常或业务失败在内均不会自动重试。
+
+---
+
 ### `aijijin fund subscribe-init`
 
 基金申购初始化。返回基金基础信息、风险等级、支付方式、阶梯费率判断依据等。
@@ -45,6 +89,7 @@ aijijin <group> <command> [--<named-flag> <value>]... [--json-file <path>|--json
 | `data.custId` | 客户 ID |
 | `data.paramOpenFundAccBean.fundCode` | 基金代码 |
 | `data.paramOpenFundAccBean.fundName` | 基金名称 |
+| `data.paramOpenFundAccBean.productType` | 产品类型（`0105`=养老基金 / `0107`=黄金宝 / 其他=普通基金；`0105` 与 `0107` 当前 skill 不支持申购，会被阻断） |
 | `data.minBuy` | 最小起购金额（新申购） |
 | `data.paramOpenFundAccBean.minAddBuy` | 最小追加金额 |
 | `data.maxBuy` | 单笔最大购买金额 |
@@ -131,7 +176,7 @@ aijijin <group> <command> [--<named-flag> <value>]... [--json-file <path>|--json
 
 ### `aijijin fund trade-record`
 
-记录用户已阅读的协议。必须在用户回复 `已阅读` 之后、签约检查之前调用。
+记录用户已阅读的协议。必须在用户回复 `已阅读` 之后、下单之前调用。
 
 无命名选项。通过 `--json-file`、`--stdin` 或 `--json` 之一提供完整请求体：
 
@@ -166,36 +211,6 @@ CLI 输入选项：
 
 ---
 
-### `aijijin fund check-before-trade`
-
-申购前的签约检查。
-
-参数：
-
-| 选项 | 必填 | 类型 | 取值 | 服务端字段 | 说明 |
-|---|---|---|---|---|---|
-| `--amount` | 是 | 正十进制字符串（无指数） | 形如 `100.00` | `applicationAmount` | 申购金额 |
-| `--fund-code` | 是 | 6 位数字字符串 | 形如 `000001` | `fundCode` | 基金代码 |
-| `--transaction-account-id` | 是 | 非空字符串 | — | `transactionAccountId` | 交易账户 ID |
-| `--json-file` | 否 | 文件路径 | — | — | 基础请求体；与 `--stdin` 互斥；可与 `--json` 和命名选项共存并被覆盖 |
-| `--stdin` | 否 | 标志 | — | — | 从 stdin 读取请求体；与 `--json-file` 互斥 |
-| `--json` | 否 | 字符串 | — | — | 内联 JSON 字符串；可补充或覆盖基础请求体 |
-| `--dry-run` | 否 | 标志 | — | — | 仅校验，不发起网络请求；输出 `{"endpoint": "check_before_trade", "request": {...}}` |
-
-成功输出：UTF-8 JSON `{"ok": true, "data": <server-response>}`，exit 0。
-
-响应字段：
-
-| 字段 | 说明 |
-|---|---|
-| `data.signContract` | 是否需要签约（`true` / `false`） |
-
-退出码：`0` 成功；`2` 输入校验失败（如金额非正十进制、基金代码格式错误等）；`3` 凭据/认证失败；`4` 业务失败；`5` 网络/服务器/响应异常。
-
-CLI 不会对超时、连接错误、5xx、响应异常或业务错误进行自动重试；只有 HTTP 401 会自动刷新 Work Token 并重放一次。
-
----
-
 ### `aijijin fund buy`
 
 提交基金申购订单。
@@ -210,7 +225,8 @@ CLI 不会对超时、连接错误、5xx、响应异常或业务错误进行自�
 | `--fund-code` | 是 | 6 位数字字符串 | — | `fundCode` | 基金代码 |
 | `--amount` | 是 | 正十进制字符串（无指数） | — | `money` | 申购金额 |
 | `--transaction-account-id` | 是 | 字符串 | — | `transactionAccountId` | 交易账户 ID |
-| `--agreement-record` | 否 | 非空字符串 | — | `extAttr.AgreementRecord` | 协议留痕校验。CLI 内部包装为 `extAttr: {AgreementRecord: <value>}`；不传时不发送 `extAttr` 字段。`/ai/buy` 是 JSON 编码，`extAttr` 作为嵌套对象直接透传。 |
+| `--trade-id` | 否（CLI Schema） | 非空字符串 | — | `tradeId` | thsfund 申购流程必传：普通持仓传 `selectedTransAccountId`（正常为对应 `600` 账号）；已有分仓传列表项 `vcTransactionaccountid`；新建分仓传创建成功响应的虚拟账户 ID |
+| `--agreement-record` | 否（CLI Schema） | 非空字符串 | — | `extAttr.AgreementRecord` | thsfund 申购流程必传 Step 7 取得的 `agreementRecordId`。CLI 内部包装为 `extAttr: {AgreementRecord: <value>}`，`/ai/buy` 以嵌套对象透传。 |
 | `--json-file` | 否 | 文件路径 | — | — | 基础请求体；与 `--stdin` 互斥；可与 `--json` 和命名选项共存并被覆盖 |
 | `--stdin` | 否 | 标志 | — | — | 从 stdin 读取请求体；与 `--json-file` 互斥 |
 | `--json` | 否 | 字符串 | — | — | 内联 JSON 字符串；可补充或覆盖基础请求体 |

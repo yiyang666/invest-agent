@@ -154,7 +154,7 @@ integrations:
   thsfund:
     project_local_install_approved: true
     isolated_python_install_approved: true
-    sdk_version: 0.2.1
+    sdk_version: 0.2.0
     environment_manager: miniconda
     environment_path: .conda-env
     python_version: "3.12"

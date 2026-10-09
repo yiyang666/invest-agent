@@ -62,6 +62,7 @@ class Phase7AijijinEntryTests(unittest.TestCase):
                         "fundCode": "019861",
                         "money": "200.00",
                         "transactionAccountId": "secret-account-id",
+                        "tradeId": "secret-trade-id",
                     },
                 },
             }
@@ -77,10 +78,13 @@ class Phase7AijijinEntryTests(unittest.TestCase):
             _intent(amount_cny=Decimal("200.00")),
             buy_type=1,
             transaction_account_id="secret-account-id",
+            trade_id="secret-trade-id",
         )
         self.assertEqual(seen[-1], "--dry-run")
         self.assertNotIn("secret-account-id", json.dumps(result))
+        self.assertNotIn("secret-trade-id", json.dumps(result))
         self.assertTrue(result["transaction_account_bound"])
+        self.assertTrue(result["trade_account_bound"])
         self.assertFalse(result["real_trading_enabled"])
 
     def test_proposed_single_order_cap_is_enforced_even_in_dry_run(self) -> None:
@@ -95,6 +99,7 @@ class Phase7AijijinEntryTests(unittest.TestCase):
                 _intent(amount_cny=Decimal("5000.01")),
                 buy_type=1,
                 transaction_account_id="secret-account-id",
+                trade_id="secret-trade-id",
             )
 
     def test_redeem_preview_is_redacted_and_calculates_current_lot_fee(self) -> None:

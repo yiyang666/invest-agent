@@ -77,18 +77,19 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       border-right: 1px solid var(--border);
     }
     .panel-qr .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 24px;
+      gap: 12px;
+      margin-bottom: auto;
       align-self: flex-start;
     }
     .brand-icon {
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       background: var(--primary-dim);
       border-radius: 10px;
       display: flex;
@@ -96,12 +97,12 @@
       justify-content: center;
     }
     .brand-icon svg {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       color: var(--primary);
     }
     .brand-name {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 600;
       color: var(--text);
       letter-spacing: 0.5px;
@@ -109,27 +110,9 @@
     .qr-anchor {
       position: relative;
       margin-bottom: 16px;
-    }
-    .qr-ring {
-      width: 220px;
-      height: 220px;
-      border-radius: 50%;
-      background: conic-gradient(var(--primary) 0deg, var(--border) 80deg, transparent 80deg);
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
-      animation: spin 10s linear infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .qr-ring::before {
-      content: "";
-      position: absolute;
-      inset: 10px;
-      border-radius: 50%;
-      background: var(--bg-2);
     }
     .qr-inner {
       position: relative;
@@ -146,47 +129,8 @@
       image-rendering: pixelated;
       border-radius: 8px;
     }
-    .status-dot {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 12px;
-      height: 12px;
-      background: var(--primary);
-      border-radius: 50%;
-      box-shadow: 0 0 0 4px var(--bg-2), 0 0 16px var(--primary);
-      animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-    .hint-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 18px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      font-size: 13px;
-      color: var(--text-2);
-    }
-    .hint-bar .dot {
-      width: 6px;
-      height: 6px;
-      background: var(--mint);
-      border-radius: 50%;
-      flex-shrink: 0;
-      animation: blink 1.5s ease-in-out infinite;
-    }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.2; }
-    }
     .scan-tip {
-      margin-top: 14px;
+      margin-top: auto;
       font-size: 14px;
       font-weight: 500;
       color: var(--text);
@@ -247,10 +191,6 @@
       font-weight: 700;
       color: var(--primary);
       flex-shrink: 0;
-    }
-    .step[data-done="true"] .step-num {
-      background: var(--mint-dim);
-      color: var(--mint);
     }
     .step-body {
       flex: 1;
@@ -315,13 +255,6 @@
         align-self: center;
         margin-bottom: 24px;
       }
-      .qr-ring {
-        width: 180px;
-        height: 180px;
-      }
-      .qr-ring::before {
-        inset: 8px;
-      }
       .qr-inner img {
         width: 140px;
         height: 140px;
@@ -335,11 +268,6 @@
       .step {
         padding: 14px 0;
       }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .qr-ring { animation: none; }
-      .status-dot { animation: none; }
-
     }
   </style>
 </head>
@@ -358,12 +286,10 @@
         </div>
 
         <div class="qr-anchor">
-          <div class="qr-ring">
-            <div class="qr-inner">
-              <img src="init-qrcode.png" alt="设备注册二维码" />
-            </div>
+          <div class="qr-inner">
+            <img src="init-qrcode.png" alt="设备注册二维码" />
           </div>
-          <div class="status-dot" aria-hidden="true"></div>
+
         </div>
 
         <p class="scan-tip">用同花顺 App 扫一扫此码</p>
@@ -376,27 +302,27 @@
         </div>
 
         <div class="steps">
-          <div class="step" data-done="false">
+          <div class="step">
             <div class="step-num">1</div>
             <div class="step-body">
               <p>扫码后点击<strong>「复制提示词」</strong></p>
               <small>进入基金Skill授权页</small>
             </div>
           </div>
-          <div class="step" data-done="false">
+          <div class="step">
             <div class="step-num">2</div>
             <div class="step-body">
               <p>完成风险评测 <small>（如系统提示）</small></p>
             </div>
           </div>
-          <div class="step" data-done="false">
+          <div class="step">
             <div class="step-num">3</div>
             <div class="step-body">
               <p>将 <code>initToken</code> 粘贴到聊天框</p>
               <small>发送后等待初始化完成</small>
             </div>
           </div>
-          <div class="step" data-done="false">
+          <div class="step">
             <div class="step-num">4</div>
             <div class="step-body">
               <p>在同花顺App内<strong>「确认授权」</strong></p>

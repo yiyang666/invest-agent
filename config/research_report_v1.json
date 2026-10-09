@@ -7,7 +7,7 @@
       "sha256": "9bb304cb62af9e0d0497ee2d73509359df9e1e5ce8dcee5017bf17154d7690aa"
     },
     "investment_policy": {
-      "path": "config/investment_policy.yaml",
+      "path": "config/investment_policy_2026_08_25.yaml",
       "sha256": "d38d176f6afc8e0e63285b6e4d56199fdd9cc9d8ba0c78b7eb2a15db869f9947"
     },
     "strategy_registry": {

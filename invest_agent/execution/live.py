@@ -40,6 +40,8 @@ class LivePurchaseEnvelope:
     payment_method: str
     payment_account_masked: str
     transaction_account_binding_sha256: str
+    trade_account_binding_sha256: str
+    trade_account_masked: str
     agreement_record_sha256: str
     expected_confirmation: str
 
@@ -52,6 +54,10 @@ class LivePurchaseEnvelope:
             raise ValueError("payment account must be a masked display value")
         if not SHA256_RE.fullmatch(self.transaction_account_binding_sha256):
             raise ValueError("transaction account binding must be a SHA-256 digest")
+        if not SHA256_RE.fullmatch(self.trade_account_binding_sha256):
+            raise ValueError("trade account binding must be a SHA-256 digest")
+        if not self.trade_account_masked.strip() or "*" not in self.trade_account_masked:
+            raise ValueError("trade account must be a masked display value")
         if not SHA256_RE.fullmatch(self.agreement_record_sha256):
             raise ValueError("agreement record binding must be a SHA-256 digest")
         if not self.expected_confirmation.strip():
@@ -65,16 +71,20 @@ class LivePurchaseEnvelope:
         payment_method: str,
         payment_account_masked: str,
         transaction_account_id: str,
+        trade_id: str,
+        trade_account_masked: str,
         agreement_record: str,
         expected_confirmation: str,
     ) -> "LivePurchaseEnvelope":
-        if not transaction_account_id.strip() or not agreement_record.strip():
+        if not transaction_account_id.strip() or not trade_id.strip() or not agreement_record.strip():
             raise ValueError("runtime account and agreement bindings are required")
         return cls(
             intent=intent,
             payment_method=payment_method,
             payment_account_masked=payment_account_masked,
             transaction_account_binding_sha256=_digest(transaction_account_id),
+            trade_account_binding_sha256=_digest(trade_id),
+            trade_account_masked=trade_account_masked,
             agreement_record_sha256=_digest(agreement_record),
             expected_confirmation=expected_confirmation,
         )
@@ -86,6 +96,8 @@ class LivePurchaseEnvelope:
             "payment_method": self.payment_method,
             "payment_account_masked": self.payment_account_masked,
             "transaction_account_binding_sha256": self.transaction_account_binding_sha256,
+            "trade_account_binding_sha256": self.trade_account_binding_sha256,
+            "trade_account_masked": self.trade_account_masked,
             "agreement_record_sha256": self.agreement_record_sha256,
             "expected_confirmation": self.expected_confirmation,
         }
@@ -99,7 +111,8 @@ class LivePurchaseEnvelope:
         method = "钱包" if self.payment_method == "wallet" else "银行卡"
         return (
             f"确认申购{self.intent.fund_code} {amount}元，使用"
-            f"{self.payment_account_masked}（{method}），预计费用{fee}元"
+            f"{self.payment_account_masked}（{method}），关联分仓"
+            f"{self.trade_account_masked}，预计费用{fee}元"
         )
 
 

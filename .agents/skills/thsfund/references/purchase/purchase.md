@@ -6,7 +6,7 @@ name: purchase
 
 > 公共约定见 SKILL.md §2，全局禁止事项见 §3。
 
-> **前置自检**：执行任何 `aijijin` 命令前，先按 SKILL.md §0 完成 SDK 自检；缺失或低于 0.2.0 时停下并展示安装命令，等用户完成后再继续。
+> **前置自检**：执行任何 `aijijin` 命令前，先按 SKILL.md §0 完成 SDK 自检；缺失或版本不是 0.2.1 时停下并展示重装命令，等用户完成后再继续。
 
 本 skill 用于执行基金申购真实交易流程。它不是投资建议或基金查询流程；一旦用户表达买入、申购、购买基金等交易意图，必须按本文档执行。
 
@@ -37,14 +37,16 @@ name: purchase
 | 禁止自动更换基金代码 | 真实交易必须锁定用户指定基金，避免买错产品 |
 | 禁止使用其他 skill 的接口绕过失败 | 申购流程必须使用本文档指定接口 |
 | 禁止替用户选择支付方式 | 支付账户必须由用户明确选择 |
+| 禁止把非 `600` 开头账户用于虚拟分仓查询或创建 | 虚拟账户必须绑定 `600` 开头的交易账户 |
+| 禁止在虚拟账户创建失败或结果不明确时自动重试 | 重试可能重复创建分仓；必须停止并说明结果不明确 |
 | 禁止把购买意图当作风险二次确认 | 风险不匹配时必须单独确认 |
 | 禁止把购买意图当作协议已阅读 | 协议确认必须由用户回复 `已阅读` |
-| 禁止未记录协议阅读就签约检查 | 用户回复 `已阅读` 后必须先调用协议阅读记录接口 |
+| 禁止未记录协议阅读就下单 | 用户回复 `已阅读` 后必须先调用协议阅读记录接口 |
 | 禁止钱包余额不足时拦截钱包支付 | 钱包支付由 `/ai/buy` 接口自行完成充值并购买 |
 | 禁止只凭接口 `status_code=0000` 判定订单成功 | 订单成功必须按订单详情状态字段判定 |
 | 禁止展示底层状态码 | 面向用户只展示中文状态和可读原因 |
-| 禁止自行调用任何 token 接口 | Work Token 由 CLI 负责（详见 SKILL.md §2 第 3 条），skill 不需要也无法访问 |
 | 禁止在申购失败时自动重试 | 网络超时、连接中断、5xx 或提交结果不明确时不得自动重试；先查询订单状态并向用户说明 |
+| 禁止申购养老基金（productType=0105）/ 黄金宝（productType=0107） | 当前 skill 不支持这两种产品类型 |
 
 ## 本轮状态变量
 
@@ -54,14 +56,18 @@ name: purchase
 |---|---|---|
 | `fundCode` | 用户指定/确认 | 所有申购相关接口必须使用该基金代码 |
 | `fundName` | init | 展示和风险提示 |
-| `amount` | 用户输入 | 金额校验、签约检查、下单 |
+| `amount` | 用户输入 | 金额校验、下单 |
 | `fundRiskLevel` | init | 风险等级校验 |
 | `clientRiskLevel` | init 的 `ov_clientriskrate` | 风险等级校验 |
 | `riskConfirmed` | 用户本轮回复 | 风险不匹配时是否已单独确认 |
 | `selectedPayType` | 用户选择 | 钱包/银行卡，决定 `buyType` |
-| `selectedTransAccountId` | 用户选择账户 | 签约检查和下单 |
-| `selectedWalletAvailableVol` | init 中用户所选 `fundtzeroList` 账户的 `availableVol` | 判断钱包余额是否足额以及是否跳过签约检查；选择银行卡时为空 |
+| `selectedTransAccountId` | 用户选择账户 | 下单 |
+| `selectedWalletAvailableVol` | init 中用户所选 `fundtzeroList` 账户的 `availableVol` | 判断钱包余额是否足额；选择银行卡时为空 |
+| `selectedGeneralTradeId` | 用户选定支付账户的 `transActionAccountId` | `600` 开头时用于查询/创建虚拟账户；值必须与本轮支付账户一致 |
+| `selectedTradeId` | 普通持仓取 `selectedTransAccountId`；已有分仓取列表项 `vcTransactionaccountid`；新建分仓取创建成功响应 | 下单必传的 `tradeId` |
+| `selectedStrategyName` | 已有分仓取列表项 `subBusinessUserName`；新建分仓取创建名称 | 最终确认与结果展示；普通持仓固定为“普通持仓” |
 | `confirmedAgreements` | 本轮协议确认展示内容 | 协议阅读记录 |
+| `agreementRecordId` | Step 7 协议阅读记录成功响应 | Step 8 下单必传的协议记录号 |
 | `appSheetSerialNo` | `/ai/buy` 返回 | 订单详情查询 |
 
 ## 基金锁定约束
@@ -73,7 +79,7 @@ name: purchase
 
 ## 流程总览
 
-按 Step 1 → Step 10 顺序执行；Work Token / `--dry-run` / 退出码语义等全局约定见 SKILL.md §2，不在本文档重复。
+按 Step 1 → Step 9 顺序执行；Step 5 选择支付账户后必须紧接 Step 5.1 处理分仓。Work Token / `--dry-run` / 退出码语义等全局约定见 SKILL.md §2，不在本文档重复。
 
 ## Step 0：CLI 自动管理 Work Token
 
@@ -93,6 +99,16 @@ name: purchase
    ```bash
    aijijin fund subscribe-init --fund-code "$fundCode"
    ```
+
+   **产品类型阻断检查**：读取 init 响应 `data.paramOpenFundAccBean.productType`，按下表路由：
+
+   | productType | 含义 | 处理方式 |
+   |---|---|---|
+   | `0105` | 养老基金 | **阻断申购**，停止流程，向用户告知「该基金属于养老基金，本 skill 当前不支持申购养老基金，请前往同花顺 App 完成」 |
+   | `0107` | 黄金宝 | **阻断申购**，停止流程，向用户告知「该基金属于黄金宝，本 skill 当前不支持申购黄金宝，请前往同花顺 App 完成」 |
+   | 其他 | 普通基金 | 继续后续步骤 |
+
+   阻断后**不得**继续任何后续步骤（费用查询、信息展示、合规校验、风险测评、支付方式选择、协议确认、下单）。
 
 2. 调用基金费用信息查询命令：
 
@@ -144,7 +160,7 @@ name: purchase
 您的个人信息未完善，请到同花顺爱基金或者同花顺理财的个人中心补充对应信息。
 ```
 
-如果校验不通过，禁止继续金额校验、支付方式选择、协议确认、签约检查、下单等任何后续步骤。
+如果校验不通过，禁止继续金额校验、支付方式选择、协议确认、下单等任何后续步骤。
 
 ## Step 4：风险测评与风险等级校验
 
@@ -188,7 +204,7 @@ name: purchase
 
 强制要求：
 
-- 必须在本次交易 init 之后、签约检查和下单之前，针对风险提示单独获得用户确认。
+- 必须在本次交易 init 之后、下单之前，针对风险提示单独获得用户确认。
 - 不得把用户此前表达过购买意图、前一轮确认或当前购买指令当作本轮风险确认。
 - 若风险确认被中断、拒绝或未完成，必须重新发起二次确认。
 - 未收到明确的 `确认继续` 前，禁止进入支付方式选择之后的任何交易步骤。
@@ -230,13 +246,66 @@ name: purchase
 
 ### 钱包余额处理
 
-`availableVol` 只用于展示、钱包余额是否足额判断和 Step 8 是否跳过签约检查判断，不参与支付方式可选性、金额校验或下单资格判断。
+`availableVol` 只用于展示和钱包余额是否足额判断，不参与支付方式可选性、金额校验或下单资格判断。
 
 用户选择钱包后，无论余额是否小于申购金额，都必须继续协议确认和 `/ai/buy` 下单。不得提示钱包余额不足，不得要求改选支付方式，不得自动切换银行卡，不得额外调用充值接口。
 
-当用户选择钱包账户时，必须记录所选 `fundtzeroList` 账户的 `availableVol` 作为本轮 `selectedWalletAvailableVol`，供 Step 8 判断是否需要签约检查。
+当用户选择钱包账户时，必须记录所选 `fundtzeroList` 账户的 `availableVol` 作为本轮 `selectedWalletAvailableVol`，仅用于钱包余额是否足额的展示与判断。
 
-## Step 6：
+## Step 5.1：选择或创建虚拟分仓
+
+虚拟账户用于分仓管理，一个虚拟账户对应一个持仓。该步骤必须在支付账户确定后执行，因为虚拟账户绑定到具体交易账户。
+
+### 资格判断
+
+将本轮所选支付账户的 `transActionAccountId` 同时记录为 `selectedGeneralTradeId`：
+
+| 条件 | 动作 |
+|---|---|
+| `selectedGeneralTradeId` 匹配 `^600[0-9]+$` | 查询该交易账户下的虚拟账户 |
+| 不匹配 | 不调用任何 `trade-account` 命令；设置 `selectedTradeId = selectedTransAccountId`、`selectedStrategyName=普通持仓`，继续 Step 6 |
+
+禁止为了启用分仓而更换用户已选支付账户。
+
+### 查询并展示已有分仓
+
+```bash
+aijijin trade-account list \
+  --general-trade-id "$selectedGeneralTradeId"
+```
+
+只使用本次响应实际返回的虚拟账户。列表项字段按以下固定映射读取：
+
+- `subBusinessUserName`：策略名称，用于展示并记录为 `selectedStrategyName`。
+- `vcTransactionaccountid`：虚拟交易账户，用于记录为 `selectedTradeId`。
+
+`subBusinessUserName` 为空或仅含空白的列表项不展示给用户；列表为空时不阻断流程，仍展示“普通持仓”和“新建一个独立分仓”。持仓金额、标签类型等字段仅在响应明确提供时展示，禁止猜测。按 `references/purchase/display-templates.md` 的“分仓选择”模板展示。
+
+- 用户明确选择已有分仓：记录该项实际返回的 `vcTransactionaccountid` 与 `subBusinessUserName`。
+- 用户选择普通持仓，或未主动指定任何分仓：设置 `selectedTradeId = selectedTransAccountId`、`selectedStrategyName=普通持仓`；当所选账户为 `600` 开头时，`selectedTradeId` 即该 `600` 账号。
+- 用户输入无法唯一匹配多个分仓：要求重新选择，不得猜测。
+- 查询失败：展示可读错误并停止本次申购，不得在无法确认分仓列表时创建或下单。
+
+### 新建独立分仓
+
+用户选择“新建一个独立分仓”后，询问分仓名。名称去除首尾空白后必须非空；允许汉字、数字、字母和内部空格。
+
+创建前必须再次执行 `trade-account list`，用最新列表在当前 `selectedGeneralTradeId` 下校验重名：
+
+- 若已有相同的 `subBusinessUserName`（与待创建 `strategyName` 比较去除首尾空白后的完整名称），不得重复创建；提示用户选择已有分仓或输入其他名称。
+- 无重名时才执行：
+
+  ```bash
+  aijijin trade-account create \
+    --general-trade-id "$selectedGeneralTradeId" \
+    --strategy-name "$strategyName"
+  ```
+
+创建成功后，必须从本次响应读取新虚拟账户的 `tradeId`，记录为 `selectedTradeId`，并记录实际 `strategyName`。响应缺少非空 `tradeId` 时视为结果不明确，停止流程，不得下单。
+
+`trade-account create` 是不可安全重放的外部写操作：包括 HTTP 401、网络超时、连接中断、5xx、响应异常或业务失败在内，CLI 与 skill 均禁止自动重试，也禁止转而用同名再次创建。
+
+## Step 6：金额校验
 
 ### 申购类型判断
 
@@ -259,7 +328,7 @@ name: purchase
 
 ## Step 7：协议确认与协议阅读记录
 
-用户选择支付方式后，必须查询并展示本轮交易需确认的协议。用户明确回复 `已阅读` 后，必须先调用协议阅读记录接口；记录成功后才能进入签约检查。
+用户选择支付方式后，必须查询并展示本轮交易需确认的协议。用户明确回复 `已阅读` 后，必须先调用协议阅读记录接口；记录成功后才能进入最终买入确认与下单步骤。
 
 ### 协议查询和展示
 
@@ -334,48 +403,22 @@ aijijin fund trade-record --json-file "$tradeRecordFile"
 
 - CLI 退出码 0 且响应中顶层 `ok: true` 时，视为记录成功。
 - 其他情况视为失败：展示响应中的 `message` 或 `error.msg`，并停止后续流程。
+- 记录成功后必须从本次响应读取非空协议记录号，保存为 `agreementRecordId`；缺失时停止流程，不得进入下单。
 
 处理规则：
 
 - 用户未明确回复 `已阅读` 前，禁止调用协议阅读记录接口。
-- 协议阅读记录必须在用户回复 `已阅读` 后、签约检查或签约检查跳过判断之前调用。
-- 协议阅读记录成功后，继续 Step 8 签约检查或签约检查跳过判断。
-- 如协议阅读记录失败，展示失败原因并停止后续流程，不得继续签约检查、签约检查跳过判断或下单。
+- 协议阅读记录必须在用户回复 `已阅读` 后、最终买入确认与下单之前调用。
+- 协议阅读记录成功后，进入 Step 8 提交订单。
+- 如协议阅读记录失败，展示失败原因并停止后续流程，不得继续下单。
 
-## Step 8：签约检查
+## Step 8：提交订单
 
-签约检查前必须先判断是否满足跳过条件：
+完成风险、支付方式、分仓、金额与协议步骤后，按 `references/purchase/display-templates.md` 的“最终买入确认”模板展示基金、金额、支付账户和本轮 `selectedStrategyName`。普通持仓显示“普通持仓”。
 
-- 若用户选择钱包支付（`selectedPayType=钱包`），且所选钱包账户的 `selectedWalletAvailableVol >= amount`，则跳过签约检查接口，直接进入 Step 9 提交订单。
-- 上述比较必须使用本轮用户所选钱包账户的 `availableVol` 和本轮申购金额 `amount`，按数值比较，不得使用展示字符串或历史账户余额。
-- 仅当“钱包支付 + 所选钱包余额足额”两个条件同时满足时才能跳过签约检查；银行卡支付、钱包余额不足或无法可靠判断余额是否足额时，都必须继续调用签约检查接口。
+### 提交订单
 
-需要签约检查时，调用：
-
-```bash
-aijijin fund check-before-trade \
-  --amount "$amount" \
-  --fund-code "$fundCode" \
-  --transaction-account-id "$selectedTransAccountId"
-```
-
-若响应中 `signContract=false`，继续提交订单。
-
-若 `signContract=true`，按 `references/purchase/display-templates.md` 的“签约提醒”模板展示。只有用户明确回复 `y` 时，才能继续提交订单；用户回复其他内容或尚未回复时，停留在本步骤，不得调用 `/ai/buy`。
-
-## Step 9：提交订单
-
-调用：
-
-```bash
-aijijin fund buy \
-  --buy-type "$buyType" \
-  --fund-code "$fundCode" \
-  --amount "$amount" \
-  --transaction-account-id "$selectedTransAccountId"
-```
-
-如需协议留痕校验（合规要求每笔申购记录到具体的协议版本号），追加：
+统一调用以下命令，不按普通持仓或虚拟分仓拆分参数：
 
 ```bash
 aijijin fund buy \
@@ -383,20 +426,58 @@ aijijin fund buy \
   --fund-code "$fundCode" \
   --amount "$amount" \
   --transaction-account-id "$selectedTransAccountId" \
+  --trade-id "$selectedTradeId" \
   --agreement-record "$agreementRecordId"
 ```
 
-`$agreementRecordId` 取自 Step 7 协议阅读记录接口 `aijijin fund trade-record` 的服务端响应（用于唯一标识本次交易对应的协议记录）。该参数可选；不传时不发送 `extAttr` 字段，服务端按无协议留痕处理。CLI 内部会把 `--agreement-record <value>` 包装为 `extAttr: {AgreementRecord: <value>}`。
+`$agreementRecordId` 取自 Step 7 协议阅读记录接口 `aijijin fund trade-record` 的本次成功响应，用于唯一标识本次交易对应的协议记录。
 
-请求中的 `buyType` 必须使用 Step 6 根据用户选择确定的值：钱包 `1`，银行卡 `0`。
+请求中的 `buyType` 必须使用 Step 5 根据用户选择确定的值：钱包 `1`，银行卡 `0`。
+
+`tradeId` 规则：
+
+| 分仓归属 | `fund buy` 参数 |
+|---|---|
+| 普通持仓 | 传 `selectedTradeId = selectedTransAccountId`；所选账户为 `600` 开头时即传该 `600` 账号 |
+| 已有虚拟分仓 | 传该列表项实际返回的 `vcTransactionaccountid` |
+| 本轮新建虚拟分仓 | 传创建成功响应实际返回的 `--trade-id` |
+
+禁止把 `subBusinessUserName` 或创建入参 `strategyName` 当作 `tradeId`，禁止沿用历史轮次或其他支付账户的虚拟交易账户，禁止手工通过 `--json` 注入未校验的分仓字段。
 
 钱包支付时必须始终使用 `buyType=1` 和用户所选钱包的 `transActionAccountId`。
 
-`/ai/buy` 返回 `appSheetSerialNo` 后，必须进入 Step 10 查询订单详情。`/ai/buy` 的 `ok: true` 只表示提交接口成功，不代表订单最终成功。
+### 完整分仓下单示例
+
+```bash
+aijijin trade-account list \
+  --general-trade-id "600110053853"
+
+aijijin fund buy \
+  --buy-type "0" \
+  --fund-code "000083" \
+  --amount "100.00" \
+  --transaction-account-id "600110053853" \
+  --trade-id "v00110054143" \
+  --agreement-record "150772237510861572"
+```
+
+此示例中的虚拟交易账户和协议记录号只能来自本轮实际响应，不得复制示例值用于真实交易。若用户选择普通持仓，同一命令仍必须保留 `--trade-id`，其值改为所选普通交易账户 `600110053853`。
+
+### 常见错误
+
+| 错误 | 正确做法 |
+|---|---|
+| 支付账户未确定就查询分仓 | 先完成 Step 5，再用所选账户查询 |
+| 用虚拟 `tradeId` 调用 `trade-account list/create` | 两个命令都传绑定它的 `600` 开头普通交易账户 |
+| 用分仓名代替 `tradeId` | `subBusinessUserName` 只用于展示；下单使用响应实际返回的 `vcTransactionaccountid` |
+| 普通持仓传空字符串 `--trade-id ""` 或省略参数 | 传本轮所选普通交易账户；`600` 账户即传对应的 `600` 账号 |
+| 创建失败后用同名自动重试 | 停止并报告结果不明确，待人工确认后再继续 |
+
+`/ai/buy` 返回 `appSheetSerialNo` 后，必须进入 Step 9 查询订单详情。`/ai/buy` 的 `ok: true` 只表示提交接口成功，不代表订单最终成功。
 
 CLI 仅会在服务端明确返回 HTTP 401 时刷新 Work Token 并重试一次；网络超时、连接中断、5xx 或 `ok: false` 时，不得自动重试申购命令。
 
-## Step 10：查询订单详情并展示结果
+## Step 9：查询订单详情并展示结果
 
 申购提交并取得 `appSheetSerialNo` 后，必须直接调用：
 
@@ -407,6 +488,8 @@ aijijin trade detail --order-id "$appSheetSerialNo"
 订单状态必须按 `references/purchase/order-status.md` 的状态判断优先级判定，不得只因为详情接口返回 `ok: true` 就展示订单成功。
 
 展示结果时使用 `references/purchase/display-templates.md` 的申购结果模板。
+
+结果中的“关联分仓”使用本轮已提交的 `selectedStrategyName` 展示；普通持仓显示“普通持仓”。不得因为订单详情暂未回显分仓字段而改写本轮已提交的归属。
 
 面向用户展示时：
 
