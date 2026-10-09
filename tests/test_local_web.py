@@ -122,5 +122,13 @@ class FundWatchCatalogTests(unittest.TestCase):
         self.assertGreater(len(series), 180)
         self.assertLess(series[0]['nav_date'], series[-1]['nav_date'])
 
+    def test_latest_fund_income_excludes_cash_and_reports_missing_date(self):
+        snapshot = sample()
+        snapshot['positions'][0]['latest_income'] = '12.5'
+        summary = Dashboard(Path('.')).latest_fund_income([snapshot])
+        self.assertEqual(summary['value'], 12.5)
+        self.assertTrue(summary['excludes_cash'])
+        self.assertEqual(summary['date_status'], 'unreported')
+
 
 if __name__=='__main__': unittest.main()
