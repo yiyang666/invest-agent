@@ -58,6 +58,8 @@ class FundDataSyncTests(unittest.TestCase):
         self.assertIn("539003", codes)
         self.assertIn("096001", codes)
         self.assertIn("006282", codes)
+        self.assertIn("008401", codes)
+        self.assertIn("008706", codes)
         self.assertTrue(
             {"017436", "017437", "080006", "016452", "016453", "017641", "018966", "019305", "519981"}
             <= codes
@@ -66,6 +68,12 @@ class FundDataSyncTests(unittest.TestCase):
         self.assertNotIn("021000", codes)
         self.assertNotIn("050025", codes)
         self.assertNotIn("539001", codes)
+
+    def test_watch_catalog_is_validated_and_keeps_entries_in_the_universe(self) -> None:
+        config = self._config("data/private/test-unused.sqlite3")
+        funds = {item.fund_code: item.reasons for item in resolve_sync_funds(config, workspace_root=ROOT)}
+        self.assertIn("fund_watch_catalog", funds["000071"])
+        self.assertIn("fund_watch_catalog", funds["008401"])
 
     def test_held_fund_remains_in_universe_when_purchase_is_blocked(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT) as directory:

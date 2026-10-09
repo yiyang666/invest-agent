@@ -82,10 +82,16 @@ class Dashboard:
         pool = self.json("config/qdii_purchase_route_pool_v1.json", {})
         research = self.json("config/global_qdii_research_pool_v1.json", {})
         monthly = self.json("config/monthly_decision_pack_v1.json", {})
+        catalog = self.json("config/fund_watch_catalog_v1.json", {})
         names, types, labels, tags, label_sources = {}, {}, {}, {}, {}
         for row in self.rows("SELECT fund_code,fund_name,fund_type FROM fund_metadata_observations ORDER BY source_observed_at"):
             names[row["fund_code"]] = row["fund_name"]
             types[row["fund_code"]] = row["fund_type"]
+        for row in catalog.get("classifications", []):
+            code = row["fund_code"]
+            names[code] = row["fund_name"]
+            labels[code] = row["category"]
+            label_sources[code] = "监控基金目录"
         for row in research.get("funds", []):
             code = row["fund_code"]
             names[code] = row.get("fund_name")

@@ -92,4 +92,17 @@ class WebBoundaryTests(unittest.TestCase):
             self.assertIn(b'503',response);self.assertNotIn(b'secret',response)
 
 
+class FundWatchCatalogTests(unittest.TestCase):
+    def test_every_currently_monitored_fund_has_a_display_classification(self):
+        payload = Dashboard(Path('.')).payload()
+        missing = [fund['code'] for fund in payload['funds'] if fund['category'] == '待分类']
+        self.assertEqual(missing, [])
+
+    def test_held_share_classes_have_expected_broad_market_classification(self):
+        funds = {fund['code']: fund for fund in Dashboard(Path('.')).payload()['funds']}
+        self.assertEqual(funds['000071']['category'], '香港宽基')
+        self.assertEqual(funds['008401']['category'], '美国宽基')
+        self.assertEqual(funds['008706']['category'], '英国宽基')
+
+
 if __name__=='__main__': unittest.main()

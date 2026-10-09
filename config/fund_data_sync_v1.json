@@ -6,6 +6,7 @@
   "database_path": "data/private/invest_agent.sqlite3",
   "raw_root": "data/raw/fund_batches",
   "fund_sources": {
+    "watch_catalog_path": "config/fund_watch_catalog_v1.json",
     "purchase_route_pool_path": "config/qdii_purchase_route_pool_v1.json",
     "global_qdii_research_pool_path": "config/global_qdii_research_pool_v1.json",
     "include_blocked_reference_routes": false,

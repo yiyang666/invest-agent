@@ -88,6 +88,32 @@ def resolve_sync_funds(config: Mapping[str, Any], *, workspace_root: Path) -> tu
         raise ValueError("fund data sync config requires fund_sources")
     reasons: dict[str, set[str]] = {}
 
+    watch_catalog_path = sources.get("watch_catalog_path")
+    if watch_catalog_path is not None:
+        path = _resolve(
+            workspace_root,
+            watch_catalog_path,
+            field="watch_catalog_path",
+        )
+        catalog = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(catalog, Mapping) or catalog.get("schema_version") != 1:
+            raise ValueError("fund watch catalog schema_version must be 1")
+        classifications = catalog.get("classifications")
+        if not isinstance(classifications, list):
+            raise ValueError("fund watch catalog classifications must be a list")
+        seen_catalog_codes: set[str] = set()
+        for item in classifications:
+            if not isinstance(item, Mapping):
+                raise ValueError("fund watch catalog entries must be objects")
+            code = str(item.get("fund_code", ""))
+            if FUND_CODE_PATTERN.fullmatch(code) is None or code in seen_catalog_codes:
+                raise ValueError(f"invalid or duplicate fund watch catalog code: {code!r}")
+            if not all(isinstance(item.get(field), str) and item[field].strip()
+                       for field in ("fund_name", "sleeve", "category", "basis")):
+                raise ValueError(f"fund watch catalog entry is incomplete: {code}")
+            seen_catalog_codes.add(code)
+            reasons.setdefault(code, set()).add("fund_watch_catalog")
+
     static_funds = sources.get("static_funds", [])
     if not isinstance(static_funds, list):
         raise ValueError("static_funds must be a list")
