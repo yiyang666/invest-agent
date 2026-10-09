@@ -28,6 +28,7 @@ class DataMaintenanceScheduleTests(unittest.TestCase):
         self.assertEqual(
             {job["job_id"] for job in jobs},
             {
+                "portfolio_daily",
                 "fund_data_daily",
                 "market_daily_series",
                 "market_weekly_context",
@@ -56,7 +57,7 @@ class DataMaintenanceScheduleTests(unittest.TestCase):
         due = due_jobs(jobs, state, as_of)
         self.assertEqual(
             {job["job_id"] for job in due},
-            {"fund_data_daily", "market_daily_series", "market_weekly_context"},
+            {"portfolio_daily", "fund_data_daily", "market_daily_series", "market_weekly_context"},
         )
         for job in due:
             state["jobs"][job["job_id"]] = {"last_success_period": job["due_period"]}
@@ -87,7 +88,7 @@ class DataMaintenanceScheduleTests(unittest.TestCase):
                 )
             self.assertEqual(code, 0)
             payload = json.loads(output.getvalue())
-            self.assertEqual(len(payload["all_jobs"]), 5)
+            self.assertEqual(len(payload["all_jobs"]), 6)
             self.assertGreaterEqual(len(payload["due_jobs"]), 3)
             self.assertFalse((Path(directory) / "missing-state.json").exists())
 

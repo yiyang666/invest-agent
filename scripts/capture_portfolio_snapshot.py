@@ -7,7 +7,8 @@ redacted PortfolioSnapshot payload is persisted under data/private/.
 from __future__ import annotations
 
 import json
-from datetime import datetime
+import argparse
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import subprocess
@@ -25,6 +26,10 @@ from invest_agent.domain.portfolio import (
     QualityIssue,
     QualitySeverity,
 )
+from invest_agent.data.portfolio_store import save_snapshot
+from invest_agent.execution.aijijin import validate_endpoint_overrides
+import os
+from importlib.metadata import version
 
 
 SNAPSHOT_DIRECTORY = PROJECT_ROOT / "data" / "private" / "portfolio_snapshots"
@@ -39,7 +44,10 @@ def decimal_or_issue(
     issues: list[QualityIssue],
 ) -> Decimal:
     try:
-        return Decimal(str(value))
+        parsed = Decimal(str(value))
+        if not parsed.is_finite():
+            raise ValueError("nonfinite")
+        return parsed
     except (InvalidOperation, ValueError):
         subject = f" for {fund_code}" if fund_code else ""
         issues.append(
@@ -62,6 +70,8 @@ def holding_shares_and_status(
     text = "" if value is None else str(value).strip()
     try:
         shares = Decimal(text)
+        if not shares.is_finite():
+            raise ValueError("nonfinite")
     except (InvalidOperation, ValueError):
         if text.lower() in PENDING_SHARE_MARKERS and market_value > 0:
             return Decimal("0"), PositionStatus.PENDING_CONFIRMATION
@@ -79,6 +89,9 @@ def holding_shares_and_status(
 
 
 def fetch_overview() -> dict[str, object]:
+    if version("aijijin-sdk") != "0.2.1":
+        raise RuntimeError("Read-only portfolio capture requires reviewed aijijin-sdk 0.2.1")
+    validate_endpoint_overrides(os.environ, approved_hosts=("trade.5ifund.com", "fund.10jqka.com.cn"))
     executable = Path(sys.executable).parent / "aijijin"
     result = subprocess.run(
         [str(executable), "holding", "overview"],
@@ -86,6 +99,7 @@ def fetch_overview() -> dict[str, object]:
         capture_output=True,
         text=True,
         encoding="utf-8",
+        timeout=120,
     )
     if result.returncode != 0:
         raise RuntimeError("The read-only holding overview request failed")
@@ -93,6 +107,22 @@ def fetch_overview() -> dict[str, object]:
     if envelope.get("ok") is not True or not isinstance(envelope.get("data"), dict):
         raise RuntimeError("The read-only holding overview returned an invalid response")
     return envelope
+
+
+def optional_decimal(value: object) -> Decimal | None:
+    try:
+        result = Decimal(str(value))
+        return result if result.is_finite() else None
+    except (InvalidOperation, ValueError):
+        return None
+
+
+def optional_date(value: object) -> date | None:
+    try:
+        text = str(value)
+        return datetime.strptime(text, "%Y%m%d").date() if len(text) == 8 else date.fromisoformat(text[:10])
+    except ValueError:
+        return None
 
 
 def build_snapshot(envelope: dict[str, object]) -> PortfolioSnapshot:
@@ -165,6 +195,10 @@ def build_snapshot(envelope: dict[str, object]) -> PortfolioSnapshot:
                 shares=shares,
                 market_value=market_value,
                 status=position_status,
+                nav_date=optional_date(fund.get("navDate")),
+                holding_income=optional_decimal(fund.get("holdIncome")),
+                latest_income=optional_decimal(fund.get("newestIncome")),
+                income_date=optional_date(fund.get("newestIncomeDate")),
             )
         )
 
@@ -178,7 +212,10 @@ def build_snapshot(envelope: dict[str, object]) -> PortfolioSnapshot:
     )
 
 
-def persist(snapshot: PortfolioSnapshot) -> Path:
+def persist(snapshot: PortfolioSnapshot, *, database: Path | None = None) -> Path:
+    if snapshot.quality_status.value == "fail":
+        raise ValueError("Portfolio snapshot failed its quality gate")
+    save_snapshot(database or PROJECT_ROOT / "data/private/invest_agent.sqlite3", snapshot.to_public_dict())
     SNAPSHOT_DIRECTORY.mkdir(parents=True, exist_ok=True)
     SNAPSHOT_DIRECTORY.chmod(0o700)
     target = SNAPSHOT_DIRECTORY / f"{snapshot.batch_id}.json"
@@ -193,20 +230,17 @@ def persist(snapshot: PortfolioSnapshot) -> Path:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Capture one redacted, read-only portfolio snapshot")
+    parser.add_argument("--database", type=Path, default=PROJECT_ROOT / "data/private/invest_agent.sqlite3")
+    args = parser.parse_args()
     try:
         envelope = fetch_overview()
         snapshot = build_snapshot(envelope)
-        target = persist(snapshot)
-    except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
-        print(str(exc), file=sys.stderr)
+        target = persist(snapshot, database=args.database)
+    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError, json.JSONDecodeError):
+        print("Read-only portfolio capture failed; no raw response was saved.", file=sys.stderr)
         return 1
     print(target)
-    update = envelope.get("update")
-    if isinstance(update, dict) and update.get("latestVersion"):
-        print(
-            "A thsfund update is available: "
-            f"{update['latestVersion']} (upgrade remains disabled until explicitly approved)"
-        )
     return 0
 
 

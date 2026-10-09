@@ -21,6 +21,12 @@ def load_schedule_jobs(
         raise ValueError("fund sync config requires schedule_recommendation")
     jobs: list[dict[str, object]] = [
         {
+            "job_id": "portfolio_daily",
+            "kind": "portfolio_snapshot",
+            "cadence": "business_daily",
+            "local_time": recommendation.get("local_time", "23:30"),
+        },
+        {
             "job_id": "fund_data_daily",
             "kind": "fund_data_sync",
             "cadence": "business_daily",
