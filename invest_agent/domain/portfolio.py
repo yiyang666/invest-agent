@@ -66,6 +66,9 @@ class PositionSnapshot:
     fund_name: str | None = None
     nav_date: date | None = None
     status: PositionStatus = PositionStatus.CONFIRMED
+    holding_income: Decimal | None = None
+    latest_income: Decimal | None = None
+    income_date: date | None = None
 
     def validation_issues(self) -> tuple[QualityIssue, ...]:
         issues: list[QualityIssue] = []
@@ -212,6 +215,9 @@ class PortfolioSnapshot:
                     "weight": str(weights[position.fund_code]),
                     "nav_date": position.nav_date.isoformat() if position.nav_date else None,
                     "status": position.status.value,
+                    "holding_income": str(position.holding_income) if position.holding_income is not None else None,
+                    "latest_income": str(position.latest_income) if position.latest_income is not None else None,
+                    "income_date": position.income_date.isoformat() if position.income_date else None,
                 }
                 for position in self.positions
             ],

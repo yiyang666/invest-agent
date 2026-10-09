@@ -81,7 +81,13 @@ def _run_job(
 ) -> dict[str, object]:
     kind = job.get("kind")
     results: list[dict[str, object]] = []
-    if kind == "fund_data_sync":
+    if kind == "portfolio_snapshot":
+        code, payload, _ = _run_json_command([sys.executable, "scripts/capture_portfolio_snapshot.py"], root)
+        # Maintenance logs contain only publication status, never account payloads.
+        results.append({"command": "portfolio_snapshot", "exit_code": code,
+                        "result": {"status": "published" if code == 0 else "failed"},
+                        "stderr": "" if code == 0 else "Read-only portfolio capture failed"})
+    elif kind == "fund_data_sync":
         argv = [
             sys.executable,
             "-m",

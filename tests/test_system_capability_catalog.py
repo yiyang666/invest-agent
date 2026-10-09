@@ -94,7 +94,7 @@ class SystemCapabilityCatalogTests(unittest.TestCase):
         self.assertIn("run_data_maintenance_cli.sh plan", prompt)
         self.assertIn("run_data_maintenance_cli.sh run-due", prompt)
         self.assertIn("不得绕过统一维护CLI", prompt)
-        self.assertIn("禁止刷新爱基金账户", prompt)
+        self.assertIn("禁止绕过统一作业访问爱基金账户", prompt)
         self.assertIn("禁止用模拟", prompt)
         self.assertFalse((ROOT / "scripts/run_scheduled_fund_data_sync.sh").exists())
 
