@@ -27,6 +27,7 @@ class PurchaseRoutePoolTests(unittest.TestCase):
                 "016452",
                 "017641",
                 "017894",
+                "018966",
                 "019305",
                 "020712",
                 "096001",
@@ -70,11 +71,14 @@ class PurchaseRoutePoolTests(unittest.TestCase):
             pool.routes_for_sleeve("us_growth")[0].purchase_fee_rate,
             Decimal("0.0015"),
         )
-        nasdaq_route = pool.routes_for_sleeve("us_nasdaq_core")[0]
-        self.assertEqual(nasdaq_route.fund_code, "016452")
-        self.assertEqual(nasdaq_route.minimum_order_cny, Decimal("1"))
-        self.assertEqual(nasdaq_route.daily_cap_cny, Decimal("10"))
-        self.assertEqual(nasdaq_route.purchase_fee_rate, Decimal("0.0012"))
+        nasdaq_routes = pool.routes_for_sleeve("us_nasdaq_core")
+        self.assertEqual(
+            tuple(route.fund_code for route in nasdaq_routes), ("018966", "016452")
+        )
+        self.assertEqual(nasdaq_routes[0].minimum_order_cny, Decimal("1"))
+        self.assertEqual(nasdaq_routes[0].daily_cap_cny, Decimal("2000"))
+        self.assertEqual(nasdaq_routes[0].purchase_fee_rate, Decimal("0.0012"))
+        self.assertEqual(nasdaq_routes[1].daily_cap_cny, Decimal("10"))
         japan_route = pool.routes_for_sleeve("japan_broad_core")[0]
         self.assertEqual(japan_route.fund_code, "020712")
         self.assertEqual(japan_route.minimum_order_cny, Decimal("1"))

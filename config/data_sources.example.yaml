@@ -149,6 +149,40 @@ providers:
       - complete_history_boundaries_not_documented
       - revision_and_pagination_semantics_not_documented
       - data_persistence_and_derived_use_terms_not_documented
+  jin10_mcp:
+    enabled: true
+    role: research_cross_asset_and_event_context_source
+    adapter_status: raw_first_adapter_active_in_unified_daily_maintenance
+    service_url: https://mcp.jin10.com/mcp
+    upstream_domains:
+      - jin10.com
+    transport: streamable_http
+    authentication: bearer_token_from_environment
+    credential_environment_variable: JIN10_MCP_TOKEN
+    collection_tools:
+      - get_quote
+      - list_calendar
+    interactive_tools:
+      - search_flash
+      - search_news
+      - get_news
+    excluded_tools:
+      - get_kline
+      - list_flash
+      - list_news
+    network_mode: unified_business_daily_collection_and_interactive_low_frequency
+    allow_in_inference_path: false
+    allow_in_backtest_path: false
+    allow_in_execution_path: false
+    persist_before_formal_use: true
+    raw_before_normalization: true
+    require_secondary_source_validation: true
+    known_limits:
+      - quote_timestamp_exchange_semantics_not_documented
+      - volume_unit_not_documented_and_not_published
+      - calendar_mcp_exposes_current_natural_week_only
+      - no_vix_bond_curve_dxy_nasdaq_global_breadth_or_cross_market_flow
+      - remote_service_version_rate_limit_and_sla_not_documented
   validated_fund_nav_proxy:
     enabled: true
     role: research_only_market_trend_proxy

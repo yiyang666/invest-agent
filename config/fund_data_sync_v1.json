@@ -23,6 +23,7 @@
       {"fund_code": "012636", "reason": "satellite_theme_observation_candidate"}
     ],
     "research_candidate_funds": [
+      {"fund_code": "018966", "current_channel_availability": "limited", "channel_checked_at": "2026-09-02T15:00:00+08:00"},
       {"fund_code": "006282", "current_channel_availability": "limited", "channel_checked_at": "2026-08-24T00:00:00+08:00"},
       {"fund_code": "017436", "current_channel_availability": "limited", "channel_checked_at": "2026-08-24T00:00:00+08:00"},
       {"fund_code": "017437", "current_channel_availability": "limited", "channel_checked_at": "2026-08-24T00:00:00+08:00"},

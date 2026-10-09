@@ -32,6 +32,14 @@ from .guchacha_breadth import (
     load_guchacha_breadth_policy,
     normalize_guchacha_breadth,
 )
+from .jin10 import (
+    PROVIDER_ID as JIN10_PROVIDER_ID,
+    Jin10McpClient,
+    decode_jin10_tool_payload,
+    load_jin10_policy,
+    normalize_jin10_calendar,
+    normalize_jin10_quote,
+)
 from .mcp_client import GuchachaMcpClient, PROVIDER_ID, decode_jsonrpc, extract_tool_result
 from .normalize import normalize_guchacha_result
 from .policy import load_tool_policy
@@ -187,6 +195,35 @@ def build_parser() -> argparse.ArgumentParser:
     replay_guchacha_breadth.add_argument("--raw-root", type=Path, default=DEFAULT_RAW_ROOT)
     replay_guchacha_breadth.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
 
+    jin10_quotes = subparsers.add_parser(
+        "collect-jin10-quotes",
+        help="Archive and publish the reviewed Jin10 cross-asset quote panel",
+    )
+    jin10_quotes.add_argument("--as-of")
+    jin10_quotes.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    jin10_quotes.add_argument("--raw-root", type=Path, default=DEFAULT_RAW_ROOT)
+    jin10_quotes.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
+    jin10_quotes.add_argument("--timeout-seconds", type=float, default=30.0)
+
+    jin10_calendar = subparsers.add_parser(
+        "collect-jin10-calendar",
+        help="Archive Jin10's current-week calendar and publish reviewed releases",
+    )
+    jin10_calendar.add_argument("--as-of")
+    jin10_calendar.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    jin10_calendar.add_argument("--raw-root", type=Path, default=DEFAULT_RAW_ROOT)
+    jin10_calendar.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
+    jin10_calendar.add_argument("--timeout-seconds", type=float, default=30.0)
+
+    replay_jin10 = subparsers.add_parser(
+        "replay-jin10", help="Re-normalize one immutable Jin10 MCP batch"
+    )
+    replay_jin10.add_argument("--batch-id", required=True)
+    replay_jin10.add_argument("--as-of", required=True)
+    replay_jin10.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    replay_jin10.add_argument("--raw-root", type=Path, default=DEFAULT_RAW_ROOT)
+    replay_jin10.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
+
     init_store = subparsers.add_parser("init-store", help="Create isolated market-data tables")
     init_store.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
     inspect = subparsers.add_parser("inspect", help="Inspect market batches and series coverage")
@@ -267,6 +304,70 @@ def _publish_payload(
     return summary, 0 if published.quality_report.can_publish else 2
 
 
+def _jin10_batch(
+    *,
+    batch_id: str,
+    tool: str,
+    arguments: dict[str, object],
+    payload: bytes,
+    content_type: str,
+    fetched_at: datetime,
+    as_of: datetime,
+    raw_content_sha256: str,
+    config: Path,
+):
+    policy = load_jin10_policy(config)
+    policy.validate_tool(tool)
+    result = decode_jin10_tool_payload(payload, content_type)
+    if tool == "get_quote":
+        return normalize_jin10_quote(
+            batch_id=batch_id,
+            arguments=arguments,
+            result=result,
+            policy=policy,
+            fetched_at=fetched_at,
+            as_of=as_of,
+            raw_content_sha256=raw_content_sha256,
+        )
+    if tool == "list_calendar":
+        return normalize_jin10_calendar(
+            batch_id=batch_id,
+            result=result,
+            policy=policy,
+            fetched_at=fetched_at,
+            as_of=as_of,
+            raw_content_sha256=raw_content_sha256,
+        )
+    raise ValueError(f"Unsupported Jin10 normalizer: {tool}")
+
+
+def _archive_jin10_response(*, raw, as_of: datetime, raw_root: Path):
+    suffix = hashlib.sha256(raw.payload).hexdigest()[:12]
+    stamp = raw.fetched_at.strftime("%Y%m%dT%H%M%S")
+    tool_slug = raw.tool_name.replace("_", "-")
+    code_slug = str(raw.arguments.get("code", "")).lower()
+    identity = f"-{code_slug}" if code_slug else ""
+    batch_id = f"jin10-{stamp}-{tool_slug}{identity}-{suffix}"
+    receipt = archive_raw_payload(
+        root=raw_root,
+        provider_id=JIN10_PROVIDER_ID,
+        batch_id=batch_id,
+        payload=raw.payload,
+        content_type=raw.content_type,
+        observed_at=raw.fetched_at,
+        request_parameters={
+            "endpoint": "https://mcp.jin10.com/mcp",
+            "jsonrpc_method": f"tools/call:{raw.tool_name}",
+            "protocol_version": "2025-06-18",
+            "arguments_json": json.dumps(
+                raw.arguments, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+            ),
+            "as_of": as_of.isoformat(),
+        },
+    )
+    return batch_id, receipt
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
@@ -288,6 +389,143 @@ def main(argv: list[str] | None = None) -> int:
                 )
             )
             return 0
+        if args.command == "collect-jin10-quotes":
+            as_of = _as_of(args.as_of)
+            policy = load_jin10_policy(args.config)
+            client = Jin10McpClient(
+                endpoint=policy.endpoint,
+                token_environment_variable=policy.credential_environment_variable,
+                timeout_seconds=args.timeout_seconds,
+            )
+            results = []
+            for code in policy.quote_specs:
+                raw = client.call_tool("get_quote", {"code": code})
+                batch_id, receipt = _archive_jin10_response(
+                    raw=raw, as_of=as_of, raw_root=args.raw_root
+                )
+                batch = _jin10_batch(
+                    batch_id=batch_id,
+                    tool="get_quote",
+                    arguments={"code": code},
+                    payload=raw.payload,
+                    content_type=raw.content_type,
+                    fetched_at=raw.fetched_at,
+                    as_of=as_of,
+                    raw_content_sha256=receipt.content_sha256,
+                    config=args.config,
+                )
+                published = MarketDataStore(args.db).publish(batch)
+                results.append(
+                    {
+                        "code": code,
+                        "batch_id": batch_id,
+                        "quality_status": published.quality_report.status.value,
+                        "published_numeric_records": published.published_numeric_records,
+                        "issues": [issue.to_dict() for issue in published.quality_report.issues],
+                    }
+                )
+            rejected = sum(item["quality_status"] == "fail" for item in results)
+            print(
+                json.dumps(
+                    {
+                        "status": "published" if rejected == 0 else "partial",
+                        "provider": JIN10_PROVIDER_ID,
+                        "requested_quotes": len(results),
+                        "rejected_quotes": rejected,
+                        "results": results,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0 if rejected == 0 else 2
+        if args.command == "collect-jin10-calendar":
+            as_of = _as_of(args.as_of)
+            policy = load_jin10_policy(args.config)
+            client = Jin10McpClient(
+                endpoint=policy.endpoint,
+                token_environment_variable=policy.credential_environment_variable,
+                timeout_seconds=args.timeout_seconds,
+            )
+            raw = client.call_tool("list_calendar", {})
+            batch_id, receipt = _archive_jin10_response(
+                raw=raw, as_of=as_of, raw_root=args.raw_root
+            )
+            batch = _jin10_batch(
+                batch_id=batch_id,
+                tool="list_calendar",
+                arguments={},
+                payload=raw.payload,
+                content_type=raw.content_type,
+                fetched_at=raw.fetched_at,
+                as_of=as_of,
+                raw_content_sha256=receipt.content_sha256,
+                config=args.config,
+            )
+            if not batch.numeric_observations:
+                print(
+                    json.dumps(
+                        {
+                            "status": "archived_no_reviewed_releases",
+                            "provider": JIN10_PROVIDER_ID,
+                            "batch_id": batch_id,
+                            "published_numeric_records": 0,
+                        },
+                        ensure_ascii=False,
+                        indent=2,
+                        sort_keys=True,
+                    )
+                )
+                return 0
+            summary, code = _published_summary(
+                MarketDataStore(args.db).publish(batch), source="Jin10 economic calendar"
+            )
+            print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
+            return code
+        if args.command == "replay-jin10":
+            as_of = _as_of(args.as_of)
+            archived = load_raw_payload(
+                root=args.raw_root,
+                provider_id=JIN10_PROVIDER_ID,
+                batch_id=args.batch_id,
+            )
+            method = archived.request_parameters.get("jsonrpc_method", "")
+            if not method.startswith("tools/call:"):
+                raise ValueError("Archived batch is not a Jin10 tool call")
+            tool = _safe_tool(method.split(":", 1)[1])
+            arguments = _arguments(archived.request_parameters.get("arguments_json", "{}"))
+            batch = _jin10_batch(
+                batch_id=archived.batch_id,
+                tool=tool,
+                arguments=arguments,
+                payload=archived.payload,
+                content_type=archived.content_type,
+                fetched_at=archived.observed_at,
+                as_of=as_of,
+                raw_content_sha256=archived.content_sha256,
+                config=args.config,
+            )
+            if not batch.numeric_observations:
+                print(
+                    json.dumps(
+                        {
+                            "status": "replayed_no_reviewed_releases",
+                            "provider": JIN10_PROVIDER_ID,
+                            "batch_id": archived.batch_id,
+                            "published_numeric_records": 0,
+                        },
+                        ensure_ascii=False,
+                        indent=2,
+                        sort_keys=True,
+                    )
+                )
+                return 0
+            summary, code = _published_summary(
+                MarketDataStore(args.db).publish(batch), source="Jin10 MCP replay"
+            )
+            print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
+            return code
         if args.command == "collect-fred":
             as_of = _as_of(args.as_of)
             if args.lookback_days < 0:

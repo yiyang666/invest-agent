@@ -52,7 +52,7 @@ Agent会先读取项目政策和能力目录，再调用已有的确定性接口
 
 - 爱基金持仓、钱包、订单和交易规则的受审查只读访问；
 - AKShare兼容的东财/同花顺采集器及基金公司公开净值源；
-- 股叉叉、FRED NFCI、本地基金趋势代理与全A股聚合宽度的raw-first/可重放采集及隔离市场数据仓；
+- 股叉叉、金十精选跨资产/欧日宏观、FRED NFCI、本地基金趋势代理与全A股聚合宽度的raw-first/可重放采集及隔离市场数据仓；
 - 七轴`GlobalMarketStateSnapshot`计算骨架，显式报告覆盖率、时点可信度、来源数量和缺失能力；
 - 一个可观察的Codex固定会话触发统一CLI，管理基金与市场数据的日、周、月、季维护；
 - 原始批次不可变归档、质量门禁和本地SQLite校验仓；
@@ -119,17 +119,17 @@ Agent不应：
 ## 本地环境与数据
 
 - 当前项目环境：Miniconda / Python 3.12 / `.conda-env`；
-- 爱基金SDK：项目隔离安装的`aijijin-sdk 0.2.0`；
+- 爱基金SDK：项目隔离安装的`aijijin-sdk 0.2.1`；
 - 本地数据、持仓、报告、数据库、日志和原始MCP响应统一位于`data/`，全部被Git忽略；
 - 爱基金凭证位于用户目录，不进入项目；
-- 股叉叉MCP只在`.codex/config.toml`保存环境变量名，不保存Bearer token。
+- 项目代码和数据只保存环境变量名，不保存Bearer token；金十既可供Agent即时查询，也已通过受控环境/钥匙串绑定纳入统一工作日日频采集。
 
 新机器可以先创建隔离环境并安装已审查的爱基金本地wheel：
 
 ```bash
 conda env create --prefix ./.conda-env --file environment.yml
 .conda-env/bin/python -m pip install --no-deps \
-  .agents/skills/thsfund/vendor/aijijin_sdk-0.2.0-py3-none-any.whl
+  .agents/skills/thsfund/vendor/aijijin_sdk-0.2.1-py3-none-any.whl
 ```
 
 认证和真实账户操作必须另行遵循[爱基金安全审查](docs/integrations/thsfund-review.md)，不能从Git恢复凭证。
@@ -172,6 +172,7 @@ conda env create --prefix ./.conda-env --file environment.yml
 - [架构决策摘要](docs/decisions/README.md)
 - [爱基金安全审查](docs/integrations/thsfund-review.md)
 - [股叉叉MCP审查](docs/integrations/guchacha-mcp-review.md)
+- [金十MCP精简审查](docs/integrations/jin10-mcp-review.md)
 - [市场状态数据契约](docs/market-data.md)
 - [全球市场状态评估](docs/market-regime.md)
 - [全球市场状态数据源评审](docs/integrations/market-regime-source-review.md)

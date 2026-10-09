@@ -1,6 +1,6 @@
 ---
 name: market-data-collect
-description: Collect, archive, validate, publish, replay, inspect, backfill, and schedule reviewed market-context data for this project. Covers Guchacha valuation/weights/rates/FX/margin/macro/crowding and public all-A-share breadth, validated fund-NAV trend proxies, allowlisted FRED personal-research series, plus manual SSE breadth validation; also diagnoses stale or missing market data and operates the unified maintenance schedule.
+description: Collect, archive, validate, publish, replay, inspect, backfill, and schedule reviewed market-context data for this project. Covers Guchacha valuation/weights/rates/FX/margin/macro/crowding and public all-A-share breadth, Jin10 reviewed cross-asset quotes and Europe/Japan macro releases, validated fund-NAV trend proxies, allowlisted FRED personal-research series, plus manual SSE breadth validation; also diagnoses stale or missing market data and operates the unified maintenance schedule.
 ---
 
 # Market Data Collect
@@ -23,6 +23,8 @@ Before acting, read:
 6. `docs/integrations/guchacha-mcp-review.md`
 7. `docs/integrations/market-regime-source-review.md`
 8. `config/market_data_sync_v1.json`
+
+For Jin10 work, also read `docs/integrations/jin10-mcp-review.md` and ADR-0032.
 
 Read [references/quality-and-schedule.md](references/quality-and-schedule.md) before changing cadence, quality gates, credentials, or scheduler activation.
 
@@ -99,6 +101,17 @@ python -m invest_agent.market_data.cli collect-sse-breadth
 
 It covers Shanghai A shares only and is not in the default maintenance plan. Use it only when a manual exchange-level cross-check is worth the extra request; never relabel it as full-A-share breadth.
 
+### Collect reviewed Jin10 evidence
+
+Only the compact quote panel and reviewed economic releases may enter the local store:
+
+```bash
+python -m invest_agent.market_data.cli collect-jin10-quotes
+python -m invest_agent.market_data.cli collect-jin10-calendar
+```
+
+These commands require `JIN10_MCP_TOKEN`. The unified runner obtains it only from the environment or the reviewed macOS Keychain launcher. Both commands run in the existing business-daily market job; monthly and quarterly releases are captured on their publication date rather than through duplicate cadence jobs. Never collect minute K-lines, full flash feeds, full article feeds, or undocumented volume units.
+
 ### Replay an archive
 
 Use replay to reproduce normalization without calling the provider:
@@ -148,7 +161,7 @@ The preferred visible trigger is the single Codex heartbeat named `Invest Agent 
 
 Use one deterministic local runner that evaluates four cadences:
 
-- daily: fund NAV, validated trend proxies, Guchacha all-A-share aggregate breadth, and high-frequency market series;
+- daily: fund NAV, validated trend proxies, Guchacha all-A-share aggregate breadth, high-frequency market series, Jin10 reviewed quotes, and the current-week economic calendar;
 - weekly: FRED NFCI, dataset catalog, index valuation panel, forward PE, and current industry crowding;
 - monthly: index weights and monthly/release-driven macro series;
 - quarterly: GDP refresh.
@@ -164,6 +177,7 @@ The Codex task is the visible control surface: it presents the plan, reads the r
 - Never print, persist, copy, or expose `GUCHACHA_MCP_TOKEN`.
 - Use the existing environment secret or the reviewed macOS Keychain service; never embed credentials in plist files or Git.
 - Never invoke excluded Guchacha tools or bypass argument allowlists.
+- Never invoke Jin10 `get_kline`, `list_flash`, or `list_news`; news searches remain interactive and are not bulk archived.
 - Never write Guchacha values directly into fund NAV tables.
 - Never let collection code generate strategy signals, risk approvals, or orders.
 - Do not activate or change either Codex scheduling or launchd silently. Validate the exact task, prompt, cadence, target conversation, and credential readiness, then tell the user exactly what will run.

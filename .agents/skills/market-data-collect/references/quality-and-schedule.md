@@ -12,6 +12,7 @@
 - `is_estimated` on index weights is preserved.
 - Forward-PE retrieval dates are marked as proxies when the provider omits a snapshot date.
 - Missing independent validation keeps Guchacha evidence at research authority; it must not silently become a production risk gate.
+- Jin10 quote time semantics remain unverified and volume units are not published. Its calendar exposes only the current natural week; unmatched or unreleased events remain raw-only.
 
 ## Cadence ownership
 
@@ -39,6 +40,8 @@ The launchd wrapper is a fallback for future zero-LLM operation. Keep it unloade
 ## Credential readiness
 
 Interactive and Codex-local commands may inherit `GUCHACHA_MCP_TOKEN`; a missing credential must appear as a failed market command and must not be printed. A future background launchd process generally does not inherit the terminal environment, so its wrapper can retrieve the token from macOS Keychain service `invest-agent-guchacha-mcp`. Check existence without printing the secret.
+
+Jin10 collection similarly requires `JIN10_MCP_TOKEN`. The active Codex controller uses `scripts/run_data_maintenance_cli.sh`, which prefers the inherited environment and otherwise reads the reviewed macOS Keychain service `invest-agent-jin10-mcp` without printing the secret. The user has confirmed the current token is free-use; never copy it into project configuration, logs, commands, or archives.
 
 ## Failure handling
 

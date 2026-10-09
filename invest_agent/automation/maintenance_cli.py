@@ -207,6 +207,42 @@ def _run_job(
                     "--raw-root",
                     raw_root,
                 ]
+            elif operation == "collect_jin10_quotes":
+                if arguments not in ({}, None):
+                    raise ValueError("collect_jin10_quotes does not accept arguments")
+                tool = "jin10_reviewed_quote_panel"
+                argv = [
+                    sys.executable,
+                    "-m",
+                    "invest_agent.market_data.cli",
+                    "collect-jin10-quotes",
+                    "--as-of",
+                    as_of.isoformat(),
+                    "--config",
+                    str(job["config_path"]),
+                    "--db",
+                    database,
+                    "--raw-root",
+                    raw_root,
+                ]
+            elif operation == "collect_jin10_calendar":
+                if arguments not in ({}, None):
+                    raise ValueError("collect_jin10_calendar does not accept arguments")
+                tool = "jin10_reviewed_economic_calendar"
+                argv = [
+                    sys.executable,
+                    "-m",
+                    "invest_agent.market_data.cli",
+                    "collect-jin10-calendar",
+                    "--as-of",
+                    as_of.isoformat(),
+                    "--config",
+                    str(job["config_path"]),
+                    "--db",
+                    database,
+                    "--raw-root",
+                    raw_root,
+                ]
             elif operation is None:
                 tool = str(raw.get("tool", ""))
                 argv = [

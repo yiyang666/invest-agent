@@ -1,4 +1,4 @@
 interface:
   display_name: "Market Context Research"
-  short_description: "Route and explain validated market-context evidence"
-  default_prompt: "Use $market-context-research to inspect current valuation, rates, FX, leverage, macro, or industry crowding with the correct evidence mode."
+  short_description: "Route Guchacha, Jin10, and local market evidence"
+  default_prompt: "Use $market-context-research to inspect valuation, rates, FX, macro, Jin10 cross-asset quotes, or event context with the correct evidence mode."

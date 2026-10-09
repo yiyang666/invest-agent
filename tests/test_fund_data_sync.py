@@ -14,6 +14,7 @@ from invest_agent.data.sync import (
     load_sync_config,
     resolve_sync_funds,
     sync_plan_payload,
+    summarize_sync_results,
 )
 
 
@@ -22,6 +23,21 @@ SHANGHAI = ZoneInfo("Asia/Shanghai")
 
 
 class FundDataSyncTests(unittest.TestCase):
+    def test_stale_published_nav_is_warning_not_collection_failure(self) -> None:
+        status, summary = summarize_sync_results([
+            {"collection_status": "published", "freshness": "stale"},
+            {"collection_status": "published", "freshness": "fresh"},
+        ])
+        self.assertEqual(status, "complete")
+        self.assertEqual(summary["stale"], 1)
+        self.assertEqual(summary["published"], 2)
+        status, summary = summarize_sync_results([
+            {"collection_status": "published", "freshness": "stale"},
+            {"collection_status": "error", "freshness": "unknown"},
+        ])
+        self.assertEqual(status, "degraded")
+        self.assertEqual(summary["errors"], 1)
+
     def _config(self, database_path: str, *, snapshots: bool = False) -> dict:
         config = load_sync_config(ROOT / "config/fund_data_sync_v1.json")
         config["database_path"] = database_path
@@ -43,7 +59,7 @@ class FundDataSyncTests(unittest.TestCase):
         self.assertIn("096001", codes)
         self.assertIn("006282", codes)
         self.assertTrue(
-            {"017436", "017437", "080006", "016452", "016453", "017641", "019305", "519981"}
+            {"017436", "017437", "080006", "016452", "016453", "017641", "018966", "019305", "519981"}
             <= codes
         )
         self.assertNotIn("968173", codes)

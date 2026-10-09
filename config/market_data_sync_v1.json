@@ -11,6 +11,39 @@
     "timeout_seconds": 30,
     "max_attempts": 1
   },
+  "jin10_policy": {
+    "endpoint": "https://mcp.jin10.com/mcp",
+    "credential_environment_variable": "JIN10_MCP_TOKEN",
+    "usage_scope": "personal_research_local_only",
+    "enabled_tools": ["get_quote", "list_calendar"],
+    "interactive_tools": ["search_flash", "search_news", "get_news"],
+    "excluded_tools": ["get_kline", "list_flash", "list_news"],
+    "maximum_quote_age_hours": 96,
+    "quote_codes": [
+      {"code": "000300", "label": "沪深300", "region": "china", "price_unit": "index_point"},
+      {"code": "HSI", "label": "恒生指数", "region": "hong_kong", "price_unit": "index_point"},
+      {"code": "SPX", "label": "标普500", "region": "united_states", "price_unit": "index_point"},
+      {"code": "FTSE", "label": "富时100", "region": "united_kingdom", "price_unit": "index_point"},
+      {"code": "GDAXI", "label": "德国DAX", "region": "europe", "price_unit": "index_point"},
+      {"code": "N225", "label": "日经225", "region": "japan", "price_unit": "index_point"},
+      {"code": "XAUUSD", "label": "现货黄金", "region": "global", "price_unit": "usd_per_troy_ounce"},
+      {"code": "USOIL", "label": "WTI原油", "region": "global", "price_unit": "usd_per_barrel"},
+      {"code": "USDCNH", "label": "美元兑离岸人民币", "region": "china_global", "price_unit": "fx_rate"},
+      {"code": "USDJPY", "label": "美元兑日元", "region": "japan_global", "price_unit": "fx_rate"},
+      {"code": "EURUSD", "label": "欧元兑美元", "region": "europe_global", "price_unit": "fx_rate"}
+    ],
+    "calendar_indicators": [
+      {"title_pattern": "^欧元区第.+季度GDP季率(?:初值|修正值|终值)?$", "series_id": "jin10_macro:euro_area:gdp_qoq_release", "label": "欧元区GDP季率发布值", "unit": "%", "frequency": "quarterly_release"},
+      {"title_pattern": "^欧元区\\d+月工业产出月率$", "series_id": "jin10_macro:euro_area:industrial_production_mom_release", "label": "欧元区工业产出月率发布值", "unit": "%", "frequency": "monthly_release"},
+      {"title_pattern": "^德国\\d+月季调后工业产出月率$", "series_id": "jin10_macro:germany:industrial_production_mom_release", "label": "德国工业产出月率发布值", "unit": "%", "frequency": "monthly_release"},
+      {"title_pattern": "^日本第.+季度实际GDP季率(?:初值|修正值|终值)?$", "series_id": "jin10_macro:japan:real_gdp_qoq_release", "label": "日本实际GDP季率发布值", "unit": "%", "frequency": "quarterly_release"},
+      {"title_pattern": "^日本\\d+月领先指标(?:初值|终值)?$", "series_id": "jin10_macro:japan:leading_index_release", "label": "日本领先指标发布值", "unit": "index", "frequency": "monthly_release"},
+      {"title_pattern": "^日本\\d+月经济观察家现况指数$", "series_id": "jin10_macro:japan:economy_watchers_current_release", "label": "日本经济观察家现况指数发布值", "unit": "index", "frequency": "monthly_release"},
+      {"title_pattern": "^日本\\d+月经济观察家前景指数$", "series_id": "jin10_macro:japan:economy_watchers_outlook_release", "label": "日本经济观察家前景指数发布值", "unit": "index", "frequency": "monthly_release"},
+      {"title_pattern": "^日本\\d+月核心CPI年率$", "series_id": "jin10_macro:japan:core_cpi_yoy_release", "label": "日本核心CPI年率发布值", "unit": "%", "frequency": "monthly_release"}
+    ],
+    "scheduler_status": "active_unified_daily_maintenance"
+  },
   "fund_proxy_policy": {
     "enabled": true,
     "role": "research_only_investable_market_trend_proxy",
@@ -179,7 +212,9 @@
         {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "usdcny", "limit": 10}},
         {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "dxy", "limit": 10}},
         {"tool": "get_market_series", "arguments": {"dataset": "margin", "key": "margin_bal", "limit": 10}},
-        {"tool": "get_market_series", "arguments": {"dataset": "margin", "key": "leverage_pct", "limit": 10}}
+        {"tool": "get_market_series", "arguments": {"dataset": "margin", "key": "leverage_pct", "limit": 10}},
+        {"operation": "collect_jin10_quotes"},
+        {"operation": "collect_jin10_calendar"}
       ]
     },
     {
