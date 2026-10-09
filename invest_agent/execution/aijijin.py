@@ -218,6 +218,7 @@ class AijijinCliAdapter:
         *,
         buy_type: int,
         transaction_account_id: str,
+        trade_id: str,
         agreement_record: str | None,
     ) -> list[str]:
         if intent.action is not OrderAction.PURCHASE or intent.amount_cny is None:
@@ -226,6 +227,8 @@ class AijijinCliAdapter:
             raise ValueError("buy type must be 0 for bank card or 1 for wallet")
         if not transaction_account_id.strip():
             raise ValueError("transaction account ID is required in memory")
+        if not trade_id.strip():
+            raise ValueError("trade ID is required in memory")
         args = [
             "fund",
             "buy",
@@ -237,6 +240,8 @@ class AijijinCliAdapter:
             str(intent.amount_cny.quantize(Decimal("0.01"))),
             "--transaction-account-id",
             transaction_account_id,
+            "--trade-id",
+            trade_id,
         ]
         if agreement_record is not None:
             if not agreement_record.strip():
@@ -250,6 +255,7 @@ class AijijinCliAdapter:
         *,
         buy_type: int,
         transaction_account_id: str,
+        trade_id: str,
         agreement_record: str | None = None,
     ) -> dict[str, object]:
         if intent.amount_cny is None or intent.amount_cny > Decimal(
@@ -262,6 +268,7 @@ class AijijinCliAdapter:
                 intent,
                 buy_type=buy_type,
                 transaction_account_id=transaction_account_id,
+                trade_id=trade_id,
                 agreement_record=agreement_record,
             ),
             "--dry-run",
@@ -285,6 +292,8 @@ class AijijinCliAdapter:
             raise ValueError("aijijin purchase dry-run endpoint mismatch")
         if request.get("transactionAccountId") != transaction_account_id:
             raise ValueError("aijijin purchase dry-run account binding mismatch")
+        if request.get("tradeId") != trade_id:
+            raise ValueError("aijijin purchase dry-run trade account binding mismatch")
         if (
             request.get("fundCode") != intent.fund_code
             or request.get("money") != str(intent.amount_cny.quantize(Decimal("0.01")))
@@ -298,6 +307,7 @@ class AijijinCliAdapter:
             "amount_cny": str(request.get("money")),
             "buy_type": str(request.get("buyType")),
             "transaction_account_bound": True,
+            "trade_account_bound": True,
             "transaction_account_persisted": False,
             "network_used": False,
             "real_trading_enabled": False,

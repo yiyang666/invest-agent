@@ -1,4 +1,5 @@
-# Reviewed project-local thsfund 0.2.0 runtime artifacts.
+# Historical thsfund 0.2.0 review record; no longer the installed project runtime.
+# Active runtime lock: aijijin-sdk-0.2.1-project-skill.artifacts.
 # Credentials and authenticated responses are never part of this lock.
 
 14089db9d9cd5e9c75e5a3ecaa01cc3f7bd194485974e68bf127116ffa240ccf  .agents/skills/thsfund/vendor/aijijin_sdk-0.2.0-py3-none-any.whl

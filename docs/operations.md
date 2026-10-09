@@ -3,7 +3,7 @@
 ## 运行环境
 
 - 项目环境：`.conda-env`，Python 3.12；
-- 爱基金 SDK：`aijijin-sdk==0.2.0`；
+- 爱基金 SDK：`aijijin-sdk==0.2.1`；
 - AKShare：固定为1.18.91；
 - 本地数据库：`data/private/invest_agent.sqlite3`；
 - 私有快照、报告和原始批次均被 Git 忽略。
@@ -17,6 +17,8 @@
 命令通过爱基金只读接口实时取数，原始响应只在内存处理，仅持久化脱敏 `PortfolioSnapshot`。交易记录和赎回预览也只能通过受审查的 `aijijin` CLI 查询。
 
 ## 基金数据
+
+基金同步的任务成功表示本轮请求和批次发布成功。净值新鲜度独立报告：`summary.stale`、各基金的 `latest_nav_after` 和 `freshness` 仍须检查；陈旧净值不得作为新鲜数据进入决策。采集拒绝或异常仍使任务失败。
 
 ```bash
 # 预览当次基金全集、区间与来源（不联网）
@@ -72,31 +74,34 @@ QDII当前路由事实位于 `config/qdii_purchase_route_pool_v1.json`。同一�
 
 .conda-env/bin/python -m invest_agent.market_data.cli collect-guchacha-breadth
 
+# 金十精简链路；JIN10_MCP_TOKEN由环境变量或受控钥匙串启动层提供
+.conda-env/bin/python -m invest_agent.market_data.cli collect-jin10-quotes
+.conda-env/bin/python -m invest_agent.market_data.cli collect-jin10-calendar
+
 # 一次性历史回填（包含schema审计、基金代理、NFCI、全A聚合宽度及已审查市场命令）
 .conda-env/bin/python -m invest_agent.automation.maintenance_cli run-bootstrap
 ```
 
-`probe`只用于schema排查，归档但不发布；进入策略、风险、报告、归因或调仓建议的值必须由`collect`、`publish-fund-proxies`、`collect-fred`、`collect-guchacha-breadth`或定时维护写入本地市场数据表。基金代理不是官方指数；FRED与股叉叉聚合宽度仅限个人本地研究并要求引用。`collect-sse-breadth`保留为手工校验，不在默认计划中。精确允许列表见`config/market_data_sync_v1.json`。
+`probe`只用于schema排查，归档但不发布；进入策略、风险、报告、归因或调仓建议的值必须由受审查采集命令或定时维护写入本地市场数据表。基金代理不是官方指数；FRED、股叉叉聚合宽度和金十均保持个人本地研究边界。金十只发布精选报价和明确映射的欧日宏观值；分钟K线、全量快讯和全量文章不接入。精确允许列表见`config/market_data_sync_v1.json`。
 
 ## 可观察的日/周/月/季统一数据维护
 
-系统不为四种频率创建四个会话。一个名为`Invest Agent 数据更新总控`的Codex heartbeat在工作日23:55返回固定维护会话，只依次运行`plan`和`run-due`；确定性代码根据本地状态判断应运行哪些作业：
+系统不为四种频率创建四个会话。一个名为`Invest Agent 数据更新总控`的Codex heartbeat在工作日23:55返回固定维护会话，通过`run_data_maintenance_cli.sh`加载环境凭证后，仍只依次运行统一CLI的`plan`和`run-due`；确定性代码根据本地状态判断应运行哪些作业：
 
-- 工作日：基金净值、股叉叉全A股聚合宽度、国债收益率、外汇和两融；
+- 工作日：基金净值、股叉叉全A股聚合宽度、国债收益率、外汇、两融、金十精选跨资产报价和本周财经日历；
 - 每周：数据目录、指数估值、前瞻PE和行业拥挤度；
 - 每月：指数权重及CPI/PPI/PMI/非农/巴菲特指标；
 - 每季：GDP。
 
 ```bash
 # 只读预览当前到期作业
-.conda-env/bin/python -m invest_agent.automation.maintenance_cli plan
+scripts/run_data_maintenance_cli.sh plan
 
 # 手工运行到期作业
-.conda-env/bin/python -m invest_agent.automation.maintenance_cli run-due
+scripts/run_data_maintenance_cli.sh run-due
 
 # 诊断单个作业
-.conda-env/bin/python -m invest_agent.automation.maintenance_cli \
-  run-job --job-id market_weekly_context
+scripts/run_data_maintenance_cli.sh run-job --job-id market_weekly_context
 ```
 
 Codex任务的版本化提示词位于`config/codex_data_update_automation_v1.md`。Agent只展示计划和解释汇总报告；共享锁、频率状态、采集、门禁与写库均由`maintenance_cli`完成。任务状态和历史在Codex的Scheduled页面及固定会话查看，本地状态位于`data/private/automation/data-maintenance-state.json`。
@@ -141,6 +146,15 @@ tail -n 50 data/private/automation/data-maintenance.stderr.log
   --config config/monthly_research_pipeline_v1.json \
   --workspace-root .
 ```
+
+流水线成功并生成当月新 Manifest 后，可用一页结论查看现状、风险、行动草案与理由：
+
+```bash
+.conda-env/bin/python -m invest_agent.decision.brief_cli \
+  --manifest data/private/reports/<当月新manifest>.json --workspace-root .
+```
+
+默认配置仍是 2026 年 8 月历史样例；不得直接当作本月决策。生成当月新产物前，需刷新只读账户快照、核验净值和产品规则，并使用新的运行 ID 与不可变输出路径。一页入口会拒绝跨月或哈希不匹配的报告。
 
 流水线依次生成决策包、证据报告、自然语言解释和一致性验收，最后才发布Manifest。任一阶段失败则不发布；它不联网、不自动定时、不生成订单。
 

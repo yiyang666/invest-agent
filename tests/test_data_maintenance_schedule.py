@@ -39,6 +39,9 @@ class DataMaintenanceScheduleTests(unittest.TestCase):
             {job["cadence"] for job in jobs},
             {"business_daily", "weekly", "monthly", "quarterly"},
         )
+        daily = next(job for job in jobs if job["job_id"] == "market_daily_series")
+        operations = [command.get("operation") for command in daily["commands"]]
+        self.assertEqual(operations[-2:], ["collect_jin10_quotes", "collect_jin10_calendar"])
 
     def test_weekly_and_daily_are_due_once_in_their_period(self) -> None:
         jobs = self._jobs()
@@ -223,6 +226,43 @@ class DataMaintenanceScheduleTests(unittest.TestCase):
                 result["results"][0]["command"],
                 "guchacha_public_dashboard_breadth",
             )
+
+    def test_jin10_operations_route_to_reviewed_cli_without_kline(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / "market.json"
+            config.write_text(
+                json.dumps(
+                    {
+                        "database_path": "data/private/test.sqlite3",
+                        "raw_root": "data/raw",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            job = {
+                "job_id": "market_jin10_test",
+                "kind": "market_data_sync",
+                "config_path": str(config),
+                "commands": [
+                    {"operation": "collect_jin10_quotes"},
+                    {"operation": "collect_jin10_calendar"},
+                ],
+            }
+            with patch(
+                "invest_agent.automation.maintenance_cli._run_json_command",
+                return_value=(0, {"status": "published"}, ""),
+            ) as mocked:
+                result = _run_job(
+                    job,
+                    root=root,
+                    as_of=datetime(2026, 9, 11, 23, 55, tzinfo=TZ),
+                )
+            argv = [call.args[0] for call in mocked.call_args_list]
+            self.assertIn("collect-jin10-quotes", argv[0])
+            self.assertIn("collect-jin10-calendar", argv[1])
+            self.assertNotIn("get-kline", " ".join(" ".join(parts) for parts in argv))
+            self.assertEqual(result["status"], "complete")
 
 
 if __name__ == "__main__":

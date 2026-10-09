@@ -2,20 +2,20 @@
 
 - 审查日期：2026-08-15
 - 页面：[爱基金 Skills 安装说明](https://mams.10jqka.com.cn/new/server/html/110213.html)
-- Bundle 版本：`thsfund 0.2.0`
-- SDK：`aijijin-sdk 0.2.0`
-- Bundle SHA-256：`bc80a9064e5145a6449ff491474ca14fe7822c7d078820956d11c5e55371ece8`
-- 项目内wheel SHA-256：`14089db9d9cd5e9c75e5a3ecaa01cc3f7bd194485974e68bf127116ffa240ccf`
+- Bundle 版本：`thsfund 0.2.1`
+- SDK：`aijijin-sdk 0.2.1`
+- Bundle SHA-256：`537d91ac11ec87b865557de3b90b5eda5e9d8925440640eeff0db570fbaf4a30`
+- 项目内wheel SHA-256：`a1aaef48c8c09b36d0b75c05e0ac274741204d39a9c2607a17df2d0a1684f9cc`
 - 状态：已静态审查；Skill 与 SDK 已项目级安装；逐笔受控申购试运行完成；赎回/撤单及自动交易关闭
 
-项目副本仅移除了上游Skill头部不受Codex schema支持的`version`字段；业务流程未改，版本继续由审查记录、wheel文件名和哈希锁定。
+项目副本仅移除了上游Skill头部不受Codex schema支持的`version`字段；0.2.1 升级时重新应用了本项目覆盖条款（项目级安装、禁止自动升级、受控申购、凭证不落盘），版本由审查记录、wheel文件名和哈希锁定。
 
 ## 1. 能力范围
 
 Skill 包含五类受保护业务：
 
 1. 持仓/钱包总览
-2. 基金申购
+2. 基金申购（含分仓/虚拟账户选择与新建）
 3. 基金赎回
 4. 交易记录与详情查询
 5. 撤单
@@ -27,7 +27,7 @@ SDK 通过 `aijijin` CLI 调用 `trade.5ifund.com` 和 `fund.10jqka.com.cn` 的�
 - `SKILL.md`
 - 申购、赎回、持仓、交易查询、撤单和安装说明
 - 初始化二维码页面
-- 纯 Python wheel：`aijijin_sdk-0.2.0-py3-none-any.whl`
+- 纯 Python wheel：`aijijin_sdk-0.2.1-py3-none-any.whl`
 - wheel 依赖：`requests>=2.31.0`
 
 ## 3. 静态代码观察
@@ -70,7 +70,7 @@ SDK 支持 `AIJIJIN_GATEWAY_URL` 和 `AIJIJIN_API_BASE_URL`。生产运行前必
 
 1. 使用项目级 `.agents/skills/thsfund/`，不安装到全局目录。
 2. SDK 使用 Miniconda 创建的项目专用 `.conda-env`（Python 3.12，conda-forge），不修改全局 Python，也不写入 shell 初始化配置。
-3. 固定 `0.2.0` 与上述 SHA-256；先校验再复制/安装。
+3. 固定 `0.2.1` 与上述 SHA-256；先校验再复制/安装。
 4. 首次只启用只读能力，验证持仓和订单查询。
 5. 申购、赎回、撤单由项目自己的 Execution Gateway 包装并默认关闭。
 6. 自动更新关闭；任何升级重新静态审查。
@@ -92,10 +92,10 @@ SDK 支持 `AIJIJIN_GATEWAY_URL` 和 `AIJIJIN_API_BASE_URL`。生产运行前必
 
 - 项目 Skill 路径：`.agents/skills/thsfund/`
 - Python 环境：`.conda-env`，Python 3.12，Miniconda，conda-forge
-- SDK：`aijijin-sdk 0.2.0`
+- SDK：`aijijin-sdk 0.2.1`
 - HTTP 依赖：`requests 2.34.2`
 - TLS：OpenSSL 3.6.3
-- 已验证 SDK 导入、版本和 `aijijin --help`；已完成设备注册、最终授权及一次只读账户总览查询。
+- 已验证 SDK 导入、版本和 `aijijin --help`；已完成设备注册、最终授权及只读账户总览查询；0.2.1 升级后再次验证 `aijijin holding overview` 成功。
 - 已读取钱包余额、基金持仓及总资产汇总；原始结果未写入仓库，后续仅通过脱敏 PortfolioSnapshot 输出。
 - 上游说明中的 `aijijin --version` 在 0.2.0 不受支持，因此以包元数据和 Python 导入双重核对版本。
 - macOS 系统 Python 3.9 使用旧版 LibreSSL，不作为本项目运行时。
@@ -107,3 +107,25 @@ SDK 支持 `AIJIJIN_GATEWAY_URL` 和 `AIJIJIN_API_BASE_URL`。生产运行前必
 归一化结果保存于 `config/aijijin_research_route_snapshot_v1.json`，只包含基金身份、可购状态、最低/最高申购额、当日剩余额度、风险等级、费率阶梯、渠道折扣及平台展示的确认/到账工作日。原始受保护响应未持久化，账户、客户、支付方式和凭证字段均未进入仓库。
 
 该快照只证明2026-08-26当前渠道状态。用于历史回测时必须标记 `counterfactual_execution`，并用法定首档费率重复费用敏感性；它不解除 `advisory_only`，也不代表历史每天适用同一限额或到账规则。
+
+## 9. 0.2.1 升级审查记录（2026-09-01）
+
+- 来源：爱基金 CLI 受保护接口返回的 `update` 提示（downloadUrl 指向 `o.thsi.cn` 官方资源），经用户明确同意后升级。
+- 升级包（zip）SHA-256：`537d91ac11ec87b865557de3b90b5eda5e9d8925440640eeff0db570fbaf4a30`
+- 项目内 wheel（`aijijin_sdk-0.2.1-py3-none-any.whl`）SHA-256：`a1aaef48c8c09b36d0b75c05e0ac274741204d39a9c2607a17df2d0a1684f9cc`
+- 旧版 0.2.0 存档：Bundle SHA-256 `bc80a9064e5145a6449ff491474ca14fe7822c7d078820956d11c5e55371ece8`；wheel SHA-256 `14089db9d9cd5e9c75e5a3ecaa01cc3f7bd194485974e68bf127116ffa240ccf`；备份目录 `data/private/backups/thsfund-0.2.0-20260901/`。
+
+### 变更内容
+
+- 新增分仓/虚拟账户：`aijijin trade-account list`（查询 `600` 开头交易账户下的虚拟账户）与 `aijijin trade-account create`（创建分仓，不可安全重放，禁止自动重试）。
+- 申购链路新增分仓选择与新建步骤；`aijijin fund buy` 新增 `--trade-id`（普通持仓传 `600` 账号、已有分仓传 `vcTransactionaccountid`、新建分仓传创建返回的虚拟账户 ID）与 `--agreement-record`；最终确认模板包含“关联分仓”。
+- 安全修复：撤单请求移除旧版注入的 `operator` 字段，改用 `transActionAccountId`；SKILL 改为唯一兼容 `aijijin-sdk 0.2.1`。
+- 新增扫码登录（PKCE）模块 `_scan_login.py` / `_login_lock.py`，会话轮询与一次性凭据交换在本进程内完成。
+
+### 审查结论
+
+- 未发现新增 `eval`、动态代码下载执行、shell 拼接或绕过 CLI 的路径；`_device.py` 仅运行固定参数 `ioreg`（与 0.2.0 一致）。
+- 新增端点位于同一网关：`/openapi/ai/tradeaccount/list`（401 重试一次）与 `/openapi/ai/tradeaccount/create`（`never` 重试策略）。
+- 项目覆盖条款已重新应用到项目内 `SKILL.md`；未启用自动升级，未写入全局目录。
+- 项目的 dry-run 适配器现强制绑定 `tradeId`，逐笔批准摘要绑定关联分仓并在确认语句中展示脱敏分仓；变更分仓须重新批准。自动真实提交仍关闭。
+- 0.2.1 安装到 `.conda-env`（`pip install --no-deps --force-reinstall`，requests 已满足），升级后 `holding overview` 只读验证通过，未再触发升级提示。

@@ -1,13 +1,13 @@
 ---
 name: market-context-research
-description: Route, retrieve, and explain validated market-context evidence for this investment project. Use when the user asks about current or historical index valuation, index weights, forward PE, rates, foreign exchange, margin leverage, macro indicators, industry crowding, market state, or how those observations affect a fund portfolio, strategy, risk review, attribution, or report.
+description: Route, retrieve, and explain validated market-context evidence for this investment project. Use when the user asks about current or historical index valuation, index weights, forward PE, rates, foreign exchange, margin leverage, macro indicators, industry crowding, Jin10 cross-asset quotes or event context, market state, or how those observations affect a fund portfolio, strategy, risk review, attribution, or report.
 ---
 
 # Market Context Research
 
 ## Purpose
 
-Use Guchacha and the project's local market-data store without letting an LLM improvise data provenance. Market context explains the environment; it does not predict markets or replace deterministic fund data, backtests, or risk rules.
+Use Guchacha, the reviewed high-value Jin10 subset, and the project's local market-data store without letting an LLM improvise data provenance. Market context explains the environment; it does not predict markets or replace deterministic fund data, backtests, or risk rules.
 
 ## Read First
 
@@ -19,6 +19,8 @@ Before acting, read:
 4. `docs/market-regime.md` when the question concerns overall market state
 5. `docs/integrations/guchacha-mcp-review.md`
 6. `config/investment_policy.yaml` when present
+
+For Jin10 queries, read `docs/integrations/jin10-mcp-review.md` and use the Jin10 section in [references/tool-routing.md](references/tool-routing.md).
 
 Read [references/tool-routing.md](references/tool-routing.md) whenever choosing a Guchacha tool or interpreting its authority.
 
@@ -79,6 +81,8 @@ python -m invest_agent.market_regime.cli --as-of YYYY-MM-DD
 ## Hard Boundaries
 
 - Never use Guchacha context as a market-timing oracle.
+- Never use Jin10 headlines, provider impact labels, or quote changes as a market-timing oracle.
+- Jin10 allows only `get_quote`/`list_calendar` for reviewed evidence and `search_flash`/`search_news`/`get_news` for interactive explanation. Never call `get_kline`, `list_flash`, or `list_news` for this project.
 - Never convert high crowding, low valuation, macro releases, or forward PE into an automatic buy/sell rule without a versioned strategy specification and backtest.
 - Never call `search_stocks`, `get_stock`, `get_dcf_report`, or `get_watchlist` in this project.
 - Never use Snowball/Xueqiu cookie APIs or FinClaw's automatic source fallback as formal evidence.

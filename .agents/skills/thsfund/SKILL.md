@@ -21,18 +21,18 @@ description: aijijin CLI 基金业务统一入口（ai基金/爱基金亦触发�
 
 任何 `aijijin` 命令执行前都必须先完成本节自检；缺失或版本不足时**模型可在用户同意后替用户执行安装**（见 §0.3），未取得同意前不要执行 pip install。
 
-### §0.1 最低版本 & 自检命令
+### §0.1 兼容版本 & 自检命令
 
 合到一步完成：
 
-- **最低版本**：`aijijin-sdk >= 0.2.0`。`0.1.x` 不包含 CLI 入口（`aijijin` 控制台脚本自 0.2.0 引入），调用必失败。
+- **唯一兼容版本**：`aijijin-sdk 0.2.1`。必须满足 `Version == 0.2.1`；其他版本可能仍在撤单请求中注入 `operator`，不得放行。
 - **自检命令**：
 
   ```bash
   pip show aijijin-sdk
   ```
 
-  解析 `Version:` 行；命令非 0 退出或 `Version` 缺失 ⇒ SDK 未安装；`Version` 解析后须 `>= 0.2.0` 才满足最低版本要求。
+  解析 `Version:` 行；命令非 0 退出或 `Version` 缺失 ⇒ SDK 未安装；仅 `Version == 0.2.1` 满足兼容要求。
 
 > SDK 装好后，`aijijin` CLI 入口随 pip 安装自动写入 Python 的 Scripts 目录；如遇 `pip show` 通过而 `aijijin` 调用报错「command not found」，停下向用户报告「Scripts 目录未在 PATH，请重新安装或将 Scripts 加入 PATH」。
 
@@ -41,20 +41,20 @@ description: aijijin CLI 基金业务统一入口（ai基金/爱基金亦触发�
 | `pip show` 结果 | 动作 |
 |---|---|
 | 未安装 / 解析失败 | 展示安装命令（见 §0.3），用 AskUserQuestion 询问用户是否同意安装；同意后执行 pip install 并重新自检；不同意则停下 |
-| `Version < 0.2.0` | 展示升级命令（见 §0.3，`--force-reinstall`），用 AskUserQuestion 询问用户是否同意升级；同意后执行并重新自检；不同意则停下 |
-| `Version >= 0.2.0` | 通过，进入 §1 路由 |
+| `Version != 0.2.1` | 展示重装命令（见 §0.3，`--force-reinstall`），说明当前版本不兼容，用 AskUserQuestion 询问用户是否同意切换到 0.2.1；同意后执行并重新自检；不同意则停下 |
+| `Version == 0.2.1` | 通过，进入 §1 路由 |
 
 ### §0.3 安装命令模板
 
-skill 自带 `vendor/aijijin_sdk-0.2.0-py3-none-any.whl`，使用本地绝对路径安装，无需联网：
+skill 自带 `vendor/aijijin_sdk-0.2.1-py3-none-any.whl`，使用本地绝对路径安装，无需联网：
 
 ```bash
-pip install "<skill_dir>\vendor\aijijin_sdk-0.2.0-py3-none-any.whl"
+pip install "<skill_dir>\vendor\aijijin_sdk-0.2.1-py3-none-any.whl"
 ```
 
 `<skill_dir>` 必须替换为本 skill 的实际目录。模型在向用户展示时把绝对路径写完整，不要让用户猜测。
 
-- 升级场景建议加 `--force-reinstall`，避免被已存在的 0.1.x 残留干扰；命令示例：`pip install --force-reinstall "<skill_dir>\vendor\aijijin_sdk-0.2.0-py3-none-any.whl"`。
+- 版本不匹配时加 `--force-reinstall`，避免其他版本 CLI 残留；命令示例：`pip install --force-reinstall "<skill_dir>\vendor\aijijin_sdk-0.2.1-py3-none-any.whl"`。
 
 ### §0.4 references/*.md 的引用约定
 
@@ -77,6 +77,8 @@ pip install "<skill_dir>\vendor\aijijin_sdk-0.2.0-py3-none-any.whl"
 
 ### §0.5.1 打开 QR 页
 
+二维码内容校验地址（仅用于核对 `assets/init-qrcode.png`，禁止引导用户在浏览器打开）：`https://eq.10jqka.com.cn/hxapp/kamis-renderer/index.0.3.8.html`
+
 **GUI 场景（默认）**：模型在 §0.3 入口**主动**调用平台命令打开 QR 页，并引导用户操作。
 
 **平台打开命令**：
@@ -90,11 +92,11 @@ pip install "<skill_dir>\vendor\aijijin_sdk-0.2.0-py3-none-any.whl"
 
 **统一话术（GUI，已主动打开）**：
 
-> 已为你打开同花顺基金Skill 设备注册页面（默认浏览器）。请打开同花顺 App 扫码进入 → 点击「复制提示词」按钮 → 完成风险评测答题（如系统提示需要）→ 把 initToken 粘贴到聊天里。
+> 已为你打开同花顺基金Skill 设备注册页面（默认浏览器）。请打开同花顺 App 扫码进入 → 点击「复制提示词」按钮 → 完成风险评测答题（如系统提示需要）→ 把 initToken 粘贴到聊天里。 
 
 **统一话术（无 GUI / 无资产，仅 1407 / 1301-1303 路径）**：
 
-> 请打开同花顺 App，扫码进入基金Skill页面（路径：同花顺理财 → 基金Skill），点击「复制提示词」按钮，完成风险评测答题（如系统提示需要），把 initToken 粘贴到聊天里。
+> 请打开同花顺 App，扫码进入基金Skill页面（路径：同花顺理财 → 基金Skill），点击「复制提示词」按钮，完成风险评测答题（如系统提示需要），把 initToken 粘贴到聊天里。  
 
 ### §0.5.2 设备注册
 
@@ -150,15 +152,15 @@ aijijin auth init "<initToken>"
    - 退出码语义：`0` 成功 / `2` 输入或校验失败 / `3` 凭据或认证失败 / `4` 业务失败 / `5` 网络或服务端异常。
 2. **读字段一律取 `data.*`**：所有服务端字段都要再往下读一层 `data.<field>`（如 `data.fundRiskLevel`、`data.cancelFlag`）；`trade list` 的订单数组在 `data.data[]`（三层嵌套）。
 3. **Work Token 由 CLI 自动管理**：skill 不需要也无法获取 Work Token，禁止调用任何 Work Token 或 Refresh Token 接口。
-4. **CLI 重试规则**：CLI 仅在服务端明确返回 HTTP 401 时刷新凭据并重试一次；网络超时、连接中断、5xx 或响应异常时不会自动重试。
+4. **CLI 重试规则**：除 `trade-account create` 外，CLI 仅在服务端明确返回 HTTP 401 时刷新凭据并重试一次；网络超时、连接中断、5xx 或响应异常时不会自动重试。创建虚拟账户是不可安全重放的写操作，`trade-account create` 包括 HTTP 401 在内均不自动重试。
 5. **用户询问规范**：所有需要用户确认 / 选择 / 输入的步骤，**优先使用 `AskUserQuestion` 工具**。若当前 Agent 不支持 `AskUserQuestion`，则降级为**直接用文字询问**并等待用户回复。本规范覆盖所有 `references/**/*.md` 中的「询问用户」「用户确认」「用户输入」「等用户」等步骤；各文件无需重复说明，统一引用本条。
 6. **面向用户展示约束**：不得展示底层状态码、`confirmFlag`、`checkFlag`、`failMsg.code` 等字段名或字段值；面向用户只展示中文状态和可读原因。
 7. **dry-run 行为**：所有 CLI 命令都支持 `--dry-run`，仅在排查拼写错误、字段合并结果或 Schema 报错时使用——它执行命名选项 + JSON 输入合并和 Schema 校验，但不读取 Work Token、不发起网络请求、不会产生交易，输出 `{"endpoint": <name>, "request": <merged-payload>}`。dry-run 不是流程的一部分，不写进正常调用样例。
-8. **顶层 `update` 字段（版本更新通知）**：受保护接口（`fund buy` / `fund redeem` / `fund redeem-render`、`holding list` / `holding wallet-home` / `holding overview`、`trade list` / `trade detail` / `trade revoke`）的**成功响应**（`ok: true`）在以下三个条件**同时**满足时，CLI 会在 JSON 顶层附加一个 `update` 字段：
+8. **顶层 `update` 字段（版本更新通知）**：受保护接口（`fund buy` / `fund redeem` / `fund redeem-render`、`holding list` / `holding wallet-home` / `holding overview`、`trade list` / `trade detail` / `trade revoke`、`trade-account list` / `trade-account create`）的**成功响应**（`ok: true`）在以下三个条件**同时**满足时，CLI 会在 JSON 顶层附加一个 `update` 字段：
    - `getworktoken` 本次返回中包含 `update` 对象（服务端提示当前 CLI 已是最新或需要更新）；
    - 该 `update.latestVersion` 在本地尚未被 dismiss；
    - 本次调用不是 `--dry-run`。
-   - 字段内容形如 `{"update": {"latestVersion": "0.3.0", "downloadUrl": "https://...", "changeLog": "..."}}`。格式为 Keep-a-Changelog Markdown（`## [版本] - 日期 \n 描述`）。`downloadUrl` 是**单 URL** 指向一个组合 zip 包（含 SDK + skill 整套）。
+   - 字段内容形如 `{"update": {"latestVersion": "0.2.1", "downloadUrl": "https://...", "changeLog": "..."}}`。格式为 Keep-a-Changelog Markdown（`## [版本] - 日期 \n 描述`）。`downloadUrl` 是**单 URL** 指向一个组合 zip 包（含 SDK + skill 整套）。
    - **触发时机**：业务意图的 CLI 命令成功返回（退出码 0）**之后**；自检阶段（§0.1 ~ §0.5）只判断"能不能干活"，**不触发**版本升级提示（会打断用户当前业务）。即使用户在升级提示后说"先不升级"，skill 也必须保留已完成业务的有效状态继续工作。
    - **展示要求**：
      * 提示语必须是"提醒/建议"语气，**不得**要求用户必须升级才能继续；
@@ -172,8 +174,8 @@ aijijin auth init "<initToken>"
      4. **立即下载并升级** —— 自动执行下方"升级动作"全流程（与 §0.4 "停下等用户完成"模式不同；用户已在 AskUserQuestion 中显式授权）；完成后提示用户 skill 文件已更新，下次业务起新会话生效（当前会话引用的 references 仍是旧版）。
    - **升级动作（用户选择"立即下载并升级"后自动执行）**：
      1. `curl -L -o <tmp> "<downloadUrl>"` 下载 zip 到临时目录；
-     2. `unzip -o <tmp> -d ~/.claude/skills/` 解压覆盖 `thsfund/`（zip 根目录是 `thsfund/`，解压会整体覆盖现有 `thsfund/` 目录，旧 vendor whl 被新 vendor whl 自然替换）；
-     3. `pip install --force-reinstall "<~/.claude/skills/thsfund/vendor/aijijin_sdk-X.Y.Z-py3-none-any.whl>"` 装新 SDK；
+     2. `unzip -o <tmp> -d ~/.Codex/skills/` 解压覆盖 `thsfund/`（zip 根目录是 `thsfund/`，解压会整体覆盖现有 `thsfund/` 目录，旧 vendor whl 被新 vendor whl 自然替换）；
+     3. `pip install --force-reinstall "<~/.Codex/skills/thsfund/vendor/aijijin_sdk-X.Y.Z-py3-none-any.whl>"` 装新 SDK；
      4. 提示用户 skill 文件已更新，下次业务起新会话生效。
    - **升级范围**：SDK + skill 本身（`SKILL.md` / `references/` / `vendor/`）**必须一起升**，不允许只升其一（skill 改了引用/字段名但 SDK 没换版本会出现接口错位，反之亦然）。
 

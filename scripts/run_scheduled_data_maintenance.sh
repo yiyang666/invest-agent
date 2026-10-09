@@ -11,15 +11,24 @@ private_automation_directory="${project_root}/data/private/automation"
 session_id_file="${private_automation_directory}/data-maintenance-codex-session-id"
 notification_disabled_file="${private_automation_directory}/disable-data-maintenance-notification"
 codex_executable="/Applications/ChatGPT.app/Contents/Resources/codex"
-keychain_service="invest-agent-guchacha-mcp"
+guchacha_keychain_service="invest-agent-guchacha-mcp"
+jin10_keychain_service="invest-agent-jin10-mcp"
 
 mkdir -p "${private_automation_directory}"
 chmod 700 "${private_automation_directory}"
 
 if [[ -z "${GUCHACHA_MCP_TOKEN:-}" ]]; then
-  keychain_token="$(/usr/bin/security find-generic-password -a "${USER}" -s "${keychain_service}" -w 2>/dev/null || true)"
+  keychain_token="$(/usr/bin/security find-generic-password -a "${USER}" -s "${guchacha_keychain_service}" -w 2>/dev/null || true)"
   if [[ -n "${keychain_token}" ]]; then
     export GUCHACHA_MCP_TOKEN="${keychain_token}"
+  fi
+  unset keychain_token
+fi
+
+if [[ -z "${JIN10_MCP_TOKEN:-}" ]]; then
+  keychain_token="$(/usr/bin/security find-generic-password -a "${USER}" -s "${jin10_keychain_service}" -w 2>/dev/null || true)"
+  if [[ -n "${keychain_token}" ]]; then
+    export JIN10_MCP_TOKEN="${keychain_token}"
   fi
   unset keychain_token
 fi

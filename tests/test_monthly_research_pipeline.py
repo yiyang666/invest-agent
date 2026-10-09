@@ -13,6 +13,7 @@ from invest_agent.decision.pipeline import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+HAS_PRIVATE_RESEARCH_STORE = (ROOT / "data/private/invest_agent.sqlite3").is_file()
 
 
 class MonthlyResearchPipelineTests(unittest.TestCase):
@@ -24,6 +25,7 @@ class MonthlyResearchPipelineTests(unittest.TestCase):
             )
         )
 
+    @unittest.skipUnless(HAS_PRIVATE_RESEARCH_STORE, "requires local private research store")
     def test_builds_four_stage_non_executable_pipeline(self) -> None:
         manifest, artifacts = build_monthly_research_pipeline(
             self.config, workspace_root=ROOT
@@ -36,6 +38,7 @@ class MonthlyResearchPipelineTests(unittest.TestCase):
         self.assertFalse(manifest["execution"]["automatic_schedule_used"])
         self.assertEqual(manifest["execution"]["orders"], [])
 
+    @unittest.skipUnless(HAS_PRIVATE_RESEARCH_STORE, "requires local private research store")
     def test_artifact_manifest_hashes_match_exact_bytes(self) -> None:
         manifest, artifacts = build_monthly_research_pipeline(
             self.config, workspace_root=ROOT
@@ -46,6 +49,7 @@ class MonthlyResearchPipelineTests(unittest.TestCase):
                 hashlib.sha256(content).hexdigest(),
             )
 
+    @unittest.skipUnless(HAS_PRIVATE_RESEARCH_STORE, "requires local private research store")
     def test_same_inputs_produce_identical_manifest_and_artifacts(self) -> None:
         first = build_monthly_research_pipeline(self.config, workspace_root=ROOT)
         second = build_monthly_research_pipeline(self.config, workspace_root=ROOT)

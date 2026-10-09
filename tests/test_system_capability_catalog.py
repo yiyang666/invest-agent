@@ -1,4 +1,5 @@
 import hashlib
+import json
 from pathlib import Path
 import tomllib
 import unittest
@@ -54,21 +55,53 @@ class SystemCapabilityCatalogTests(unittest.TestCase):
         self.assertIn("`docs/capabilities.md`", read_first)
         self.assertIn("docs/capabilities.md", (ROOT / "README.md").read_text())
 
+    def test_jin10_is_narrowly_reviewed_and_scheduled_in_unified_daily_job(self) -> None:
+        market = json.loads(
+            (ROOT / "config/market_data_sync_v1.json").read_text(encoding="utf-8")
+        )
+        policy = market["jin10_policy"]
+        self.assertEqual(set(policy["enabled_tools"]), {"get_quote", "list_calendar"})
+        self.assertEqual(
+            set(policy["interactive_tools"]),
+            {"search_flash", "search_news", "get_news"},
+        )
+        self.assertEqual(
+            set(policy["excluded_tools"]),
+            {"get_kline", "list_flash", "list_news"},
+        )
+        self.assertEqual(
+            policy["scheduler_status"], "active_unified_daily_maintenance"
+        )
+        scheduled_operations = {
+            command.get("operation")
+            for job in market["jobs"]
+            for command in job["commands"]
+        }
+        self.assertIn("collect_jin10_quotes", scheduled_operations)
+        self.assertIn("collect_jin10_calendar", scheduled_operations)
+        daily = next(job for job in market["jobs"] if job["job_id"] == "market_daily_series")
+        daily_operations = [command.get("operation") for command in daily["commands"]]
+        self.assertEqual(daily_operations[-2:], ["collect_jin10_quotes", "collect_jin10_calendar"])
+        review = (ROOT / "docs/integrations/jin10-mcp-review.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("`get_kline` | 禁用", review)
+
     def test_visible_data_update_automation_uses_only_unified_runner(self) -> None:
         prompt = (ROOT / "config/codex_data_update_automation_v1.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("maintenance_cli plan", prompt)
-        self.assertIn("maintenance_cli run-due", prompt)
+        self.assertIn("run_data_maintenance_cli.sh plan", prompt)
+        self.assertIn("run_data_maintenance_cli.sh run-due", prompt)
         self.assertIn("不得绕过统一维护CLI", prompt)
         self.assertIn("禁止刷新爱基金账户", prompt)
         self.assertIn("禁止用模拟", prompt)
         self.assertFalse((ROOT / "scripts/run_scheduled_fund_data_sync.sh").exists())
 
     def test_reviewed_aijijin_artifact_matches_committed_lock(self) -> None:
-        wheel = ROOT / ".agents/skills/thsfund/vendor/aijijin_sdk-0.2.0-py3-none-any.whl"
+        wheel = ROOT / ".agents/skills/thsfund/vendor/aijijin_sdk-0.2.1-py3-none-any.whl"
         expected = (
-            ROOT / "config/locks/aijijin-sdk-0.2.0-project-skill.artifacts"
+            ROOT / "config/locks/aijijin-sdk-0.2.1-project-skill.artifacts"
         ).read_text(encoding="utf-8").splitlines()[3].split()[0]
         self.assertEqual(hashlib.sha256(wheel.read_bytes()).hexdigest(), expected)
 

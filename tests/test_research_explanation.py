@@ -22,9 +22,10 @@ class ResearchExplanationTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        cls.report = json.loads(
-            (ROOT / cls.config["source_report"]["path"]).read_text(encoding="utf-8")
-        )
+        report_path = ROOT / cls.config["source_report"]["path"]
+        if not report_path.is_file():
+            raise unittest.SkipTest("requires local private research report")
+        cls.report = json.loads(report_path.read_text(encoding="utf-8"))
 
     def test_builds_grounded_explanation_with_complete_coverage(self) -> None:
         result = build_grounded_explanation(self.config, workspace_root=ROOT)

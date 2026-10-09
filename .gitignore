@@ -25,7 +25,7 @@ credentials.json
 # Local financial data and generated evidence. The repository contains schemas
 # and sanitized examples only; real batches, snapshots, databases and reports
 # never enter Git.
-data/
+/data/
 
 # Databases, journals and runtime output in case a tool is pointed elsewhere.
 *.sqlite

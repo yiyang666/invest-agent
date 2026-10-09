@@ -1,0 +1,6 @@
+# Reviewed project-local thsfund 0.2.1 runtime artifacts.
+# Credentials and authenticated responses are never part of this lock.
+
+a1aaef48c8c09b36d0b75c05e0ac274741204d39a9c2607a17df2d0a1684f9cc  .agents/skills/thsfund/vendor/aijijin_sdk-0.2.1-py3-none-any.whl
+9f16e3221031392835b8e75b69caa131cf4f8f98cbc7886e1f50f37224d87cea  .agents/skills/thsfund/assets/init-qrcode.png
+28e31db2a0ca89c5e6a9b1735570df65bdd184cf773ea29b818a539cc1f3c310  .agents/skills/thsfund/assets/init.html

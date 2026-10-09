@@ -22,12 +22,29 @@ def _envelope(*, amount: Decimal = Decimal("200.00")) -> LivePurchaseEnvelope:
         payment_method="wallet",
         payment_account_masked="中国银行****2996",
         transaction_account_id="runtime-account-secret",
+        trade_id="runtime-trade-secret",
+        trade_account_masked="普通持仓****1234",
         agreement_record="runtime-agreement-secret",
         expected_confirmation="预计下一工作日确认",
     )
 
 
 class Phase7ControlledLiveGatewayTests(unittest.TestCase):
+    def test_trade_account_change_invalidates_exact_approval(self) -> None:
+        envelope = _envelope()
+        changed = LivePurchaseEnvelope.bind_runtime_secrets(
+            intent=envelope.intent,
+            payment_method="wallet",
+            payment_account_masked="中国银行****2996",
+            transaction_account_id="runtime-account-secret",
+            trade_id="different-trade-id",
+            trade_account_masked="普通持仓****5678",
+            agreement_record="runtime-agreement-secret",
+            expected_confirmation="预计下一工作日确认",
+        )
+        self.assertNotEqual(envelope.sha256, changed.sha256)
+        self.assertIn("普通持仓****1234", envelope.confirmation_phrase)
+
     def test_exact_confirmation_is_one_time_and_reconciles(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             database = Path(temp) / "live.sqlite3"
