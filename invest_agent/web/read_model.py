@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
 import hashlib
 import json
 from pathlib import Path
@@ -97,35 +96,19 @@ class Dashboard:
         return list(days.values())
 
     def latest_fund_income(self, portfolios):
+        # 只汇总渠道快照里的逐基金收益；禁止用相邻快照市值差推算
         if not portfolios:
             return None
         snapshot = portfolios[0]
         rows = [row for row in snapshot.get("positions", []) if row.get("latest_income") is not None]
+        if not rows:
+            return None
         dates = sorted({row["income_date"] for row in rows if row.get("income_date")})
-        if rows and len(rows) == len(snapshot.get("positions", [])) and len(dates) == 1:
-            return {"value": sum(float(row["latest_income"]) for row in rows),
-                    "position_count": len(rows), "total_position_count": len(rows),
-                    "income_date": dates[0], "date_status": "reported", "source": "channel",
-                    "snapshot_as_of": snapshot.get("as_of"), "excludes_cash": True}
-        if len(portfolios) >= 2:
-            previous = portfolios[1]
-            def signature(value):
-                return sorted((row["fund_code"], str(row["shares"]), row.get("status", "confirmed"))
-                              for row in value.get("positions", []))
-            if signature(snapshot) == signature(previous):
-                change = Decimal(str(snapshot["total_fund_value"])) - Decimal(str(previous["total_fund_value"]))
-                return {"value": float(change), "position_count": len(snapshot.get("positions", [])),
-                        "total_position_count": len(snapshot.get("positions", [])),
-                        "income_date": str(snapshot["as_of"])[:10], "date_status": "derived",
-                        "source": "snapshot_delta", "previous_snapshot_as_of": previous.get("as_of"),
-                        "snapshot_as_of": snapshot.get("as_of"), "excludes_cash": True}
-        if rows:
-            return {"value": sum(float(row["latest_income"]) for row in rows),
-                    "position_count": len(rows), "total_position_count": len(snapshot.get("positions", [])),
-                    "income_date": None, "date_status": "mixed" if dates else "unreported",
-                    "source": "channel_undated", "snapshot_as_of": snapshot.get("as_of"),
-                    "excludes_cash": True}
-        return None
+        return {"value": sum(float(row["latest_income"]) for row in rows),
+                "position_count": len(rows), "total_position_count": len(snapshot.get("positions", [])),
+                "income_date": dates[0] if len(dates) == 1 else None,
+                "date_status": "reported" if len(dates) == 1 else "mixed" if dates else "unreported",
+                "source": "channel", "snapshot_as_of": snapshot.get("as_of"), "excludes_cash": True}
 
     def funds(self, now: datetime):
         config = load_sync_config(self.root / "config/fund_data_sync_v1.json")

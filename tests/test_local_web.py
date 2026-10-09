@@ -127,23 +127,18 @@ class FundWatchCatalogTests(unittest.TestCase):
         snapshot['positions'][0]['latest_income'] = '12.5'
         summary = Dashboard(Path('.')).latest_fund_income([snapshot])
         self.assertEqual(summary['value'], 12.5)
+        self.assertEqual(summary['source'], 'channel')
         self.assertTrue(summary['excludes_cash'])
         self.assertEqual(summary['date_status'], 'unreported')
 
-    def test_latest_fund_income_uses_comparable_snapshot_delta(self):
-        current = sample(); previous = deepcopy(current)
-        current.update(as_of='2026-10-09T22:30:00+08:00', total_fund_value='105')
-        previous.update(as_of='2026-10-08T22:30:00+08:00', total_fund_value='100')
-        summary = Dashboard(Path('.')).latest_fund_income([current, previous])
-        self.assertEqual(summary['value'], 5.0)
-        self.assertEqual(summary['source'], 'snapshot_delta')
-        self.assertEqual(summary['income_date'], '2026-10-09')
-
-    def test_snapshot_delta_is_rejected_when_shares_change(self):
-        current = sample(); previous = deepcopy(current)
-        current.update(total_fund_value='105'); previous.update(total_fund_value='100')
-        previous['positions'][0]['shares'] = '19'
-        self.assertIsNone(Dashboard(Path('.')).latest_fund_income([current, previous]))
+    def test_latest_fund_income_reports_unified_channel_date(self):
+        # 渠道给出统一收益日期时，总览直接展示该日期，不做快照差额降级
+        snapshot = sample()
+        snapshot['positions'][0].update(latest_income='12.5', income_date='2026-10-08')
+        summary = Dashboard(Path('.')).latest_fund_income([snapshot])
+        self.assertEqual(summary['source'], 'channel')
+        self.assertEqual(summary['date_status'], 'reported')
+        self.assertEqual(summary['income_date'], '2026-10-08')
 
 
 if __name__=='__main__': unittest.main()
