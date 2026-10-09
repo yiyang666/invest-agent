@@ -13,24 +13,43 @@ from invest_agent.data.sync import load_sync_config, resolve_sync_funds
 from invest_agent.decision.registry import load_strategy_registry, validate_strategy_registry
 
 TZ = ZoneInfo("Asia/Shanghai")
-SLEEVES = {
-    "domestic_broad_core": "国内宽基", "domestic_growth": "国内成长",
-    "defensive": "防御资产", "sh_hk_sz_passive_technology_satellite": "科技卫星",
-    "us_broad_core": "美国宽基", "uk_broad_core": "英国宽基", "us_growth": "美国成长",
-    "us_nasdaq_core": "纳斯达克", "japan_broad_core": "日本宽基",
-    "global_technology_satellite": "全球科技", "biotechnology_satellite": "生物科技",
+FUND_TYPES = {
+    "domestic_broad_core": "沪深300", "domestic_growth": "科创100",
+    "defensive": "政策性金融债", "sh_hk_sz_passive_technology_satellite": "沪港深科技龙头",
+    "us_broad_core": "标普500", "uk_broad_core": "富时100", "us_growth": "美国主动成长",
+    "us_nasdaq_core": "纳斯达克100", "japan_broad_core": "日经225",
+    "global_technology_satellite": "全球科技互联网主动", "biotechnology_satellite": "纳斯达克生物科技",
     "legacy_active_other": "存量主动基金", "legacy_theme_other": "存量主题基金",
-    "us_broad_sp500": "美国宽基", "us_broad_sp500_equal_weight": "美国等权宽基",
-    "us_large_sp100_equal_weight": "美国大盘等权", "us_growth_active": "美国成长",
-    "us_nasdaq_style_active": "美国成长", "global_growth_nasdaq_style_active": "全球成长",
-    "us_information_technology": "美国信息科技", "global_technology_internet_active": "全球互联网",
-    "uk_broad_ftse100": "英国宽基", "europe_equity_active": "欧洲股票",
-    "germany_broad_dax": "德国宽基", "japan_broad_nikkei225": "日本宽基",
-    "japan_equity_active": "日本股票", "global_equity_active": "全球股票",
-    "gold_precious_metals": "黄金贵金属", "crude_oil": "原油",
-    "global_natural_resources": "自然资源", "us_biotechnology": "生物科技",
-    "us_biotechnology_alternative": "生物科技", "global_healthcare": "全球医疗",
+    "us_broad_sp500": "标普500", "us_broad_sp500_equal_weight": "标普500等权",
+    "us_large_sp100_equal_weight": "标普100等权", "us_growth_active": "美国主动成长",
+    "us_nasdaq_style_active": "纳指风格主动", "global_growth_nasdaq_style_active": "全球行业主动",
+    "us_information_technology": "标普信息科技", "global_technology_internet_active": "全球科技互联网主动",
+    "uk_broad_ftse100": "富时100", "europe_equity_active": "欧洲主动",
+    "germany_broad_dax": "德国DAX", "japan_broad_nikkei225": "日经225",
+    "japan_equity_active": "日本主动增强", "global_equity_active": "全球主动",
+    "gold_precious_metals": "全球黄金主题", "crude_oil": "原油",
+    "global_natural_resources": "全球自然资源主动", "us_biotechnology": "纳斯达克生物科技",
+    "us_biotechnology_alternative": "纳斯达克生物科技", "global_healthcare": "标普全球1200医疗保健",
 }
+CORE_SLEEVES = {
+    "domestic_broad_core", "domestic_growth", "us_broad_core", "uk_broad_core", "us_growth",
+    "us_nasdaq_core", "japan_broad_core", "us_broad_sp500", "us_broad_sp500_equal_weight",
+    "us_large_sp100_equal_weight", "us_growth_active", "us_nasdaq_style_active",
+    "global_growth_nasdaq_style_active", "europe_equity_active", "germany_broad_dax",
+    "japan_broad_nikkei225", "japan_equity_active", "global_equity_active",
+}
+DEFENSIVE_SLEEVES = {"defensive", "gold_stabilizer", "dividend_stabilizer"}
+
+
+def position_bucket(sleeve: object) -> str:
+    value = str(sleeve)
+    if value in CORE_SLEEVES:
+        return "核心仓"
+    if value in DEFENSIVE_SLEEVES:
+        return "防御仓"
+    return "卫星仓"
+
+
 STRATEGIES = {
     "dca_baseline": "631 长期定投", "new_money_trend_rs": "趋势与相对强弱",
     "drawdown_budget_add": "回撤预算加仓", "sleeve_drawdown_recovery": "袖套回撤修复",
@@ -83,32 +102,39 @@ class Dashboard:
         research = self.json("config/global_qdii_research_pool_v1.json", {})
         monthly = self.json("config/monthly_decision_pack_v1.json", {})
         catalog = self.json("config/fund_watch_catalog_v1.json", {})
-        names, types, labels, tags, label_sources = {}, {}, {}, {}, {}
+        names, registry_types, fund_types, buckets, tags = {}, {}, {}, {}, {}
+        type_sources, bucket_sources = {}, {}
         for row in self.rows("SELECT fund_code,fund_name,fund_type FROM fund_metadata_observations ORDER BY source_observed_at"):
             names[row["fund_code"]] = row["fund_name"]
-            types[row["fund_code"]] = row["fund_type"]
-        for row in catalog.get("classifications", []):
-            code = row["fund_code"]
-            names[code] = row["fund_name"]
-            labels[code] = row["category"]
-            label_sources[code] = "监控基金目录"
+            registry_types[row["fund_code"]] = row["fund_type"]
         for row in research.get("funds", []):
             code = row["fund_code"]
             names[code] = row.get("fund_name")
-            labels[code] = SLEEVES.get(row.get("sleeve"), row.get("sleeve", "待分类"))
-            label_sources[code] = "全球研究池"
+            fund_types[code] = FUND_TYPES.get(row.get("sleeve"), str(row.get("sleeve", "待分类")))
+            buckets[code] = position_bucket(row.get("sleeve"))
+            type_sources[code] = bucket_sources[code] = "全球研究池"
             tags[code] = row.get("tags", [])
         routes = {r["fund_code"]: r for r in pool.get("purchase_candidates", [])}
         for code, row in routes.items():
             names[code] = row.get("fund_name")
-            labels[code] = SLEEVES.get(row.get("sleeve"), row.get("sleeve", "待分类"))
-            label_sources[code] = "购买路由池"
+            fund_types.setdefault(code, FUND_TYPES.get(row.get("sleeve"), str(row.get("sleeve", "待分类"))))
+            buckets.setdefault(code, position_bucket(row.get("sleeve")))
+            type_sources.setdefault(code, "购买路由池")
+            bucket_sources.setdefault(code, "购买路由池")
         for code, sleeve in monthly.get("current_position_role_mapping", {}).items():
-            labels[code] = SLEEVES.get(sleeve, sleeve)
-            label_sources[code] = "已核验持仓分类"
+            buckets[code] = position_bucket(sleeve)
+            bucket_sources[code] = "已核验持仓归属"
         for sleeve, code in monthly.get("target_routes", {}).items():
-            labels[code] = SLEEVES.get(sleeve, sleeve)
-            label_sources[code] = "631 目标配置"
+            fund_types.setdefault(code, FUND_TYPES.get(sleeve, sleeve))
+            buckets[code] = position_bucket(sleeve)
+            type_sources.setdefault(code, "631 目标配置")
+            bucket_sources[code] = "631 目标配置"
+        for row in catalog.get("classifications", []):
+            code = row["fund_code"]
+            names[code] = row["fund_name"]
+            fund_types[code] = row["fund_type"]
+            buckets[code] = row["position_bucket"]
+            type_sources[code] = bucket_sources[code] = "监控基金目录"
         for snap in reversed(self.portfolios()):
             for row in snap["positions"]:
                 if row.get("fund_name"):
@@ -138,10 +164,13 @@ class Dashboard:
             lag = (now.date() - datetime.fromisoformat(nav_date).date()).days if nav_date else None
             funds.append({
                 "code": code, "name": names.get(code) or f"基金 {code}",
-                "category": labels.get(code, "待分类"), "category_source": label_sources.get(code),
-                "fund_type": types.get(code) or ("QDII" if "QDII" in tags.get(code, []) else "未录入"),
+                "fund_type": fund_types.get(code, registry_types.get(code) or "待分类"),
+                "fund_type_source": type_sources.get(code),
+                "position_bucket": buckets.get(code, "待归属"),
+                "position_bucket_source": bucket_sources.get(code),
+                "registry_type": registry_types.get(code) or ("QDII" if "QDII" in tags.get(code, []) else "未录入"),
                 "tags": tags.get(code, []), "held": "current_portfolio_position" in fund.reasons,
-                "role": "目标配置" if label_sources.get(code) == "631 目标配置" else "研究观察",
+                "target_route": code in set(monthly.get("target_routes", {}).values()),
                 "nav": nav.get("unit_nav"), "nav_date": nav_date,
                 "collected_at": nav.get("fetched_at"), "lag_days": lag,
                 "freshness": "missing" if lag is None else "fresh" if 0 <= lag <= config["collection"]["maximum_nav_lag_calendar_days"] else "stale",

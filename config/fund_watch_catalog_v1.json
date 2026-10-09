@@ -4,16 +4,16 @@
   "as_of": "2026-10-09T23:15:00+08:00",
   "purpose": "Stable display names and research classifications for monitored funds that are not fully covered by the policy, purchase-route, or global-QDII pools.",
   "classifications": [
-    {"fund_code": "000071", "fund_name": "华夏恒生ETF联接A", "sleeve": "hong_kong_broad_core", "category": "香港宽基", "basis": "tracks_hang_seng_index_with_rmb_fx"},
-    {"fund_code": "000216", "fund_name": "华安黄金ETF联接A", "sleeve": "gold_stabilizer", "category": "黄金稳定仓", "basis": "gold_etf_feeder"},
-    {"fund_code": "007300", "fund_name": "国联安中证全指半导体产品与设备ETF联接A", "sleeve": "semiconductor_satellite", "category": "半导体卫星", "basis": "tracks_csi_all_share_semiconductor_products_and_equipment_index"},
-    {"fund_code": "008114", "fund_name": "天弘中证红利低波动100ETF联接A", "sleeve": "dividend_stabilizer", "category": "红利低波", "basis": "tracks_csi_dividend_low_volatility_100_index"},
-    {"fund_code": "008401", "fund_name": "大成标普500等权重指数(QDII)C人民币", "sleeve": "us_broad_sp500_equal_weight", "category": "美国宽基", "basis": "c_share_of_sp500_equal_weight_index_fund"},
-    {"fund_code": "008706", "fund_name": "建信富时100指数C（QDII）（人民币）", "sleeve": "uk_broad_ftse100", "category": "英国宽基", "basis": "c_share_of_ftse_100_index_fund"},
-    {"fund_code": "011035", "fund_name": "嘉实中证稀土产业ETF联接A", "sleeve": "rare_earth_satellite", "category": "稀土卫星", "basis": "tracks_csi_rare_earth_industry_index"},
-    {"fund_code": "012636", "fund_name": "国泰中证全指软件ETF联接A", "sleeve": "software_satellite", "category": "软件卫星", "basis": "tracks_csi_all_share_software_index"},
-    {"fund_code": "014880", "fund_name": "天弘中证机器人ETF发起联接A", "sleeve": "robotics_satellite", "category": "机器人卫星", "basis": "tracks_csi_robotics_index"},
-    {"fund_code": "016453", "fund_name": "南方纳斯达克100指数发起(QDII)C", "sleeve": "us_nasdaq_core", "category": "纳斯达克", "basis": "c_share_of_nasdaq_100_index_fund"},
-    {"fund_code": "017437", "fund_name": "华宝纳斯达克精选股票发起式(QDII)C", "sleeve": "us_nasdaq_style_active", "category": "美国成长", "basis": "c_share_of_active_nasdaq_style_fund"}
+    {"fund_code": "000071", "fund_name": "华夏恒生ETF联接A", "sleeve": "hong_kong_broad_core", "fund_type": "恒生指数", "position_bucket": "核心仓", "basis": "tracks_hang_seng_index_with_rmb_fx"},
+    {"fund_code": "000216", "fund_name": "华安黄金ETF联接A", "sleeve": "gold_stabilizer", "fund_type": "黄金ETF联接", "position_bucket": "防御仓", "basis": "gold_etf_feeder"},
+    {"fund_code": "007300", "fund_name": "国联安中证全指半导体产品与设备ETF联接A", "sleeve": "semiconductor_satellite", "fund_type": "半导体", "position_bucket": "卫星仓", "basis": "tracks_csi_all_share_semiconductor_products_and_equipment_index"},
+    {"fund_code": "008114", "fund_name": "天弘中证红利低波动100ETF联接A", "sleeve": "dividend_stabilizer", "fund_type": "红利低波100", "position_bucket": "防御仓", "basis": "tracks_csi_dividend_low_volatility_100_index"},
+    {"fund_code": "008401", "fund_name": "大成标普500等权重指数(QDII)C人民币", "sleeve": "us_broad_sp500_equal_weight", "fund_type": "标普500等权", "position_bucket": "核心仓", "basis": "c_share_of_sp500_equal_weight_index_fund"},
+    {"fund_code": "008706", "fund_name": "建信富时100指数C（QDII）（人民币）", "sleeve": "uk_broad_ftse100", "fund_type": "富时100", "position_bucket": "核心仓", "basis": "c_share_of_ftse_100_index_fund"},
+    {"fund_code": "011035", "fund_name": "嘉实中证稀土产业ETF联接A", "sleeve": "rare_earth_satellite", "fund_type": "稀土产业", "position_bucket": "卫星仓", "basis": "tracks_csi_rare_earth_industry_index"},
+    {"fund_code": "012636", "fund_name": "国泰中证全指软件ETF联接A", "sleeve": "software_satellite", "fund_type": "软件产业", "position_bucket": "卫星仓", "basis": "tracks_csi_all_share_software_index"},
+    {"fund_code": "014880", "fund_name": "天弘中证机器人ETF发起联接A", "sleeve": "robotics_satellite", "fund_type": "机器人", "position_bucket": "卫星仓", "basis": "tracks_csi_robotics_index"},
+    {"fund_code": "016453", "fund_name": "南方纳斯达克100指数发起(QDII)C", "sleeve": "us_nasdaq_core", "fund_type": "纳斯达克100", "position_bucket": "核心仓", "basis": "c_share_of_nasdaq_100_index_fund"},
+    {"fund_code": "017437", "fund_name": "华宝纳斯达克精选股票发起式(QDII)C", "sleeve": "us_nasdaq_style_active", "fund_type": "纳指风格主动", "position_bucket": "核心仓", "basis": "c_share_of_active_nasdaq_style_fund"}
   ]
 }

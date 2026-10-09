@@ -95,14 +95,20 @@ class WebBoundaryTests(unittest.TestCase):
 class FundWatchCatalogTests(unittest.TestCase):
     def test_every_currently_monitored_fund_has_a_display_classification(self):
         payload = Dashboard(Path('.')).payload()
-        missing = [fund['code'] for fund in payload['funds'] if fund['category'] == '待分类']
-        self.assertEqual(missing, [])
+        missing_types = [fund['code'] for fund in payload['funds'] if fund['fund_type'] == '待分类']
+        missing_buckets = [fund['code'] for fund in payload['funds'] if fund['position_bucket'] == '待归属']
+        self.assertEqual(missing_types, [])
+        self.assertEqual(missing_buckets, [])
 
     def test_held_share_classes_have_expected_broad_market_classification(self):
         funds = {fund['code']: fund for fund in Dashboard(Path('.')).payload()['funds']}
-        self.assertEqual(funds['000071']['category'], '香港宽基')
-        self.assertEqual(funds['008401']['category'], '美国宽基')
-        self.assertEqual(funds['008706']['category'], '英国宽基')
+        self.assertEqual((funds['000071']['fund_type'], funds['000071']['position_bucket']), ('恒生指数', '核心仓'))
+        self.assertEqual((funds['008401']['fund_type'], funds['008401']['position_bucket']), ('标普500等权', '核心仓'))
+        self.assertEqual((funds['008706']['fund_type'], funds['008706']['position_bucket']), ('富时100', '核心仓'))
+
+    def test_active_japan_fund_is_core_active_enhancement(self):
+        funds = {fund['code']: fund for fund in Dashboard(Path('.')).payload()['funds']}
+        self.assertEqual((funds['007280']['fund_type'], funds['007280']['position_bucket']), ('日本主动增强', '核心仓'))
 
 
 if __name__=='__main__': unittest.main()

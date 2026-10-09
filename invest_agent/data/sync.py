@@ -109,8 +109,10 @@ def resolve_sync_funds(config: Mapping[str, Any], *, workspace_root: Path) -> tu
             if FUND_CODE_PATTERN.fullmatch(code) is None or code in seen_catalog_codes:
                 raise ValueError(f"invalid or duplicate fund watch catalog code: {code!r}")
             if not all(isinstance(item.get(field), str) and item[field].strip()
-                       for field in ("fund_name", "sleeve", "category", "basis")):
+                       for field in ("fund_name", "sleeve", "fund_type", "position_bucket", "basis")):
                 raise ValueError(f"fund watch catalog entry is incomplete: {code}")
+            if item["position_bucket"] not in {"核心仓", "防御仓", "卫星仓"}:
+                raise ValueError(f"invalid fund watch position bucket: {code}")
             seen_catalog_codes.add(code)
             reasons.setdefault(code, set()).add("fund_watch_catalog")
 
