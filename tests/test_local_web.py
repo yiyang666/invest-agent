@@ -110,5 +110,17 @@ class FundWatchCatalogTests(unittest.TestCase):
         funds = {fund['code']: fund for fund in Dashboard(Path('.')).payload()['funds']}
         self.assertEqual((funds['007280']['fund_type'], funds['007280']['position_bucket']), ('日本主动增强', '核心仓'))
 
+    def test_selected_backtests_are_exposed_with_research_gate(self):
+        strategies = Dashboard(Path('.')).payload()['strategies']['items']
+        baseline = next(item for item in strategies if item['strategy_id'] == 'dca_baseline' and item['version'] == '1.5.0')
+        self.assertEqual(baseline['backtest']['mode'], 'research_only')
+        self.assertEqual(baseline['backtest']['gate']['status'], 'blocked')
+        self.assertIsNotNone(baseline['backtest']['metrics']['annualized_return_pct'])
+
+    def test_nav_api_returns_full_published_history(self):
+        series = Dashboard(Path('.')).series('000071')
+        self.assertGreater(len(series), 180)
+        self.assertLess(series[0]['nav_date'], series[-1]['nav_date'])
+
 
 if __name__=='__main__': unittest.main()
