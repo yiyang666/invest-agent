@@ -63,6 +63,16 @@ class DataMaintenanceScheduleTests(unittest.TestCase):
             state["jobs"][job["job_id"]] = {"last_success_period": job["due_period"]}
         self.assertEqual(due_jobs(jobs, state, as_of), ())
 
+    def test_portfolio_snapshot_is_due_before_fund_data(self) -> None:
+        jobs = self._jobs()
+        portfolio = next(job for job in jobs if job["job_id"] == "portfolio_daily")
+        fund_data = next(job for job in jobs if job["job_id"] == "fund_data_daily")
+        self.assertEqual(portfolio["local_time"], "22:30")
+        self.assertEqual(fund_data["local_time"], "23:30")
+        due = due_jobs(jobs, {"schema_version": 1, "jobs": {}}, datetime(2026, 8, 28, 22, 35, tzinfo=TZ))
+        self.assertIn("portfolio_daily", {job["job_id"] for job in due})
+        self.assertNotIn("fund_data_daily", {job["job_id"] for job in due})
+
     def test_monthly_and_quarterly_catch_up_after_nominal_day(self) -> None:
         jobs = self._jobs()
         as_of = datetime(2026, 8, 5, 23, 55, tzinfo=TZ)

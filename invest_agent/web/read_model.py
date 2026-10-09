@@ -95,6 +95,22 @@ class Dashboard:
                 days[day] = {"id": row["snapshot_id"], **payload}
         return list(days.values())
 
+    def latest_fund_income(self, portfolios):
+        if not portfolios:
+            return None
+        snapshot = portfolios[0]
+        rows = [row for row in snapshot.get("positions", []) if row.get("latest_income") is not None]
+        if not rows:
+            return None
+        dates = sorted({row["income_date"] for row in rows if row.get("income_date")})
+        return {
+            "value": sum(float(row["latest_income"]) for row in rows),
+            "position_count": len(rows), "total_position_count": len(snapshot.get("positions", [])),
+            "income_date": dates[0] if len(dates) == 1 else None,
+            "date_status": "reported" if len(dates) == 1 else "mixed" if dates else "unreported",
+            "snapshot_as_of": snapshot.get("as_of"), "excludes_cash": True,
+        }
+
     def funds(self, now: datetime):
         config = load_sync_config(self.root / "config/fund_data_sync_v1.json")
         universe = resolve_sync_funds(config, workspace_root=self.root)
@@ -258,7 +274,9 @@ class Dashboard:
 
     def payload(self):
         now = datetime.now(TZ)
+        portfolios = self.portfolios()
         return {"generated_at": now.isoformat(), "database_available": self.database.is_file(),
-                "funds": self.funds(now), "portfolios": self.portfolios(),
+                "funds": self.funds(now), "portfolios": portfolios,
+                "latest_fund_income": self.latest_fund_income(portfolios),
                 "strategies": self.strategies(), "maintenance": self.maintenance(),
                 "local_only": True, "readonly": True}

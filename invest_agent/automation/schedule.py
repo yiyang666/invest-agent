@@ -24,13 +24,13 @@ def load_schedule_jobs(
             "job_id": "portfolio_daily",
             "kind": "portfolio_snapshot",
             "cadence": "business_daily",
-            "local_time": recommendation.get("local_time", "23:30"),
+            "local_time": recommendation.get("portfolio_local_time", recommendation.get("local_time", "23:30")),
         },
         {
             "job_id": "fund_data_daily",
             "kind": "fund_data_sync",
             "cadence": "business_daily",
-            "local_time": recommendation.get("local_time", "23:30"),
+            "local_time": recommendation.get("fund_data_local_time", recommendation.get("local_time", "23:30")),
             "config_path": str(Path(fund_config_path)),
         }
     ]
