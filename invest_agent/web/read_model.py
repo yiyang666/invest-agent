@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 
 from invest_agent.data.sync import load_sync_config, resolve_sync_funds
 from invest_agent.decision.registry import load_strategy_registry, validate_strategy_registry
+from invest_agent.metrics.rsi import wilder_rsi
 
 TZ = ZoneInfo("Asia/Shanghai")
 FUND_TYPES = {
@@ -196,13 +197,19 @@ class Dashboard:
         return funds
 
     def series(self, code: str):
-        # 分位图优先用累计净值，避免分红把单位净值整体下移造成假低位
-        return self.rows("""SELECT nav_date,unit_nav,accumulated_nav FROM (
+        # 展示和 RSI 使用累计净值，避免分红把单位净值整体下移造成假信号。
+        rows = self.rows("""SELECT nav_date,unit_nav,accumulated_nav FROM (
             SELECT n.nav_date,n.unit_nav,n.accumulated_nav, ROW_NUMBER() OVER (
               PARTITION BY n.nav_date ORDER BY b.fetched_at DESC,n.batch_id DESC) AS rn
             FROM fund_nav_observations n JOIN data_batches b USING(batch_id)
             WHERE n.fund_code=? AND n.provider_id='akshare_eastmoney'
               AND b.quality_status IN ('pass','partial')) WHERE rn=1 ORDER BY nav_date""", (code,))
+        nav_values = [float(row.get("accumulated_nav") or row["unit_nav"]) for row in rows]
+        rsi_values = wilder_rsi(nav_values, period=14)
+        for row, nav_value, rsi in zip(rows, nav_values, rsi_values):
+            row["display_nav"] = nav_value
+            row["rsi_14"] = None if rsi is None else round(rsi, 4)
+        return rows
 
     def backtests(self):
         catalog = self.json("config/web_backtest_catalog_v1.json", {"results": []})

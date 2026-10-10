@@ -24,47 +24,41 @@ function strategies(){const items=data.strategies.items.filter(s=>strategyFilter
 function updates(){const m=data.maintenance;return `<p class="muted">这里只看采集作业有没有按计划执行、何时成功以及失败在哪里。单只基金的数据日期和质量请到“监控基金”查看。</p>${panel('维护作业',table(['作业','最近运行','状态','最近成功周期'],m.jobs.map(j=>`<tr><td>${esc(j.name)}</td><td>${time(j.last_attempt_at)}</td><td>${badge(({complete:'完成',failed:'失败',not_run:'尚未运行'})[j.last_status]||j.last_status,j.last_status==='complete'?'good':'warn')}</td><td>${esc(j.last_success_period)}</td></tr>`)))}${panel('最近维护记录',m.reports.length?m.reports.map(r=>`<details><summary>${time(r.run_at)} · 完成 ${r.completed_job_count??0} / 到期 ${r.due_job_count??0} · 失败 ${r.failed_job_count??0}</summary>${table(['作业','结果'],r.jobs.map(j=>`<tr><td>${esc(j.name)}</td><td>${esc(j.status)}${j.summary?`<small>发布 ${j.summary.published??'—'} · 错误 ${j.summary.errors??'—'} · 陈旧 ${j.summary.stale??'—'}</small>`:''}</td></tr>`))}</details>`).join(''):empty('暂无维护记录'))}`;}
 function render(){if(!data)return;const names={overview:'投资总览',funds:'监控基金',holdings:'每日持仓',strategies:'策略库',updates:'数据更新'};$('#title').textContent=names[page];document.querySelectorAll('[data-page]').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false');});$('#content').innerHTML=({overview,funds,holdings,strategies,updates})[page]();}
 async function load(){const b=$('#refresh');b.disabled=true;try{const r=await fetch('/api/dashboard');if(!r.ok)throw Error();data=await r.json();$('#connection').textContent=`● 本地连接正常 · 数据视图生成于 ${time(data.generated_at)}${data.database_available?'':' · 数据库尚未建立'}`;render();}catch(e){$('#connection').textContent='本地数据暂时无法读取，请检查服务或配置后重试。';if(!data)$('#content').innerHTML=empty('暂未加载数据，点击右上角刷新重试。');}finally{b.disabled=false;}}
-function lineChart(points,valueKey,label,color='#438773'){const values=points.map(p=>Number(p[valueKey])).filter(Number.isFinite);if(values.length<2)return empty(`暂无足够数据计算${label}`);const lo=Math.min(...values),hi=Math.max(...values),range=hi-lo||1;const valid=points.filter(p=>Number.isFinite(Number(p[valueKey]))),line=valid.map((p,i)=>`${20+i/(valid.length-1||1)*660},${200-(Number(p[valueKey])-lo)/range*170}`).join(' ');return `<svg class="chart" viewBox="0 0 700 230" role="img" aria-label="${esc(label)}"><path d="M20 200H680 M20 115H680 M20 30H680" stroke="#e2e9e6" fill="none"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/></svg><div class="chart-caption"><span>${esc(valid[0].nav_date)}</span><span>${label} ${lo.toFixed(2)} — ${hi.toFixed(2)}</span><span>${esc(valid.at(-1).nav_date)}</span></div>`;}
-function dailyChanges(points){const result=[];for(let i=1;i<points.length;i++)result.push({nav_date:points[i].nav_date,change:(Number(points[i].unit_nav)/Number(points[i-1].unit_nav)-1)*100});return result;}
+function lineChart(points,valueKey,label,color='#438773'){const valid=points.filter(p=>p[valueKey]!=null&&Number.isFinite(Number(p[valueKey]))),values=valid.map(p=>Number(p[valueKey]));if(values.length<2)return empty(`暂无足够数据计算${label}`);const lo=Math.min(...values),hi=Math.max(...values),range=hi-lo||1,line=valid.map((p,i)=>`${20+i/(valid.length-1||1)*660},${200-(Number(p[valueKey])-lo)/range*170}`).join(' ');return `<svg class="chart" viewBox="0 0 700 230" role="img" aria-label="${esc(label)}"><path d="M20 200H680 M20 115H680 M20 30H680" stroke="#e2e9e6" fill="none"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/></svg><div class="chart-caption"><span>${esc(valid[0].nav_date)}</span><span>${label} ${lo.toFixed(4)} — ${hi.toFixed(4)}</span><span>${esc(valid.at(-1).nav_date)}</span></div>`;}
 function filterPeriod(points,months){if(!months||!points.length)return points;const end=new Date(points.at(-1).nav_date+'T00:00:00'),start=new Date(end);start.setMonth(start.getMonth()-months);return points.filter(p=>new Date(p.nav_date+'T00:00:00')>=start);}
-// 单位净值图：所选区间高低点三等分色带叠在纵轴，当前净值虚线标出
-function navLineChart(points){
-  const values=points.map(p=>Number(p.unit_nav)).filter(Number.isFinite);
-  if(values.length<2)return empty('暂无足够数据计算单位净值');
-  const lo=Math.min(...values),hi=Math.max(...values),range=hi-lo||1;
-  const current=values.at(-1),position=hi===lo?50:(current-lo)/range*100;
-  const zone=position<33.33?'低位区':position<66.66?'中位区':'高位区';
-  const valid=points.filter(p=>Number.isFinite(Number(p.unit_nav)));
+function rsiChart(points){
+  const valid=points.filter(p=>p.rsi_14!=null&&Number.isFinite(Number(p.rsi_14)));
+  if(valid.length<2)return empty('至少需要 15 个有效净值观察值计算 RSI');
+  const current=Number(valid.at(-1).rsi_14),zone=current<30?'低位区':current>70?'高位区':'中位区';
   const left=72,top=28,plotW=620,plotH=180,bottom=top+plotH,right=left+plotW,axisW=10;
-  const yAt=v=>bottom-(Number(v)-lo)/range*plotH;
+  const yAt=v=>bottom-Number(v)/100*plotH;
   const xAt=i=>left+i/(valid.length-1||1)*plotW;
-  const line=valid.map((p,i)=>`${xAt(i)},${yAt(p.unit_nav)}`).join(' ');
-  const yCurrent=yAt(current),band=plotH/3;
+  const line=valid.map((p,i)=>`${xAt(i)},${yAt(p.rsi_14)}`).join(' '),yCurrent=yAt(current);
   const zones=[
-    {label:'高位区',y:top,fill:'#d7836f38',solid:'#c46a56',text:'#a04f3e'},
-    {label:'中位区',y:top+band,fill:'#dbc47e3d',solid:'#c9ad5e',text:'#8a6e2f'},
-    {label:'低位区',y:top+band*2,fill:'#77b99b3a',solid:'#5fa888',text:'#2f6b52'},
+    {label:'高位区',from:70,to:100,fill:'#d7836f38',solid:'#c46a56',text:'#a04f3e'},
+    {label:'中位区',from:30,to:70,fill:'#dbc47e3d',solid:'#c9ad5e',text:'#8a6e2f'},
+    {label:'低位区',from:0,to:30,fill:'#77b99b3a',solid:'#5fa888',text:'#2f6b52'},
   ];
-  const bandSvg=zones.map(z=>`<rect x="${left}" y="${z.y}" width="${plotW}" height="${band}" fill="${z.fill}"/><rect x="${left-axisW}" y="${z.y}" width="${axisW}" height="${band}" fill="${z.solid}"/><text x="${left-axisW-8}" y="${z.y+band/2}" text-anchor="end" dominant-baseline="middle" fill="${z.text}" font-size="11" font-weight="500">${z.label}</text>`).join('');
-  const splitY1=top+band,splitY2=top+band*2,lineColor='#c45a4a';
-  return `<svg class="chart nav-chart" viewBox="0 0 760 250" role="img" aria-label="单位净值与高低位区间">
+  const bandSvg=zones.map(z=>{const y=yAt(z.to),height=yAt(z.from)-y;return `<rect x="${left}" y="${y}" width="${plotW}" height="${height}" fill="${z.fill}"/><rect x="${left-axisW}" y="${y}" width="${axisW}" height="${height}" fill="${z.solid}"/><text x="${left-axisW-8}" y="${y+height/2}" text-anchor="end" dominant-baseline="middle" fill="${z.text}" font-size="11" font-weight="500">${z.label}</text>`;}).join('');
+  const lineColor='#875ab0';
+  return `<svg class="chart nav-chart" viewBox="0 0 760 250" role="img" aria-label="14日 RSI 净值波动区间">
     ${bandSvg}
-    <path d="M${left} ${bottom}H${right} M${left} ${splitY1}H${right} M${left} ${splitY2}H${right} M${left} ${top}H${right}" stroke="#e2e9e6" fill="none"/>
+    <path d="M${left} ${bottom}H${right} M${left} ${yAt(30)}H${right} M${left} ${yAt(70)}H${right} M${left} ${top}H${right}" stroke="#dbe4e1" fill="none"/>
     <line x1="${left}" y1="${yCurrent}" x2="${right}" y2="${yCurrent}" stroke="#233f3b" stroke-width="1.2" stroke-dasharray="4 3" opacity=".75"/>
     <polyline points="${line}" fill="none" stroke="${lineColor}" stroke-width="2.5" stroke-linejoin="round"/>
     <circle cx="${xAt(valid.length-1)}" cy="${yCurrent}" r="4.5" fill="${lineColor}" stroke="#fff" stroke-width="2"/>
-    <text x="${right+8}" y="${yCurrent}" dominant-baseline="middle" fill="${lineColor}" font-size="11">${current.toFixed(4)}</text>
+    <text x="${right+8}" y="${yCurrent}" dominant-baseline="middle" fill="${lineColor}" font-size="11">${current.toFixed(1)}</text>
     <text x="${left}" y="${bottom+16}" fill="#738583" font-size="11">${esc(valid[0].nav_date)}</text>
     <text x="${right}" y="${bottom+16}" text-anchor="end" fill="#738583" font-size="11">${esc(valid.at(-1).nav_date)}</text>
-    <text x="${(left+right)/2}" y="${bottom+16}" text-anchor="middle" fill="#738583" font-size="11">单位净值 ${lo.toFixed(4)} — ${hi.toFixed(4)}</text>
+    <text x="${(left+right)/2}" y="${bottom+16}" text-anchor="middle" fill="#738583" font-size="11">RSI 0 — 100 · 分界 30 / 70</text>
   </svg>
-  <p class="zone-caption muted">当前净值 ${current.toFixed(4)}，位于所选区间的 ${position.toFixed(1)}% · ${zone}</p>`;
+  <p class="zone-caption muted">当前 14日 RSI ${current.toFixed(1)} · ${zone}</p>`;
 }
 function drawFundCharts(all,months){const points=filterPeriod(all,months),target=$('#curve');if(!target)return;
   target.innerHTML=`<div class="chart-tools">${[[1,'近1月'],[3,'近3月'],[6,'近6月'],[12,'近1年'],[0,'全部']].map(([n,t])=>`<button data-nav-period="${n}" class="${months===n?'active':''}">${t}</button>`).join('')}</div>
-    <div class="chart-block"><h3>单位净值</h3>${navLineChart(points)}</div>
-    <div class="chart-block"><h3>每日净值涨跌幅</h3>${lineChart(dailyChanges(points),'change','每日涨跌幅（%）','#c28b4e')}</div>
-    <p class="muted chart-note">每日涨跌幅 = 当日单位净值 ÷ 上一已发布单位净值 − 1。高低位按所选区间的最低、最高单位净值等分三段，叠在单位净值纵轴上；分红或拆分可能影响单位净值位置，不代表估值高低。</p>`;
+    <div class="chart-block"><h3>累计净值走势</h3>${lineChart(points,'display_nav','累计净值','#c45a4a')}</div>
+    <div class="chart-block"><h3>净值波动（14日 RSI）</h3>${rsiChart(points)}</div>
+    <p class="muted chart-note">RSI 使用全部已发布累计净值按 Wilder 14日算法逐点计算，图表按钮只裁剪显示范围，不改变指标历史。RSI &lt; 30 为低位区、30–70 为中位区、&gt; 70 为高位区；它描述近期涨跌力量，不等于跟踪指数 PE TTM 五年估值分位，也不直接构成买卖信号。</p>`;
   target.querySelectorAll('[data-nav-period]').forEach(b=>b.onclick=()=>drawFundCharts(all,Number(b.dataset.navPeriod)));
 }
 async function showFund(code){const f=data.funds.find(f=>f.code===code);$('#detail-content').innerHTML=`<h2>${esc(f?.name||code)}</h2><p>${badge(f?.fund_type||'待分类')} ${badge(f?.position_bucket||'待归属','good')}</p><p class="muted">${esc(code)} · 类型来源：${esc(f?.fund_type_source||'未登记')} · 仓位来源：${esc(f?.position_bucket_source||'未登记')}</p><div id="curve">正在读取本地净值…</div>`;$('#detail').showModal();try{const r=await fetch(`/api/nav?code=${encodeURIComponent(code)}`);if(!r.ok)throw Error();const payload=await r.json(),points=Array.isArray(payload)?payload:payload.series;if(!points?.length){$('#curve').innerHTML=empty('暂无可用净值');return;}drawFundCharts(points,3);}catch(e){const t=$('#curve');if(t)t.textContent='净值读取失败，请稍后重试。';}}
