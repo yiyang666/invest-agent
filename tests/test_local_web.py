@@ -124,8 +124,14 @@ class FundWatchCatalogTests(unittest.TestCase):
         self.assertIn('accumulated_nav', series[0])
         self.assertIsNotNone(series[0]['accumulated_nav'])
         self.assertEqual(series[0]['display_nav'], float(series[0]['accumulated_nav']))
-        self.assertIsNone(series[0]['rsi_14'])
-        self.assertIsNotNone(series[14]['rsi_14'])
+        self.assertIsNone(series[0]['rsi_13'])
+        self.assertIsNotNone(series[13]['rsi_13'])
+
+    def test_nav_rsi_matches_reviewed_tonghuashun_examples(self):
+        expected = {'110020': 32.46, '000043': 58.97, '018966': 66.10, '017641': 56.62}
+        for code, value in expected.items():
+            with self.subTest(code=code):
+                self.assertAlmostEqual(Dashboard(Path('.')).series(code)[-1]['rsi_13'], value, places=2)
 
     def test_latest_fund_income_excludes_cash_and_reports_missing_date(self):
         snapshot = sample()

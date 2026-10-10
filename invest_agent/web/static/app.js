@@ -27,13 +27,13 @@ async function load(){const b=$('#refresh');b.disabled=true;try{const r=await fe
 function lineChart(points,valueKey,label,color='#438773'){const valid=points.filter(p=>p[valueKey]!=null&&Number.isFinite(Number(p[valueKey]))),values=valid.map(p=>Number(p[valueKey]));if(values.length<2)return empty(`暂无足够数据计算${label}`);const lo=Math.min(...values),hi=Math.max(...values),range=hi-lo||1,line=valid.map((p,i)=>`${20+i/(valid.length-1||1)*660},${200-(Number(p[valueKey])-lo)/range*170}`).join(' ');return `<svg class="chart" viewBox="0 0 700 230" role="img" aria-label="${esc(label)}"><path d="M20 200H680 M20 115H680 M20 30H680" stroke="#e2e9e6" fill="none"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/></svg><div class="chart-caption"><span>${esc(valid[0].nav_date)}</span><span>${label} ${lo.toFixed(4)} — ${hi.toFixed(4)}</span><span>${esc(valid.at(-1).nav_date)}</span></div>`;}
 function filterPeriod(points,months){if(!months||!points.length)return points;const end=new Date(points.at(-1).nav_date+'T00:00:00'),start=new Date(end);start.setMonth(start.getMonth()-months);return points.filter(p=>new Date(p.nav_date+'T00:00:00')>=start);}
 function rsiChart(points){
-  const valid=points.filter(p=>p.rsi_14!=null&&Number.isFinite(Number(p.rsi_14)));
-  if(valid.length<2)return empty('至少需要 15 个有效净值观察值计算 RSI');
-  const current=Number(valid.at(-1).rsi_14),zone=current<30?'低位区':current>70?'高位区':'中位区';
+  const valid=points.filter(p=>p.rsi_13!=null&&Number.isFinite(Number(p.rsi_13)));
+  if(valid.length<2)return empty('至少需要 14 个有效净值观察值计算 RSI');
+  const current=Number(valid.at(-1).rsi_13),zone=current<30?'低位区':current>70?'高位区':'中位区';
   const left=72,top=28,plotW=620,plotH=180,bottom=top+plotH,right=left+plotW,axisW=10;
   const yAt=v=>bottom-Number(v)/100*plotH;
   const xAt=i=>left+i/(valid.length-1||1)*plotW;
-  const line=valid.map((p,i)=>`${xAt(i)},${yAt(p.rsi_14)}`).join(' '),yCurrent=yAt(current);
+  const line=valid.map((p,i)=>`${xAt(i)},${yAt(p.rsi_13)}`).join(' '),yCurrent=yAt(current);
   const zones=[
     {label:'高位区',from:70,to:100,fill:'#d7836f38',solid:'#c46a56',text:'#a04f3e'},
     {label:'中位区',from:30,to:70,fill:'#dbc47e3d',solid:'#c9ad5e',text:'#8a6e2f'},
@@ -41,7 +41,7 @@ function rsiChart(points){
   ];
   const bandSvg=zones.map(z=>{const y=yAt(z.to),height=yAt(z.from)-y;return `<rect x="${left}" y="${y}" width="${plotW}" height="${height}" fill="${z.fill}"/><rect x="${left-axisW}" y="${y}" width="${axisW}" height="${height}" fill="${z.solid}"/><text x="${left-axisW-8}" y="${y+height/2}" text-anchor="end" dominant-baseline="middle" fill="${z.text}" font-size="11" font-weight="500">${z.label}</text>`;}).join('');
   const lineColor='#875ab0';
-  return `<svg class="chart nav-chart" viewBox="0 0 760 250" role="img" aria-label="14日 RSI 净值波动区间">
+  return `<svg class="chart nav-chart" viewBox="0 0 760 250" role="img" aria-label="13期 RSI 净值波动区间">
     ${bandSvg}
     <path d="M${left} ${bottom}H${right} M${left} ${yAt(30)}H${right} M${left} ${yAt(70)}H${right} M${left} ${top}H${right}" stroke="#dbe4e1" fill="none"/>
     <line x1="${left}" y1="${yCurrent}" x2="${right}" y2="${yCurrent}" stroke="#233f3b" stroke-width="1.2" stroke-dasharray="4 3" opacity=".75"/>
@@ -52,13 +52,13 @@ function rsiChart(points){
     <text x="${right}" y="${bottom+16}" text-anchor="end" fill="#738583" font-size="11">${esc(valid.at(-1).nav_date)}</text>
     <text x="${(left+right)/2}" y="${bottom+16}" text-anchor="middle" fill="#738583" font-size="11">RSI 0 — 100 · 分界 30 / 70</text>
   </svg>
-  <p class="zone-caption muted">当前 14日 RSI ${current.toFixed(1)} · ${zone}</p>`;
+  <p class="zone-caption muted">当前 13期 RSI ${current.toFixed(2)} · ${zone}</p>`;
 }
 function drawFundCharts(all,months){const points=filterPeriod(all,months),target=$('#curve');if(!target)return;
   target.innerHTML=`<div class="chart-tools">${[[1,'近1月'],[3,'近3月'],[6,'近6月'],[12,'近1年'],[0,'全部']].map(([n,t])=>`<button data-nav-period="${n}" class="${months===n?'active':''}">${t}</button>`).join('')}</div>
     <div class="chart-block"><h3>累计净值走势</h3>${lineChart(points,'display_nav','累计净值','#c45a4a')}</div>
-    <div class="chart-block"><h3>净值波动（14日 RSI）</h3>${rsiChart(points)}</div>
-    <p class="muted chart-note">RSI 使用全部已发布累计净值按 Wilder 14日算法逐点计算，图表按钮只裁剪显示范围，不改变指标历史。RSI &lt; 30 为低位区、30–70 为中位区、&gt; 70 为高位区；它描述近期涨跌力量，不等于跟踪指数 PE TTM 五年估值分位，也不直接构成买卖信号。</p>`;
+    <div class="chart-block"><h3>净值波动（13期 RSI）</h3>${rsiChart(points)}</div>
+    <p class="muted chart-note">RSI 使用全部已发布累计净值，对最近13个净值变化分别汇总上涨与下跌幅度后逐点计算；该口径已与同花顺 rsi_pct 多基金同日值核对。图表按钮只裁剪显示范围，不改变指标。RSI &lt; 30 为低位区、30–70 为中位区、&gt; 70 为高位区；它描述近期涨跌力量，不等于跟踪指数 PE TTM 五年估值分位，也不直接构成买卖信号。</p>`;
   target.querySelectorAll('[data-nav-period]').forEach(b=>b.onclick=()=>drawFundCharts(all,Number(b.dataset.navPeriod)));
 }
 async function showFund(code){const f=data.funds.find(f=>f.code===code);$('#detail-content').innerHTML=`<h2>${esc(f?.name||code)}</h2><p>${badge(f?.fund_type||'待分类')} ${badge(f?.position_bucket||'待归属','good')}</p><p class="muted">${esc(code)} · 类型来源：${esc(f?.fund_type_source||'未登记')} · 仓位来源：${esc(f?.position_bucket_source||'未登记')}</p><div id="curve">正在读取本地净值…</div>`;$('#detail').showModal();try{const r=await fetch(`/api/nav?code=${encodeURIComponent(code)}`);if(!r.ok)throw Error();const payload=await r.json(),points=Array.isArray(payload)?payload:payload.series;if(!points?.length){$('#curve').innerHTML=empty('暂无可用净值');return;}drawFundCharts(points,3);}catch(e){const t=$('#curve');if(t)t.textContent='净值读取失败，请稍后重试。';}}

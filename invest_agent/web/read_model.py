@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 
 from invest_agent.data.sync import load_sync_config, resolve_sync_funds
 from invest_agent.decision.registry import load_strategy_registry, validate_strategy_registry
-from invest_agent.metrics.rsi import wilder_rsi
+from invest_agent.metrics.rsi import simple_rsi
 
 TZ = ZoneInfo("Asia/Shanghai")
 FUND_TYPES = {
@@ -205,10 +205,10 @@ class Dashboard:
             WHERE n.fund_code=? AND n.provider_id='akshare_eastmoney'
               AND b.quality_status IN ('pass','partial')) WHERE rn=1 ORDER BY nav_date""", (code,))
         nav_values = [float(row.get("accumulated_nav") or row["unit_nav"]) for row in rows]
-        rsi_values = wilder_rsi(nav_values, period=14)
+        rsi_values = simple_rsi(nav_values, period=13)
         for row, nav_value, rsi in zip(rows, nav_values, rsi_values):
             row["display_nav"] = nav_value
-            row["rsi_14"] = None if rsi is None else round(rsi, 4)
+            row["rsi_13"] = None if rsi is None else round(rsi, 4)
         return rows
 
     def backtests(self):
