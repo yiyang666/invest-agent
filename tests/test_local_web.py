@@ -4,6 +4,7 @@ from io import BytesIO
 import json
 from pathlib import Path
 import sqlite3
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -67,11 +68,12 @@ class FakeSocket:
 
 
 class WebBoundaryTests(unittest.TestCase):
-    def request(self,path,host='127.0.0.1:8765',origin=None,method='GET'):
+    def request(self,path,host='127.0.0.1:8765',origin=None,method='GET',body=b''):
         req=f'{method} {path} HTTP/1.1\r\nHost: {host}\r\n'
         if origin: req+=f'Origin: {origin}\r\n'
+        if body: req+=f'Content-Length: {len(body)}\r\n'
         req+='Connection: close\r\n\r\n'
-        sock=FakeSocket(req.encode())
+        sock=FakeSocket(req.encode()+body)
         make_handler(Path('.'))(sock,('127.0.0.1',1234),None)
         return bytes(sock.response)
 
@@ -84,6 +86,27 @@ class WebBoundaryTests(unittest.TestCase):
         self.assertIn(b'400',self.request('/api/nav?code=bad'))
         self.assertIn(b'501',self.request('/api/dashboard',method='POST'))
 
+    def test_market_refresh_is_exact_reviewed_action(self):
+        completed = subprocess.CompletedProcess([], 0)
+        with patch('invest_agent.web.server.subprocess.run', return_value=completed) as run:
+            response = self.request('/api/market-refresh', method='POST')
+        self.assertIn(b'200 OK', response)
+        self.assertIn(b'"status":"complete"', response)
+        args, kwargs = run.call_args
+        self.assertTrue(args[0][-1].endswith('/scripts/refresh_market_quotes.sh'))
+        self.assertFalse(kwargs['check'])
+        self.assertNotIn('shell', kwargs)
+        self.assertIn(b'400', self.request('/api/market-refresh', method='POST', body=b'{}'))
+
+    def test_market_refresh_reports_missing_credential_without_process_output(self):
+        completed = subprocess.CompletedProcess([], 78, stdout='secret', stderr='private path')
+        with patch('invest_agent.web.server.subprocess.run', return_value=completed):
+            response = self.request('/api/market-refresh', method='POST')
+        self.assertIn(b'503', response)
+        self.assertIn(b'credential_unavailable', response)
+        self.assertNotIn(b'secret', response)
+        self.assertNotIn(b'private path', response)
+
     def test_api_uses_local_model_and_hides_exceptions(self):
         with patch.object(Dashboard,'payload',return_value={'local_only':True}):
             self.assertIn(b'"local_only": true',self.request('/api/dashboard'))
@@ -93,6 +116,21 @@ class WebBoundaryTests(unittest.TestCase):
 
 
 class FundWatchCatalogTests(unittest.TestCase):
+    def test_market_panel_uses_latest_reviewed_quote_values(self):
+        model = Dashboard(Path('.'))
+        rows = [
+            {'series_id': 'jin10_quote:SPX:close', 'observation_date': '2026-10-09',
+             'value': 6750.0, 'unit': 'index_point', 'first_seen_at': '2026-10-10T01:00:00+08:00'},
+            {'series_id': 'jin10_quote:SPX:change_pct', 'observation_date': '2026-10-09',
+             'value': 1.5, 'unit': '%', 'first_seen_at': '2026-10-10T01:00:00+08:00'},
+        ]
+        with patch.object(model, 'rows', return_value=rows):
+            values = model.market_indices()
+        self.assertEqual([item['code'] for item in values], ['SPX'])
+        self.assertEqual(values[0]['value'], 6750.0)
+        self.assertAlmostEqual(values[0]['change'], 6750.0 - 6750.0 / 1.015)
+        self.assertEqual(values[0]['change_pct'], 1.5)
+
     def test_every_currently_monitored_fund_has_a_display_classification(self):
         payload = Dashboard(Path('.')).payload()
         missing_types = [fund['code'] for fund in payload['funds'] if fund['fund_type'] == '待分类']

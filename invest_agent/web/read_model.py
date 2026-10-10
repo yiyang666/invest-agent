@@ -62,6 +62,14 @@ JOB_NAMES = {
     "market_monthly_context": "每月宏观与权重", "market_quarterly_context": "每季宏观",
     "market_context_bootstrap": "历史数据初始化",
 }
+MARKET_INDEX_SPECS = (
+    ("000300", "沪深300", "中国"),
+    ("HSI", "恒生指数", "中国香港"),
+    ("SPX", "标普500", "美国"),
+    ("FTSE", "富时100", "英国"),
+    ("GDAXI", "德国DAX", "德国"),
+    ("N225", "日经225", "日本"),
+)
 
 
 class Dashboard:
@@ -279,11 +287,46 @@ class Dashboard:
             reports.append(report)
         return {"jobs": jobs, "reports": reports}
 
+    def market_indices(self):
+        rows = self.rows("""
+            SELECT series_id,observation_date,value,unit,first_seen_at FROM (
+              SELECT o.series_id,o.observation_date,o.value,o.unit,o.first_seen_at,
+                     ROW_NUMBER() OVER (
+                       PARTITION BY o.series_id
+                       ORDER BY o.observation_date DESC,o.first_seen_at DESC,o.batch_id DESC
+                     ) AS rn
+              FROM market_numeric_observations o
+              JOIN market_data_batches b USING(batch_id)
+              WHERE o.series_id LIKE 'jin10_quote:%'
+                AND b.quality_status IN ('pass','partial')
+            ) WHERE rn=1
+        """)
+        latest = {row["series_id"]: row for row in rows}
+        result = []
+        for code, label, region in MARKET_INDEX_SPECS:
+            close = latest.get(f"jin10_quote:{code}:close")
+            change_pct = latest.get(f"jin10_quote:{code}:change_pct")
+            if not close or not change_pct or close["observation_date"] != change_pct["observation_date"]:
+                continue
+            value = float(close["value"])
+            pct = float(change_pct["value"])
+            previous = value / (1 + pct / 100) if pct != -100 else None
+            result.append({
+                "code": code, "label": label, "region": region,
+                "value": value, "change": None if previous is None else value - previous,
+                "change_pct": pct, "observation_date": close["observation_date"],
+                "collected_at": close["first_seen_at"], "source": "金十 / 本地校验仓",
+            })
+        return result
+
     def payload(self):
         now = datetime.now(TZ)
         portfolios = self.portfolios()
         return {"generated_at": now.isoformat(), "database_available": self.database.is_file(),
                 "funds": self.funds(now), "portfolios": portfolios,
                 "latest_fund_income": self.latest_fund_income(portfolios),
+                "market_indices": self.market_indices(),
                 "strategies": self.strategies(), "maintenance": self.maintenance(),
-                "local_only": True, "readonly": True}
+                "local_only": True, "readonly": True,
+                "manual_market_refresh_enabled": True,
+                "trading_write_disabled": True}

@@ -1,4 +1,4 @@
-"""Loopback-only HTTP server for the local dashboard; no remote data access."""
+"""Loopback-only dashboard with one reviewed market-data refresh action."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import re
+import subprocess
 import time
 import threading
 from urllib.parse import urlsplit, parse_qs
@@ -17,23 +18,30 @@ STATIC = Path(__file__).parent / "static"
 
 
 def make_handler(root: Path):
+    root = root.resolve()
     model = Dashboard(root)
     cached = {"at": 0, "data": None}
     lock = threading.Lock()
+    refresh_lock = threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
             pass
 
-        def do_GET(self):
+        def allowed_request(self):
             # A foreign origin cannot use this private read service via DNS rebinding.
             host = self.headers.get("Host", "").split(":")[0]
             if host not in {"localhost", "127.0.0.1"}:
                 self.send_error(403)
-                return
+                return False
             origin = self.headers.get("Origin")
             if origin and origin != f"http://{self.headers.get('Host')}":
                 self.send_error(403)
+                return False
+            return True
+
+        def do_GET(self):
+            if not self.allowed_request():
                 return
             url = urlsplit(self.path)
             try:
@@ -56,6 +64,43 @@ def make_handler(root: Path):
                     self.send_error(404)
             except Exception:
                 self.reply(b'{"error":"Local data could not be loaded. Check the data store and configuration."}', "application/json", 503)
+
+        def do_POST(self):
+            if not self.allowed_request():
+                return
+            url = urlsplit(self.path)
+            if url.path != "/api/market-refresh":
+                self.send_error(501)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", "0") or 0)
+            except ValueError:
+                self.send_error(400)
+                return
+            if content_length != 0:
+                self.send_error(400)
+                return
+            if not refresh_lock.acquire(blocking=False):
+                self.reply(b'{"error":"refresh_in_progress"}', "application/json", 409)
+                return
+            try:
+                result = subprocess.run(
+                    [str(root / "scripts/refresh_market_quotes.sh")],
+                    cwd=root, capture_output=True, text=True, timeout=180, check=False,
+                )
+                if result.returncode == 78:
+                    self.reply(b'{"error":"credential_unavailable"}', "application/json", 503)
+                    return
+                if result.returncode != 0:
+                    self.reply(b'{"error":"Market refresh failed. Existing local quotes remain available."}', "application/json", 503)
+                    return
+                with lock:
+                    cached.update(at=0, data=None)
+                self.reply(b'{"status":"complete"}', "application/json")
+            except (OSError, subprocess.TimeoutExpired):
+                self.reply(b'{"error":"Market refresh could not complete. Existing local quotes remain available."}', "application/json", 503)
+            finally:
+                refresh_lock.release()
 
         def reply(self, body: bytes, kind: str, status: int = 200):
             self.send_response(status)
