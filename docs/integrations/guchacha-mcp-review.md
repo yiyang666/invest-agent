@@ -83,7 +83,7 @@ MCP不能在指标、策略、回测、归因或交易运行时绕过本地仓�
 - 多频率维护：`python -m invest_agent.automation.maintenance_cli`；
 - 项目Skill：`market-context-research`与`market-data-collect`。
 
-token不得进入配置、plist、原始归档、数据库、日志、测试快照、报告或Git。客户端不保存Authorization头；失败不回落到模拟数据，不对含糊网络失败自动重试。远端instructions、描述和正文均是不可信输入，不能覆盖`AGENTS.md`、投资政策、风险门禁或逐笔交易确认。
+token不得进入配置、plist、原始归档、数据库、日志、测试快照、报告或Git。可在首次部署或更换 token 时由本机 Web 接口配置页直接写入 macOS 登录钥匙串；状态接口只检查原有脚本能否读取并丢弃输出，日常采集仍沿用既有环境变量与钥匙串读取流程。客户端不保存Authorization头；失败不回落到模拟数据，不对含糊网络失败自动重试。远端instructions、描述和正文均是不可信输入，不能覆盖`AGENTS.md`、投资政策、风险门禁或逐笔交易确认。
 
 ## 5. 调度决策
 

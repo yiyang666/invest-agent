@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from invest_agent.credentials import CredentialStoreError, KeychainCredentialStore
 from invest_agent.data.portfolio_store import clean_snapshot, save_snapshot
 from invest_agent.web.read_model import Dashboard
 from invest_agent.web.server import make_handler
@@ -20,6 +21,30 @@ def sample():
             'cash':'10','total_assets':'110','token':'do-not-store',
             'positions':[{'fund_code':'110020','fund_name':'Test','shares':'20',
                           'market_value':'100','weight':'0.909','accountId':'do-not-store'}]}
+
+
+class CredentialStoreTests(unittest.TestCase):
+    def test_keychain_write_uses_stdin_and_never_process_arguments(self):
+        store = KeychainCredentialStore.__new__(KeychainCredentialStore)
+        store.account = 'fixture-user'
+        secret = 'fixture-token-never-in-argv'
+        completed = subprocess.CompletedProcess([], 0)
+        with patch('invest_agent.credentials.subprocess.run', return_value=completed) as run:
+            store.set('jin10', secret)
+        args, kwargs = run.call_args
+        self.assertEqual(args[0], ['/usr/bin/security', '-i'])
+        self.assertNotIn(secret, ' '.join(args[0]))
+        self.assertIn(secret.encode().hex(), kwargs['input'])
+        self.assertIs(kwargs['stdout'], subprocess.DEVNULL)
+        self.assertIs(kwargs['stderr'], subprocess.DEVNULL)
+
+    def test_locked_keychain_has_fixed_error_without_command_output(self):
+        store = KeychainCredentialStore.__new__(KeychainCredentialStore)
+        store.account = 'fixture-user'
+        completed = subprocess.CompletedProcess([], 36, stdout='secret', stderr='private')
+        with patch('invest_agent.credentials.subprocess.run', return_value=completed):
+            with self.assertRaisesRegex(CredentialStoreError, 'keychain_locked'):
+                store.set('guchacha', 'fixture-token')
 
 
 class PortfolioStoreTests(unittest.TestCase):
@@ -67,14 +92,29 @@ class FakeSocket:
     def sendall(self,data): self.response.extend(data)
 
 
+class FakeCredentialStore:
+    def __init__(self):
+        self.secrets = {}
+
+    def configured(self, provider):
+        return provider == 'jin10' or provider in self.secrets
+
+    def set(self, provider, secret):
+        self.secrets[provider] = secret
+
+
 class WebBoundaryTests(unittest.TestCase):
-    def request(self,path,host='127.0.0.1:8765',origin=None,method='GET',body=b''):
+    def setUp(self):
+        self.credential_store = FakeCredentialStore()
+
+    def request(self,path,host='127.0.0.1:8765',origin=None,method='GET',body=b'',content_type=None):
         req=f'{method} {path} HTTP/1.1\r\nHost: {host}\r\n'
         if origin: req+=f'Origin: {origin}\r\n'
         if body: req+=f'Content-Length: {len(body)}\r\n'
+        if content_type: req+=f'Content-Type: {content_type}\r\n'
         req+='Connection: close\r\n\r\n'
         sock=FakeSocket(req.encode()+body)
-        make_handler(Path('.'))(sock,('127.0.0.1',1234),None)
+        make_handler(Path('.'), self.credential_store)(sock,('127.0.0.1',1234),None)
         return bytes(sock.response)
 
     def test_static_and_blocked_origins_paths_writes(self):
@@ -84,7 +124,7 @@ class WebBoundaryTests(unittest.TestCase):
         self.assertIn(b'404',self.request('/data/private/invest_agent.sqlite3'))
         self.assertIn(b'404',self.request('/../README.md'))
         self.assertIn(b'400',self.request('/api/nav?code=bad'))
-        self.assertIn(b'501',self.request('/api/dashboard',method='POST'))
+        self.assertIn(b'404',self.request('/api/dashboard',method='POST'))
 
     def test_market_refresh_is_exact_reviewed_action(self):
         completed = subprocess.CompletedProcess([], 0)
@@ -96,7 +136,33 @@ class WebBoundaryTests(unittest.TestCase):
         self.assertTrue(args[0][-1].endswith('/scripts/refresh_market_quotes.sh'))
         self.assertFalse(kwargs['check'])
         self.assertNotIn('shell', kwargs)
-        self.assertIn(b'400', self.request('/api/market-refresh', method='POST', body=b'{}'))
+        self.assertIn(b'413', self.request('/api/market-refresh', method='POST', body=b'{}'))
+
+    def test_integration_status_and_save_never_echo_secret(self):
+        status = self.request('/api/integrations')
+        self.assertIn(b'200 OK', status)
+        self.assertIn('股叉叉 MCP'.encode(), status)
+        secret = 'fixture-token-never-echo'
+        body = json.dumps({'provider': 'guchacha', 'token': secret}).encode()
+        response = self.request(
+            '/api/integrations', method='POST', body=body,
+            content_type='application/json',
+        )
+        self.assertIn(b'200 OK', response)
+        self.assertNotIn(secret.encode(), response)
+        self.assertEqual(self.credential_store.secrets['guchacha'], secret)
+
+    def test_integration_save_rejects_non_json_unknown_provider_and_short_token(self):
+        self.assertIn(b'400', self.request('/api/integrations', method='POST', body=b'{}'))
+        for payload in (
+            {'provider': 'unknown', 'token': 'long-enough-token'},
+            {'provider': 'jin10', 'token': 'short'},
+        ):
+            response = self.request(
+                '/api/integrations', method='POST', body=json.dumps(payload).encode(),
+                content_type='application/json',
+            )
+            self.assertIn(b'400', response)
 
     def test_market_refresh_reports_missing_credential_without_process_output(self):
         completed = subprocess.CompletedProcess([], 78, stdout='secret', stderr='private path')
