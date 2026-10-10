@@ -288,6 +288,10 @@ class FundWatchCatalogTests(unittest.TestCase):
         funds = {fund['code']: fund for fund in Dashboard(Path('.')).payload()['funds']}
         self.assertEqual((funds['007280']['fund_type'], funds['007280']['position_bucket']), ('日本主动增强', '核心仓'))
 
+    def test_jiashi_us_growth_is_classified_as_active_nasdaq_style(self):
+        funds = {fund['code']: fund for fund in Dashboard(Path('.')).payload()['funds']}
+        self.assertEqual((funds['000043']['fund_type'], funds['000043']['position_bucket']), ('纳指风格主动', '核心仓'))
+
     def test_selected_backtests_are_exposed_with_research_gate(self):
         strategies = Dashboard(Path('.')).payload()['strategies']['items']
         baseline = next(item for item in strategies if item['strategy_id'] == 'dca_baseline' and item['version'] == '1.5.0')
