@@ -81,6 +81,24 @@ class Dashboard:
         path = self.root / name
         return json.loads(path.read_text()) if path.is_file() else default
 
+    def source_revision(self) -> str:
+        """Return a cheap version for every local input used by the dashboard."""
+        paths = [self.database, Path(str(self.database) + "-wal")]
+        paths.extend((self.root / "config").glob("*.json"))
+        paths.append(self.root / "strategies/registry.json")
+        paths.extend((self.root / "strategies/specs").glob("*.json"))
+        paths.extend((self.root / "data/private/automation").glob("*.json"))
+        paths.extend((self.root / "data/private/reports").glob("*.json"))
+        digest = hashlib.sha256()
+        for path in sorted(set(paths), key=lambda value: str(value)):
+            try:
+                stat = path.stat()
+                marker = f"{path.relative_to(self.root)}:{stat.st_mtime_ns}:{stat.st_size}\n"
+            except FileNotFoundError:
+                marker = f"{path.relative_to(self.root)}:missing\n"
+            digest.update(marker.encode())
+        return digest.hexdigest()[:16]
+
     def rows(self, sql: str, params=()):
         if not self.database.is_file():
             return []

@@ -9,7 +9,6 @@ import os
 from pathlib import Path
 import re
 import subprocess
-import time
 import threading
 from urllib.parse import urlsplit, parse_qs
 
@@ -27,7 +26,7 @@ STATIC = Path(__file__).parent / "static"
 def make_handler(root: Path, credential_store=None):
     root = root.resolve()
     model = Dashboard(root)
-    cached = {"at": 0, "data": None}
+    cached = {"revision": None, "data": None}
     lock = threading.Lock()
     refresh_lock = threading.Lock()
     credential_lock = threading.Lock()
@@ -55,10 +54,19 @@ def make_handler(root: Path, credential_store=None):
             url = urlsplit(self.path)
             try:
                 if url.path == "/api/dashboard":
+                    revision = model.source_revision()
+                    force = parse_qs(url.query).get("refresh", [""])[0] == "1"
                     with lock:
-                        if time.monotonic() - cached["at"] > 15 or cached["data"] is None:
-                            cached.update(at=time.monotonic(), data=model.payload())
+                        if force or cached["revision"] != revision or cached["data"] is None:
+                            payload = model.payload()
+                            payload["revision"] = revision
+                            cached.update(revision=revision, data=payload)
                         self.reply(json.dumps(cached["data"], ensure_ascii=False).encode(), "application/json")
+                elif url.path == "/api/dashboard-version":
+                    self.reply(
+                        json.dumps({"revision": model.source_revision()}).encode(),
+                        "application/json",
+                    )
                 elif url.path == "/api/integrations":
                     with credential_lock:
                         payload = {"items": integration_status(credential_store)}
@@ -164,7 +172,7 @@ def make_handler(root: Path, credential_store=None):
                     self.reply(b'{"error":"Market refresh failed. Existing local quotes remain available."}', "application/json", 503)
                     return
                 with lock:
-                    cached.update(at=0, data=None)
+                    cached.update(revision=None, data=None)
                 self.reply(b'{"status":"complete"}', "application/json")
             except (OSError, subprocess.TimeoutExpired):
                 self.reply(b'{"error":"Market refresh could not complete. Existing local quotes remain available."}', "application/json", 503)

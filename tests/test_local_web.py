@@ -107,18 +107,21 @@ class WebBoundaryTests(unittest.TestCase):
     def setUp(self):
         self.credential_store = FakeCredentialStore()
 
-    def request(self,path,host='127.0.0.1:8765',origin=None,method='GET',body=b'',content_type=None):
+    def request(self,path,host='127.0.0.1:8765',origin=None,method='GET',body=b'',content_type=None,handler=None):
         req=f'{method} {path} HTTP/1.1\r\nHost: {host}\r\n'
         if origin: req+=f'Origin: {origin}\r\n'
         if body: req+=f'Content-Length: {len(body)}\r\n'
         if content_type: req+=f'Content-Type: {content_type}\r\n'
         req+='Connection: close\r\n\r\n'
         sock=FakeSocket(req.encode()+body)
-        make_handler(Path('.'), self.credential_store)(sock,('127.0.0.1',1234),None)
+        (handler or make_handler(Path('.'), self.credential_store))(sock,('127.0.0.1',1234),None)
         return bytes(sock.response)
 
     def test_static_and_blocked_origins_paths_writes(self):
         self.assertIn(b'200 OK',self.request('/'))
+        version = self.request('/api/dashboard-version')
+        self.assertIn(b'200 OK', version)
+        self.assertIn(b'"revision"', version)
         self.assertIn(b'403',self.request('/',host='attacker.example'))
         self.assertIn(b'403',self.request('/',origin='https://attacker.example'))
         self.assertIn(b'404',self.request('/data/private/invest_agent.sqlite3'))
@@ -137,6 +140,16 @@ class WebBoundaryTests(unittest.TestCase):
         self.assertFalse(kwargs['check'])
         self.assertNotIn('shell', kwargs)
         self.assertIn(b'413', self.request('/api/market-refresh', method='POST', body=b'{}'))
+
+    def test_dashboard_reuses_unchanged_revision_and_manual_refresh_rebuilds(self):
+        handler = make_handler(Path('.'), self.credential_store)
+        with patch.object(Dashboard, 'source_revision', return_value='stable'), \
+                patch.object(Dashboard, 'payload', return_value={'local_only': True}) as payload:
+            self.assertIn(b'200 OK', self.request('/api/dashboard', handler=handler))
+            self.assertIn(b'200 OK', self.request('/api/dashboard', handler=handler))
+            self.assertEqual(payload.call_count, 1)
+            self.assertIn(b'200 OK', self.request('/api/dashboard?refresh=1', handler=handler))
+            self.assertEqual(payload.call_count, 2)
 
     def test_integration_status_and_save_never_echo_secret(self):
         status = self.request('/api/integrations')
@@ -182,6 +195,16 @@ class WebBoundaryTests(unittest.TestCase):
 
 
 class FundWatchCatalogTests(unittest.TestCase):
+    def test_dashboard_revision_changes_only_when_local_inputs_change(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'config').mkdir()
+            model = Dashboard(root)
+            initial = model.source_revision()
+            self.assertEqual(initial, model.source_revision())
+            (root / 'config/example.json').write_text('{}')
+            self.assertNotEqual(initial, model.source_revision())
+
     def test_market_panel_uses_latest_reviewed_quote_values(self):
         model = Dashboard(Path('.'))
         rows = [
