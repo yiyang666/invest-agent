@@ -12,6 +12,7 @@ import subprocess
 import threading
 from urllib.parse import urlsplit, parse_qs
 
+from invest_agent.aijijin_onboarding import AijijinOnboarding, AijijinOnboardingError
 from invest_agent.credentials import (
     CredentialStoreError,
     INTEGRATION_SPECS,
@@ -23,14 +24,16 @@ from .read_model import Dashboard
 STATIC = Path(__file__).parent / "static"
 
 
-def make_handler(root: Path, credential_store=None):
+def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
     root = root.resolve()
     model = Dashboard(root)
     cached = {"revision": None, "data": None}
     lock = threading.Lock()
     refresh_lock = threading.Lock()
     credential_lock = threading.Lock()
+    aijijin_lock = threading.Lock()
     credential_store = credential_store or KeychainCredentialStore()
+    aijijin_onboarding = aijijin_onboarding or AijijinOnboarding(root)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
@@ -71,6 +74,10 @@ def make_handler(root: Path, credential_store=None):
                     with credential_lock:
                         payload = {"items": integration_status(credential_store)}
                     self.reply(json.dumps(payload, ensure_ascii=False).encode(), "application/json")
+                elif url.path == "/api/aijijin":
+                    with aijijin_lock:
+                        payload = aijijin_onboarding.status()
+                    self.reply(json.dumps(payload, ensure_ascii=False).encode(), "application/json")
                 elif url.path == "/api/nav":
                     code = parse_qs(url.query).get("code", [""])[0]
                     if not re.fullmatch(r"\d{6}", code):
@@ -94,6 +101,8 @@ def make_handler(root: Path, credential_store=None):
                 self.refresh_market()
             elif url.path == "/api/integrations":
                 self.save_integration()
+            elif url.path == "/api/aijijin":
+                self.initialize_aijijin()
             else:
                 self.send_error(404)
 
@@ -140,6 +149,36 @@ def make_handler(root: Path, credential_store=None):
                 self.reply(json.dumps({"error": error.code}).encode(), "application/json", 503)
             finally:
                 token = None
+
+        def initialize_aijijin(self):
+            content_length = self.content_length(8192)
+            if content_length is None:
+                return
+            if not content_length or self.headers.get("Content-Type", "").split(";", 1)[0].strip() != "application/json":
+                self.send_error(400)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self.send_error(400)
+                return
+            init_token = payload.get("init_token") if isinstance(payload, dict) else None
+            if not isinstance(init_token, str):
+                self.send_error(400)
+                return
+            init_token = init_token.strip()
+            if not 16 <= len(init_token) <= 4096 or any(character.isspace() or ord(character) < 33 or ord(character) == 127 for character in init_token):
+                self.reply(b'{"error":"invalid_token"}', "application/json", 400)
+                return
+            try:
+                with aijijin_lock:
+                    result = aijijin_onboarding.initialize(init_token)
+                self.reply(json.dumps(result).encode(), "application/json")
+            except AijijinOnboardingError as error:
+                status = 400 if error.code in {"invalid_token", "expired_token"} else 503
+                self.reply(json.dumps({"error": error.code}).encode(), "application/json", status)
+            finally:
+                init_token = None
 
         def refresh_market(self):
             content_length = self.content_length(0)

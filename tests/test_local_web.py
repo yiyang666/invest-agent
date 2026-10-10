@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from invest_agent.aijijin_onboarding import AijijinOnboarding, AijijinOnboardingError
 from invest_agent.credentials import CredentialStoreError, KeychainCredentialStore
 from invest_agent.data.portfolio_store import clean_snapshot, save_snapshot
 from invest_agent.web.read_model import Dashboard
@@ -45,6 +46,32 @@ class CredentialStoreTests(unittest.TestCase):
         with patch('invest_agent.credentials.subprocess.run', return_value=completed):
             with self.assertRaisesRegex(CredentialStoreError, 'keychain_locked'):
                 store.set('guchacha', 'fixture-token')
+
+
+class AijijinOnboardingTests(unittest.TestCase):
+    def test_status_never_reads_or_returns_credential_contents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / '.agents/skills/thsfund').mkdir(parents=True)
+            (root / '.agents/skills/thsfund/SKILL.md').write_text('fixture')
+            (root / '.conda-env/bin').mkdir(parents=True)
+            (root / '.conda-env/bin/aijijin').write_text('fixture')
+            credential = root / 'private/credentials.json'
+            credential.parent.mkdir()
+            credential.write_text('never-return-this-secret')
+            status = AijijinOnboarding(root, credential).status()
+            self.assertTrue(status['configured'])
+            self.assertNotIn('never-return-this-secret', json.dumps(status))
+
+    def test_initialize_returns_only_reviewed_state(self):
+        onboarding = AijijinOnboarding.__new__(AijijinOnboarding)
+        onboarding.root = Path('.')
+        onboarding.executable = Path('README.md')
+        onboarding.skill_path = Path('README.md')
+        onboarding.credential_path = Path('/fixture/credentials.json')
+        completed = subprocess.CompletedProcess([], 0, stdout='{"data":{"confirmStatus":0},"secret":"never-return"}', stderr='private')
+        with patch('invest_agent.aijijin_onboarding.subprocess.run', return_value=completed):
+            self.assertEqual(onboarding.initialize('fixture-init-token'), {'state': 'pending_authorization'})
 
 
 class PortfolioStoreTests(unittest.TestCase):
@@ -103,9 +130,22 @@ class FakeCredentialStore:
         self.secrets[provider] = secret
 
 
+class FakeAijijinOnboarding:
+    def __init__(self):
+        self.tokens = []
+
+    def status(self):
+        return {'state': 'ready', 'configured': False, 'skill_installed': True, 'cli_installed': True, 'storage': None}
+
+    def initialize(self, init_token):
+        self.tokens.append(init_token)
+        return {'state': 'pending_authorization'}
+
+
 class WebBoundaryTests(unittest.TestCase):
     def setUp(self):
         self.credential_store = FakeCredentialStore()
+        self.aijijin_onboarding = FakeAijijinOnboarding()
 
     def request(self,path,host='127.0.0.1:8765',origin=None,method='GET',body=b'',content_type=None,handler=None):
         req=f'{method} {path} HTTP/1.1\r\nHost: {host}\r\n'
@@ -114,7 +154,7 @@ class WebBoundaryTests(unittest.TestCase):
         if content_type: req+=f'Content-Type: {content_type}\r\n'
         req+='Connection: close\r\n\r\n'
         sock=FakeSocket(req.encode()+body)
-        (handler or make_handler(Path('.'), self.credential_store))(sock,('127.0.0.1',1234),None)
+        (handler or make_handler(Path('.'), self.credential_store, self.aijijin_onboarding))(sock,('127.0.0.1',1234),None)
         return bytes(sock.response)
 
     def test_static_and_blocked_origins_paths_writes(self):
@@ -164,6 +204,17 @@ class WebBoundaryTests(unittest.TestCase):
         self.assertIn(b'200 OK', response)
         self.assertNotIn(secret.encode(), response)
         self.assertEqual(self.credential_store.secrets['guchacha'], secret)
+
+    def test_aijijin_status_and_init_never_echo_one_time_token(self):
+        status = self.request('/api/aijijin')
+        self.assertIn(b'200 OK', status)
+        secret = 'fixture-init-token-never-echo'
+        body = json.dumps({'init_token': secret}).encode()
+        response = self.request('/api/aijijin', method='POST', body=body, content_type='application/json')
+        self.assertIn(b'200 OK', response)
+        self.assertIn(b'pending_authorization', response)
+        self.assertNotIn(secret.encode(), response)
+        self.assertEqual(self.aijijin_onboarding.tokens, [secret])
 
     def test_integration_save_rejects_non_json_unknown_provider_and_short_token(self):
         self.assertIn(b'400', self.request('/api/integrations', method='POST', body=b'{}'))

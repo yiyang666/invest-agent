@@ -97,6 +97,7 @@ SDK 支持 `AIJIJIN_GATEWAY_URL` 和 `AIJIJIN_API_BASE_URL`。生产运行前必
 - TLS：OpenSSL 3.6.3
 - 已验证 SDK 导入、版本和 `aijijin --help`；已完成设备注册、最终授权及只读账户总览查询；0.2.1 升级后再次验证 `aijijin holding overview` 成功。
 - 已读取钱包余额、基金持仓及总资产汇总；原始结果未写入仓库，后续仅通过脱敏 PortfolioSnapshot 输出。
+- 本机 Web 可展示官方安装提示词并接收一次性 `initToken`，随后只调用项目隔离环境中的 `aijijin auth init`。网页不保存一次性令牌、不读取 Work Token / Refresh Token，也不改变 SDK 的 `~/.aijijin/credentials.json`（`0600`）凭证边界；详见 ADR-0038。
 - 上游说明中的 `aijijin --version` 在 0.2.0 不受支持，因此以包元数据和 Python 导入双重核对版本。
 - macOS 系统 Python 3.9 使用旧版 LibreSSL，不作为本项目运行时。
 
