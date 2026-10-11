@@ -94,6 +94,21 @@ class WebBacktestTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             restarted.history('../secrets')
 
+    def test_delete_removes_only_the_selected_saved_experiment(self):
+        first=self.service.run(config())
+        self.service.save({'run_id':first['id'],'name':'待删除'})
+        second=self.service.run(config('revalidated_target_gap'))
+        self.service.save({'run_id':second['id'],'name':'保留'})
+
+        self.assertEqual(self.service.delete(first['id']),
+                         {'status':'deleted','id':first['id']})
+        self.assertIsNone(self.service.history(first['id']))
+        self.assertEqual(self.service.history(second['id'])['name'],'保留')
+        with self.assertRaisesRegex(ValueError,'未找到'):
+            self.service.delete(first['id'])
+        with self.assertRaisesRegex(ValueError,'编号无效'):
+            self.service.delete('../private')
+
     def test_fixed_weights_vs_low_weight_repair_and_no_future_signal(self):
         with tempfile.TemporaryDirectory() as tmp:
             publish(tmp, rising=True)
@@ -157,5 +172,11 @@ class WebBacktestTests(unittest.TestCase):
         experiment=json.loads(response.split(b'\r\n\r\n',1)[1])
         response=request('/api/backtests/save',method='POST',body=json.dumps({'run_id':experiment['id'],'name':'HTTP实验'}).encode(),content_type='application/json')
         self.assertIn(b'200 OK',response)
+        self.assertIn(b'403',request('/api/backtests?id='+experiment['id'],origin='https://evil.example',method='DELETE'))
+        response=request('/api/backtests?id='+experiment['id'],method='DELETE')
+        self.assertIn(b'200 OK',response)
+        self.assertIn(b'"status": "deleted"',response)
+        self.assertIn(b'404',request('/api/backtests?id='+experiment['id']))
+        self.assertIn(b'400',request('/api/backtests?id=bad',method='DELETE'))
         self.assertIn(b'400',request('/api/backtests/run',method='POST',body=b'{}',content_type='application/json'))
         self.assertIn(b'404',request('/api/backtests?id='+'a'*32))

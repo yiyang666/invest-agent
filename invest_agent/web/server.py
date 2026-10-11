@@ -121,6 +121,25 @@ def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
             else:
                 self.send_error(404)
 
+        def do_DELETE(self):
+            if not self.allowed_request():
+                return
+            url = urlsplit(self.path)
+            if url.path != "/api/backtests":
+                self.send_error(404)
+                return
+            experiment_id = parse_qs(url.query).get("id", [None])[0]
+            if not backtest_lock.acquire(blocking=False):
+                self.reply('{"error":"已有实验正在计算、保存或删除，请稍后重试"}'.encode(), "application/json", 409)
+                return
+            try:
+                result = backtests.delete(experiment_id)
+                self.reply(json.dumps(result).encode(), "application/json")
+            except ValueError as error:
+                self.reply(json.dumps({"error": str(error)}, ensure_ascii=False).encode(), "application/json", 400)
+            finally:
+                backtest_lock.release()
+
         def content_length(self, maximum: int) -> int | None:
             try:
                 value = int(self.headers.get("Content-Length", "0") or 0)
