@@ -196,4 +196,6 @@ Codex自身提供的浏览器、网页、文档等通用工具属于运行环境
 
 ## 7. 本机 Web 工作台
 
+“策略回测”提供搜索基金、月供与权重配置、新增资金补低配/固定比例分配、离线执行、保存加载实验与最多六组净值叠加。直接复用既有事件回测引擎和净值质量门禁，所有实验保持 `research_only`；实验独立保存到私有 SQLite，不改变真实持仓或登记策略。规则与限制见 [使用说明](local-web.md#策略回测-v10) 和 [ADR-0039](decisions/ADR-0039-web-backtest-experiments.md)。
+
 `scripts/run_local_web.sh` 启动仅监听 `127.0.0.1:8765` 的本机看板：监控基金、分类、带区间收益率的业绩走势、基于本地已发布净值确定性计算并与同花顺多基金样本核对的13期简单RSI、每日持仓快照、策略库、宏观市场、更新状态与接口配置。数据视图只读本地仓和已有配置；远程数据动作仍限定为已审查采集链。“接口配置”只负责首次部署或换 token 时把股叉叉和金十令牌写入 macOS 钥匙串，状态接口不取回密文，不改变原有采集、维护或调度流程。网页没有交易、账户写入或模型接口。RSI与跟踪指数PE TTM五年估值分位是两类指标；当前网页只提供前者。持仓由统一维护的 `portfolio_daily` 作业调用已审查只读 CLI，脱敏后写入 SQLite。详见 [使用说明](local-web.md)、[ADR-0034](decisions/ADR-0034-local-readonly-investment-web.md)、[ADR-0036](decisions/ADR-0036-manual-market-quote-refresh.md) 与 [ADR-0037](decisions/ADR-0037-local-keychain-integration-configuration.md)。
