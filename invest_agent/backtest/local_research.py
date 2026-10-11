@@ -183,6 +183,7 @@ def _validate_scenario(payload: Mapping[str, object]) -> None:
         raise ValueError("allocation_engine must be an object")
     allocation_mode = str(allocation_engine.get("mode", "target_gap"))
     if allocation_mode not in {
+        "fixed_weights",
         "target_gap",
         "revalidated_target_gap",
         "new_money_trend_rs",
@@ -773,9 +774,21 @@ def _current_position_cash_state(
     difference = total - (
         sum(values.values(), Decimal("0")) + available_cash + nondeployable_cash
     )
-    available_cash += difference
-    if available_cash < 0:
+    # Individual displayed positions and their aggregate round independently.
+    # A one-cent negative residual must not turn a zero-cash portfolio negative.
+    rounding_bound = CENT * (len(latest.get("positions", [])) + 3)
+    if abs(difference) > rounding_bound:
         raise ValueError("position and cash state does not reconcile")
+    largest = max(values, key=values.get)
+    if values[largest] > 0:
+        if values[largest] + difference < 0:
+            raise ValueError("position and cash state does not reconcile")
+        values[largest] += difference
+    else:
+        # Before any position is confirmed, reconcile pending/receivable rounding.
+        nondeployable_cash += difference
+        if nondeployable_cash < 0:
+            raise ValueError("position and cash state does not reconcile")
     return total, values, available_cash, nondeployable_cash
 
 
@@ -919,6 +932,9 @@ def calculate_path_metrics(
         "purchase_fees_cny": f"{Decimal(str(summary['purchase_fees_cny'])):.2f}",
         "rejected_subscriptions": summary["rejected_subscriptions"],
         "skipped_valuations": len(valuations.get("skipped_valuations", [])),
+        "unitized_path": [
+            {"date": when.isoformat(), "value": value} for when, value in wealth_path
+        ],
     }
 
 
@@ -1260,7 +1276,7 @@ def run_local_dca_research(
             )
             contributions.append(contribution)
             incremental_routing: dict[str, str] | None = None
-            if allocation_mode == "new_money_trend_rs":
+            if allocation_mode in {"new_money_trend_rs", "fixed_weights"}:
                 allocation = build_direct_new_money_allocation(
                     planned_date=planned,
                     pre_contribution_portfolio_value_cny=pre_value,
@@ -1268,7 +1284,9 @@ def run_local_dca_research(
                     current_sleeve_values_cny=current_values,
                     new_money_weights=weights,
                     strategy_spec_sha256=strategy_hash,
-                    remainder_sleeve=str(allocation_engine["fallback_sleeve"]),
+                    remainder_sleeve=(str(allocation_engine["fallback_sleeve"])
+                                     if allocation_mode == "new_money_trend_rs"
+                                     else sorted(weights)[0]),
                 )
             elif allocation_mode in STATE_AWARE_TARGET_GAP_MODES:
                 allocation = build_state_adjusted_target_gap_allocation(
@@ -1446,6 +1464,7 @@ def run_local_dca_research(
             monthly_reconciliation.append(
                 {
                     "planned_date": planned.isoformat(),
+                    "allocation_plan": allocation.to_dict(),
                     "contribution_cny": f"{contribution.amount_cny:.2f}",
                     "simulated_gross_orders_cny": f"{gross_total:.2f}",
                     "cash_remaining_cny": f"{routed.contribution_cash_remaining_cny:.2f}",

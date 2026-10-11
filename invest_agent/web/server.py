@@ -20,6 +20,7 @@ from invest_agent.credentials import (
     integration_status,
 )
 from .read_model import Dashboard
+from .backtest_service import BacktestService
 
 STATIC = Path(__file__).parent / "static"
 
@@ -27,6 +28,8 @@ STATIC = Path(__file__).parent / "static"
 def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
     root = root.resolve()
     model = Dashboard(root)
+    backtests = BacktestService(root)
+    backtest_lock = threading.Lock()
     cached = {"revision": None, "data": None}
     lock = threading.Lock()
     refresh_lock = threading.Lock()
@@ -56,7 +59,17 @@ def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
                 return
             url = urlsplit(self.path)
             try:
-                if url.path == "/api/dashboard":
+                if url.path == "/api/backtests/catalog":
+                    self.reply(json.dumps(backtests.catalog(), ensure_ascii=False).encode(), "application/json")
+                elif url.path == "/api/backtests":
+                    experiment_id = parse_qs(url.query).get("id", [None])[0]
+                    try:
+                        payload = backtests.history(experiment_id)
+                    except ValueError as error:
+                        self.reply(json.dumps({"error": str(error)}, ensure_ascii=False).encode(), "application/json", 400)
+                        return
+                    self.reply(json.dumps(payload, ensure_ascii=False).encode(), "application/json", 404 if payload is None else 200)
+                elif url.path == "/api/dashboard":
                     revision = model.source_revision()
                     force = parse_qs(url.query).get("refresh", [""])[0] == "1"
                     with lock:
@@ -84,9 +97,9 @@ def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
                         self.send_error(400)
                         return
                     self.reply(json.dumps(model.series(code)).encode(), "application/json")
-                elif url.path in {"/", "/app.js", "/style.css"}:
+                elif url.path in {"/", "/app.js", "/backtests.js", "/style.css"}:
                     name = "index.html" if url.path == "/" else url.path[1:]
-                    kind = {"index.html": "text/html", "app.js": "text/javascript", "style.css": "text/css"}[name]
+                    kind = {"index.html": "text/html", "app.js": "text/javascript", "backtests.js": "text/javascript", "style.css": "text/css"}[name]
                     self.reply((STATIC / name).read_bytes(), kind)
                 else:
                     self.send_error(404)
@@ -97,7 +110,9 @@ def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
             if not self.allowed_request():
                 return
             url = urlsplit(self.path)
-            if url.path == "/api/market-refresh":
+            if url.path in {"/api/backtests/run", "/api/backtests/save"}:
+                self.backtest_action(url.path)
+            elif url.path == "/api/market-refresh":
                 self.refresh_market()
             elif url.path == "/api/integrations":
                 self.save_integration()
@@ -116,6 +131,28 @@ def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
                 self.send_error(413)
                 return None
             return value
+
+        def backtest_action(self, path):
+            length = self.content_length(16384)
+            if length is None:
+                return
+            if not length or self.headers.get("Content-Type", "").split(";", 1)[0].strip() != "application/json":
+                self.send_error(400)
+                return
+            if not backtest_lock.acquire(blocking=False):
+                self.reply('{"error":"已有实验正在计算或保存，请稍后重试"}'.encode(), "application/json", 409)
+                return
+            try:
+                payload = json.loads(self.rfile.read(length))
+                result = backtests.run(payload) if path.endswith("/run") else backtests.save(payload)
+                self.reply(json.dumps(result, ensure_ascii=False, allow_nan=False).encode(), "application/json")
+            except (ValueError, TypeError, KeyError) as error:
+                message = str(error) if isinstance(error, ValueError) else "实验参数或数据格式无效"
+                self.reply(json.dumps({"error": message}, ensure_ascii=False).encode(), "application/json", 400)
+            except Exception:
+                self.reply('{"error":"本地回测暂时无法完成，请检查已发布净值数据后重试"}'.encode(), "application/json", 503)
+            finally:
+                backtest_lock.release()
 
         def save_integration(self):
             content_length = self.content_length(8192)
