@@ -190,3 +190,18 @@ class BacktestService:
         return [{"id": r["id"], "name": r["name"], "created_at": r["created_at"], "config": r["config"],
                  "metrics": {k: v for k, v in r["result"]["profile_results"][0]["metrics"].items()
                              if k != "unitized_path"}} for r in map(lambda row: json.loads(row[0]), rows)]
+
+    def delete(self, experiment_id):
+        if not isinstance(experiment_id, str) or not re.fullmatch(r"[a-f0-9]{32}", experiment_id):
+            raise ValueError("实验编号无效")
+        if not self.experiments.exists():
+            raise ValueError("未找到这个历史实验")
+        with self.lock:
+            with closing(sqlite3.connect(self.experiments)) as con, con:
+                deleted = con.execute(
+                    "DELETE FROM experiments WHERE id = ?", (experiment_id,)
+                ).rowcount
+            self.pending.pop(experiment_id, None)
+        if deleted != 1:
+            raise ValueError("未找到这个历史实验")
+        return {"status": "deleted", "id": experiment_id}

@@ -11,6 +11,11 @@ async function btRequest(path,body){
   if(!r.ok)throw Error(result?.error||'本地服务暂时无法完成请求');
   return result;
 }
+async function btDeleteRequest(id){
+  const r=await fetch(`/api/backtests?id=${encodeURIComponent(id)}`,{method:'DELETE'}),result=await r.json();
+  if(!r.ok)throw Error(result?.error||'删除实验失败');
+  return result;
+}
 async function btLoad(){
   if(bt.loading)return;
   bt.loading=true;
@@ -54,7 +59,7 @@ function btResult(e){
   let angle=0;const gradient=slices.map((f,i)=>{const start=angle;angle+=total?f.value/total*360:0;return `${btColors[i%btColors.length]} ${start}deg ${angle}deg`;}).join(',');
   return `<section class="panel"><div class="split"><h2>${esc(e.name)}</h2><div class="actions"><button data-bt-save ${bt.busy?'disabled':''}>保存实验</button><button data-bt-current-compare>加入对比</button></div></div><p class="muted">实际完整估值：${esc(m.start_date)} — ${esc(m.end_date)} · ${m.valuation_observations} 个观察值 · 输入与净值批次已绑定</p><div class="metrics">${metric('累计投入本金',`¥ ${money(principal)}`,'按月外部现金流')}${metric('期末资产',`¥ ${money(m.final_value_cny)}`,'基金 + 可用现金 + 待确认 + 分红应收')}${metric('累计收益',`<span class="${profit>=0?'positive':'negative'}">${signedMoney(profit)}</span>`,principal?`简单收益率 ${btPct(profit/principal*100)}`:'—')}${metric('XIRR',btPct(m.xirr_pct),'资金加权年化收益')}${metric('最大回撤',btPct(m.maximum_drawdown_pct),'组合时间加权净值')}${metric('时间加权收益',btPct(m.time_weighted_return_pct),`申购费 ¥ ${money(m.purchase_fees_cny)}`)}</div><div class="grid">${panel('资产总值曲线',btChart([{name:e.name,points:daily.map(r=>({date:r.visible_date,value:r.total_value_cny}))}],'资产总值曲线'))}${panel('投资组合净值曲线',btChart([{name:e.name,points:m.unitized_path}],'组合净值曲线'))}</div><h3>期末持仓占比（含现金）</h3><div class="bt-holdings"><div class="bt-donut" role="img" aria-label="期末持仓占比" style="background:conic-gradient(${gradient||'#e2e9e6 0deg 360deg'})"><span>期末配置</span></div>${table(['基金 / 资产','市值 / 元','资产占比'],slices.map((f,i)=>`<tr><td><i class="bt-dot" style="background:${btColors[i%btColors.length]}"></i>${esc(f.name)}</td><td>${money(f.value)}</td><td>${btPct(total?f.value/total*100:0)}</td></tr>`))}</div><p class="muted">可用现金 ¥ ${money(last.available_cash_cny)} · 待确认 ¥ ${money(last.pending_subscription_cash_cny)} · 分红应收 ¥ ${money(last.distribution_receivable_cny)} · 跳过不完整估值 ${m.skipped_valuations} 次 · 拒绝订单 ${m.rejected_subscriptions} 笔。曲线仅连接完整观察值，不代表缺失日已有估值。</p><details><summary>月度分配、模拟订单与数据依据</summary><pre>${esc(JSON.stringify({config:e.config,engine:e.result.engine_version,scenario_sha256:e.result.scenario_sha256,data_bindings:e.result.data_bindings,monthly:p.monthly_reconciliation,subscriptions:p.subscription_result},null,2))}</pre></details></section>`;
 }
-function btHistory(){return panel('历史实验',`<div class="split"><p class="muted">保留原始配置和计算结果；加载后可修改参数并重跑。</p><button data-bt-reload>刷新历史</button></div>${bt.history.length?table(['实验名称','期间 / 月投入','XIRR / 最大回撤','操作'],bt.history.map(e=>`<tr><td>${esc(e.name)}<small>${time(e.created_at)}</small></td><td>${esc(e.config.start_date)} — ${esc(e.config.end_date)}<small>¥ ${money(e.config.monthly_amount)} / 月</small></td><td>${btPct(e.metrics.xirr_pct)} / ${btPct(e.metrics.maximum_drawdown_pct)}</td><td><button data-bt-load="${e.id}">加载</button> <button data-bt-compare="${e.id}">加入对比</button></td></tr>`)):empty('尚未保存实验。完成计算后，填写名称并点击“保存实验”。')}`);}
+function btHistory(){return panel('历史实验',`<div class="split"><p class="muted">保留原始配置和计算结果；加载后可修改参数并重跑。</p><button data-bt-reload>刷新历史</button></div>${bt.history.length?table(['实验名称','期间 / 月投入','XIRR / 最大回撤','操作'],bt.history.map(e=>`<tr><td>${esc(e.name)}<small>${time(e.created_at)}</small></td><td>${esc(e.config.start_date)} — ${esc(e.config.end_date)}<small>¥ ${money(e.config.monthly_amount)} / 月</small></td><td>${btPct(e.metrics.xirr_pct)} / ${btPct(e.metrics.maximum_drawdown_pct)}</td><td><div class="bt-row-actions"><button data-bt-load="${e.id}">加载</button><button data-bt-compare="${e.id}">加入对比</button><button class="bt-danger" data-bt-delete="${e.id}" data-bt-delete-name="${esc(e.name)}">删除</button></div></td></tr>`)):empty('尚未保存实验。完成计算后，填写名称并点击“保存实验”。')}`);}
 function btCompare(){
   if(!bt.comparisons.size)return '';
   const items=[...bt.comparisons.values()];
@@ -86,6 +91,16 @@ document.addEventListener('click',async e=>{
     if('btSave' in d){if(!bt.name.trim())throw Error('请先在配置中填写实验名称');bt.busy=true;bt.current=await btRequest('/api/backtests/save',{run_id:bt.current.id,name:bt.name});bt.history=await btRequest('/api/backtests');toast('实验已保存到本地。');}
     if(d.btLoad){const saved=await btRequest(`/api/backtests?id=${d.btLoad}`);bt.current=saved;Object.assign(bt,saved.config);bt.selected=saved.config.funds.map(f=>({...f}));bt.name=saved.name;}
     if(d.btCompare)btAddCompare(await btRequest(`/api/backtests?id=${d.btCompare}`));
+    if(d.btDelete){
+      const name=d.btDeleteName||'这个实验';
+      if(confirm(`确定永久删除“${name}”吗？删除后无法恢复。`)){
+        bt.busy=true;await btDeleteRequest(d.btDelete);
+        bt.history=bt.history.filter(item=>item.id!==d.btDelete);
+        bt.comparisons.delete(d.btDelete);
+        if(bt.current?.id===d.btDelete)bt.current=null;
+        toast('历史实验已删除。');
+      }
+    }
     if('btCurrentCompare' in d)btAddCompare(bt.current);
     if(d.btUncompare)bt.comparisons.delete(d.btUncompare);
     if('btReload' in d){bt.catalog=null;btLoad();}

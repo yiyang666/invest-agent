@@ -36,11 +36,11 @@ scripts/run_local_web.sh
 
 分红只使用本地已发布的分红记录；缺失的分红或拆分信息会影响结果，不以累计净值补造交易事件。需要正式策略证据时仍走原有数据完整性与策略晋级门禁。
 
-运行后填写实验名称并点击“保存实验”。名称 1–80 字，配置、完整结果、规则和批次哈希保存到私有 `data/private/web_backtests.sqlite3`，不会写入基金/持仓仓库或策略注册表。服务临时保留最近 16 个未保存结果；服务重启后未保存结果需重新运行。加载历史保留原计算结果；修改配置后执行回测生成新的实验，不覆盖旧结果。已保存实验可更名保存。
+运行后填写实验名称并点击“保存实验”。名称 1–80 字，配置、完整结果、规则和批次哈希保存到私有 `data/private/web_backtests.sqlite3`，不会写入基金/持仓仓库或策略注册表。服务临时保留最近 16 个未保存结果；服务重启后未保存结果需重新运行。加载历史保留原计算结果；修改配置后执行回测生成新的实验，不覆盖旧结果。已保存实验可更名保存，也可在历史列表确认后永久删除；删除只影响所选实验，并同步移出当前结果和对比区。
 
 点击“加入对比”，最多同时比较 6 组指标和净值曲线，横轴使用实际日期。配置不同时页面提醒核对金额、期间和定投日期，不自动挑选“最优策略”。
 
-本地接口：`GET /api/backtests/catalog`、`GET /api/backtests`、`GET /api/backtests?id=…`、`POST /api/backtests/run`（配置）、`POST /api/backtests/save`（服务端 run_id、名称）。沿用同源、localhost 防护和请求大小限制，同一时间仅允许一次计算或保存。
+本地接口：`GET /api/backtests/catalog`、`GET /api/backtests`、`GET /api/backtests?id=…`、`POST /api/backtests/run`（配置）、`POST /api/backtests/save`（服务端 run_id、名称）、`DELETE /api/backtests?id=…`。沿用同源、localhost 防护和请求大小限制，同一时间仅允许一次计算、保存或删除。
 
 基础验证：`.conda-env/bin/python -m unittest tests.test_web_backtests tests.test_local_research_backtest tests.test_local_web`。覆盖恒定净值、手续费、现金守恒、低配分配、日期与可见时间、非法参数、不可伪造结果、保存恢复及 HTTP 边界。完整测试使用 `.conda-env/bin/python -m unittest discover -s tests`。
 
