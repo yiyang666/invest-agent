@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from invest_agent.data.store import FundDataStore
 from invest_agent.web.backtest_service import BacktestService
@@ -82,6 +83,20 @@ class WebBacktestTests(unittest.TestCase):
         for item in invalid:
             with self.subTest(item=item), self.assertRaises(ValueError):
                 self.service.run(item)
+
+    def test_fund_count_accepts_ten_and_rejects_eleven(self):
+        catalog = [{'code': f'{i:06d}', 'name': str(i),
+                    'start_date': '2026-01-01', 'end_date': '2026-03-31'}
+                   for i in range(1, 12)]
+        ten = config()
+        ten['funds'] = [{'code': f'{i:06d}', 'weight': '10', 'fee_pct': '0'}
+                        for i in range(1, 11)]
+        with patch.object(self.service, 'catalog', return_value=catalog):
+            self.assertEqual(len(self.service.validate(ten)['funds']), 10)
+            eleven = deepcopy(ten)
+            eleven['funds'].append({'code': '000011', 'weight': '0.01', 'fee_pct': '0'})
+            with self.assertRaisesRegex(ValueError, '1–10'):
+                self.service.validate(eleven)
 
     def test_saved_results_are_server_computed_and_survive_restart(self):
         experiment=self.service.run(config())

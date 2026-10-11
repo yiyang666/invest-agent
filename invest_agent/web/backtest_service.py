@@ -87,8 +87,8 @@ class BacktestService:
         if mode not in {"fixed_weights", "revalidated_target_gap"}:
             raise ValueError("请选择支持的新增资金分配方式")
         funds = payload.get("funds")
-        if not isinstance(funds, list) or not 1 <= len(funds) <= 8:
-            raise ValueError("请选择 1–8 只基金")
+        if not isinstance(funds, list) or not 1 <= len(funds) <= 10:
+            raise ValueError("请选择 1–10 只基金")
         catalog = {f["code"]: f for f in self.catalog()}
         clean, seen = [], set()
         for item in funds:

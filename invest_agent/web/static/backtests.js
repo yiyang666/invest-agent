@@ -86,7 +86,7 @@ document.addEventListener('click',async e=>{
   if(bt.busy)return;
   bt.error='';
   try{
-    if(d.btAdd){if(bt.selected.length>=8)throw Error('最多选择 8 只基金');bt.selected.push({code:d.btAdd,weight:bt.selected.length?'':'100',fee_pct:'0'});const chosen=bt.selected.map(x=>bt.catalog.find(f=>f.code===x.code));const min=chosen.map(f=>f.start_date).sort().at(-1),max=chosen.map(f=>f.end_date).sort()[0];if(!bt.start_date||bt.start_date<min)bt.start_date=min;if(!bt.end_date||bt.end_date>max)bt.end_date=max;}
+    if(d.btAdd){if(bt.selected.length>=10)throw Error('最多选择 10 只基金');bt.selected.push({code:d.btAdd,weight:bt.selected.length?'':'100',fee_pct:'0'});const chosen=bt.selected.map(x=>bt.catalog.find(f=>f.code===x.code));const min=chosen.map(f=>f.start_date).sort().at(-1),max=chosen.map(f=>f.end_date).sort()[0];if(!bt.start_date||bt.start_date<min)bt.start_date=min;if(!bt.end_date||bt.end_date>max)bt.end_date=max;}
     if(d.btRemove)bt.selected=bt.selected.filter(f=>f.code!==d.btRemove);
     if('btSave' in d){if(!bt.name.trim())throw Error('请先在配置中填写实验名称');bt.busy=true;bt.current=await btRequest('/api/backtests/save',{run_id:bt.current.id,name:bt.name});bt.history=await btRequest('/api/backtests');toast('实验已保存到本地。');}
     if(d.btLoad){const saved=await btRequest(`/api/backtests?id=${d.btLoad}`);bt.current=saved;Object.assign(bt,saved.config);bt.selected=saved.config.funds.map(f=>({...f}));bt.name=saved.name;}
