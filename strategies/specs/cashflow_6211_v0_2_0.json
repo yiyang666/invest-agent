@@ -1,0 +1,163 @@
+{
+  "$schema": "../../schemas/strategy_spec.schema.json",
+  "acceptance_tests": [
+    "candidate_and_matched_631_have_identical_monthly_cashflows",
+    "signals_use_only_data_visible_at_evaluation_time",
+    "same_inputs_produce_byte_equivalent_results",
+    "no_negative_cash_no_sell_no_leverage",
+    "policy_concentration_and_drawdown_vetoes_are_enforced"
+  ],
+  "backtest_scenarios": {
+    "implementation_status": "implemented_research_only",
+    "protocol_path": "strategies/proposals/cashflow_6211_protocol_v0_2_0.md",
+    "required_comparators": {
+      "fixed_cashflow": "dca_baseline@1.5.0:monthly_3000",
+      "matched_cashflow": "dca_baseline@1.5.0:same_month_same_total_cashflow",
+      "require_identical_monthly_cashflows": true
+    },
+    "scenario_path": "config/backtest_cashflow_6211_v0_2_0.json"
+  },
+  "inputs": {
+    "allocation_anchor": "allocation_anchor_631",
+    "capital": {
+      "monthly_committed_cny": 3000,
+      "monthly_discretionary_max_cny": 2000,
+      "monthly_hard_cap_cny": 5000,
+      "policy_fields_interpretation": "本研究核心固定3000仅对照，管理可用资金0/1000/2000；外部入金相应3000/4000/5000。不复现实际核心浮动。",
+      "research_wallet_funding_cny": 5000,
+      "uninvested_cash_action": "remain_cash"
+    },
+    "comparison_benchmark": "dca_baseline@1.5.0",
+    "data": {
+      "execution_nav_field": "unit_nav",
+      "forward_fill": false,
+      "missing_signal_action": "no_signal",
+      "provider_id": "akshare_eastmoney",
+      "signal_nav_field": "accumulated_nav",
+      "visibility": "historical_visibility_assumed"
+    },
+    "discovery": {
+      "new_fund_routes": [],
+      "new_sleeves": [],
+      "novel_data_inputs": [],
+      "report_path": "strategies/proposals/cashflow_6211_discovery_v0_2_0.toml",
+      "report_sha256": "b265e01d7de76ed7ac648b1455fe8f86153fb9a8425860b98cc8250bf609f578",
+      "status": "research_ready"
+    },
+    "scope": "new_money_only"
+  },
+  "known_blockers": [
+    "historical_channel_calendar_fees_caps_counterfactual",
+    "broker_core_3000_scenario_not_actual_advanced_dca",
+    "redemption_take_profit_unimplemented",
+    "prospective_oos_less_than_12_months",
+    "not_registered_no_policy_migration"
+  ],
+  "mode": "research_only",
+  "prohibitions": [
+    "use_future_or_same_day_unpublished_data",
+    "forward_fill_missing_nav",
+    "change_parameters_after_viewing_backtest_results",
+    "borrow_cash_or_use_leverage",
+    "sell_existing_holdings",
+    "submit_real_orders"
+  ],
+  "purpose": "核心渠道定投与用户明确的可用资金分开管理；测试红利替换部分核心、卫星仓位和RSI新增资金规则的收益风险代价。",
+  "required_outputs": [
+    "annualized_return",
+    "xirr",
+    "annualized_volatility",
+    "maximum_drawdown_and_recovery",
+    "purchase_fees",
+    "cash_drag",
+    "rolling_windows",
+    "stress_results",
+    "data_rule_strategy_and_code_hashes"
+  ],
+  "research_evidence_level": "research_ready",
+  "rules": {
+    "acceptance": {
+      "automatic_winner_selection": false,
+      "interpretation": "收益与回撤同时不劣才标签dominates，否则tradeoff；绝不据单窗自动晋级。",
+      "maximum_drawdown_worsening_pp": 0.0,
+      "minimum_return_delta_pp": 0.0,
+      "parameter_changes_create_new_version": true,
+      "primary_return_metric": "xirr_pct"
+    },
+    "actions": [
+      {
+        "action_id": "allocate_managed",
+        "action_type": "allocate_new_cash",
+        "amount_source": "user_supplied_available_budget",
+        "cooldown_calendar_days": 30,
+        "interpretation": "这里只表达20:10:10经济结构；实际申购用总资产目标缺口，未达条件的卫星份额留现金。",
+        "maximum_amount_cny": 2000,
+        "priority": 1,
+        "target_sleeves": [
+          "defensive_bond",
+          "gold",
+          "satellite"
+        ],
+        "target_weights": [
+          0.5,
+          0.25,
+          0.25
+        ],
+        "when_signal": "available_cash"
+      }
+    ],
+    "execution": {
+      "leverage_allowed": false,
+      "selling_allowed": false
+    },
+    "flexible": {
+      "actual_budget_source": "user_supplied_available_budget_0_to_2000",
+      "allocation_method": "available_budget_target_gap",
+      "base_amount_cny": 0,
+      "decision_calendar_day": 1,
+      "decision_frequency": "monthly",
+      "discretionary_max_cny": 2000,
+      "enabled": true,
+      "untriggered_action": "remain_cash"
+    },
+    "risk": {
+      "maximum_active_rebalances_per_month": 2,
+      "maximum_single_fund_weight_pct": 25,
+      "maximum_theme_weight_pct": 30,
+      "portfolio_drawdown_review_pct": 15,
+      "portfolio_drawdown_veto_pct": 20
+    },
+    "signals": [
+      {
+        "on_missing": "hold_cash",
+        "primitive": "available_budget_residual",
+        "scope": "wallet",
+        "signal_id": "available_cash",
+        "threshold": 0
+      },
+      {
+        "lookback_observations": 13,
+        "on_missing": "no_signal",
+        "primitive": "rsi_low_positive_trend",
+        "scope": "satellite",
+        "signal_id": "satellite_entry",
+        "slow_average_observations": 200,
+        "threshold": 30
+      }
+    ],
+    "stable": {
+      "allocation_method": "external_broker_core_dca",
+      "base_amount_cny": 3000,
+      "enabled": true,
+      "schedule_calendar_days": [
+        5,
+        15,
+        25
+      ]
+    }
+  },
+  "schema_version": 1,
+  "status": "implemented_exploratory",
+  "strategy_id": "cashflow_6211",
+  "strategy_version": "0.2.0"
+}

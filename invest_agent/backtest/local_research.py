@@ -46,6 +46,10 @@ from invest_agent.strategies.satellite_traffic_light import (
 from invest_agent.strategies.satellite_risk_budget import (
     build_satellite_risk_budget_signal,
 )
+from invest_agent.strategies.cashflow_6211 import (
+    build_broker_core_allocation, satellite_rsi_targets,
+    satellite_trough_recovery_targets,
+)
 
 from .subscription_engine import (
     CashContribution,
@@ -66,6 +70,7 @@ STATE_AWARE_TARGET_GAP_MODES = {
     "revalidated_target_gap",
     "satellite_traffic_light",
     "satellite_inverse_volatility",
+    "broker_core_residual",
 }
 
 
@@ -191,8 +196,35 @@ def _validate_scenario(payload: Mapping[str, object]) -> None:
         "sleeve_drawdown_recovery",
         "satellite_traffic_light",
         "satellite_inverse_volatility",
+        "broker_core_residual",
     }:
         raise ValueError("unsupported allocation engine mode")
+    if allocation_mode == "broker_core_residual":
+        core = allocation_engine.get("core_sleeves")
+        if not isinstance(core, list) or not core or len(core) != len(set(core)) or not set(core) < sleeves:
+            raise ValueError("broker core sleeves must be a unique strict subset of route sleeves")
+        amount = Decimal(str(allocation_engine.get("broker_core_amount_cny")))
+        if not amount.is_finite() or not 0 <= amount <= Decimal(str(payload["monthly_contribution_cny"])):
+            raise ValueError("broker core budget must fit wallet monthly contribution")
+        schedule = allocation_engine.get("broker_core_schedule_cny", {})
+        if not isinstance(schedule, Mapping):
+            raise ValueError("broker core schedule must be an object")
+        for day, value in schedule.items():
+            date.fromisoformat(str(day))
+            parsed = Decimal(str(value))
+            if not parsed.is_finite() or not 0 <= parsed <= Decimal(str(payload["monthly_contribution_cny"])):
+                raise ValueError("invalid scheduled broker core amount")
+        satellites = allocation_engine.get("satellite_funds", {})
+        if not isinstance(satellites, Mapping):
+            raise ValueError("broker satellites must be an object")
+        route_map = {str(r["sleeve"]): str(r["fund_code"]) for r in routes}
+        if any(k in core or route_map.get(k) != v for k, v in satellites.items()):
+            raise ValueError("broker satellite candidates must match non-core routes")
+        if allocation_engine.get("satellite_mode", "static") not in {"static", "rsi_low_trend", "trough_recovery"}:
+            raise ValueError("invalid broker satellite mode")
+        multiplier = Decimal(str(allocation_engine.get("satellite_multiplier", "1")))
+        if not multiplier.is_finite() or not 0 <= multiplier <= 1:
+            raise ValueError("satellite multiplier must be in [0, 1]")
     if allocation_mode not in {
         "target_gap",
         *STATE_AWARE_TARGET_GAP_MODES,
@@ -1013,9 +1045,13 @@ def run_local_dca_research(
             str(sleeve): drawdown_signal_series[str(sleeve)]
             for sleeve in candidate_funds
         }
+    gold_signal_series: Sequence[NavPoint] | None = None
+    erp_pe_history: list[tuple[str, float]] = []
+    erp_y10_history: list[tuple[str, float]] = []
     if allocation_mode in {
         "satellite_traffic_light",
         "satellite_inverse_volatility",
+        "broker_core_residual",
     }:
         satellite_funds = allocation_engine["satellite_funds"]
         assert isinstance(satellite_funds, Mapping)
@@ -1032,6 +1068,42 @@ def run_local_dca_research(
             )
             for sleeve, fund_code in satellite_funds.items()
         }
+        sig_params = allocation_engine.get("signal_parameters", {})
+        if isinstance(sig_params, Mapping) and sig_params.get("enable_gold_regime"):
+            gold_code = next(
+                (str(item["fund_code"]) for item in routes_payload if str(item.get("sleeve")) == "gold"),
+                "000216",
+            )
+            gold_signal_series = load_nav_series(
+                database,
+                fund_code=gold_code,
+                provider_id=provider_id,
+                as_of=end,
+                nav_field="accumulated_nav",
+            )
+        if isinstance(sig_params, Mapping) and sig_params.get("enable_erp_gate"):
+            with sqlite3.connect(database) as conn:
+                tables = {
+                    r[0]
+                    for r in conn.execute(
+                        "SELECT name FROM sqlite_master WHERE type='table'"
+                    ).fetchall()
+                }
+                if "market_numeric_observations" in tables:
+                    erp_pe_history = [
+                        (str(d), float(v))
+                        for d, v in conn.execute(
+                            "SELECT observation_date, value FROM market_numeric_observations "
+                            "WHERE series_id='index_valuation:000300:pe_ttm' ORDER BY observation_date"
+                        ).fetchall()
+                    ]
+                    erp_y10_history = [
+                        (str(d), float(v))
+                        for d, v in conn.execute(
+                            "SELECT observation_date, value FROM market_numeric_observations "
+                            "WHERE series_id='market_series:bond_yield:CN_10Y' ORDER BY observation_date"
+                        ).fetchall()
+                    ]
     distribution_assumption = scenario["distribution_assumption"]
     assert isinstance(distribution_assumption, Mapping)
     distributions = _load_cash_distributions(
@@ -1092,7 +1164,33 @@ def run_local_dca_research(
         monthly_signal_ledger: list[dict[str, object]] = []
         for sequence, planned in enumerate(planned_dates, start=1):
             signal: dict[str, object] | None = None
-            if allocation_mode == "new_money_trend_rs":
+            if allocation_mode == "broker_core_residual" and allocation_engine.get("satellite_mode") in {"rsi_low_trend", "trough_recovery"}:
+                sat_mode = allocation_engine.get("satellite_mode")
+                if sat_mode == "trough_recovery":
+                    extra_kwargs: dict[str, object] = {}
+                    if gold_signal_series is not None:
+                        extra_kwargs["gold_series"] = gold_signal_series
+                    if erp_pe_history:
+                        vis_pe = [v for d, v in erp_pe_history if d < planned.isoformat()]
+                        if vis_pe and vis_pe[-1] > 0:
+                            vis_y10 = [v for d, v in erp_y10_history if d < planned.isoformat()]
+                            y10_val = vis_y10[-1] if vis_y10 else 2.35
+                            extra_kwargs["erp_pct"] = 100.0 / vis_pe[-1] - y10_val
+                    signal = satellite_trough_recovery_targets(
+                        review_date=planned, strategic_weights=profile_weights,
+                        satellite_series={k: points for k, (_code, points) in satellite_signal_series.items()},
+                        **allocation_engine.get("signal_parameters", {}),
+                        **extra_kwargs,
+                    )
+                else:
+                    signal = satellite_rsi_targets(
+                        review_date=planned, strategic_weights=profile_weights,
+                        satellite_series={k: points for k, (_code, points) in satellite_signal_series.items()},
+                        **allocation_engine.get("signal_parameters", {}),
+                    )
+                weights = {k: Decimal(v) for k, v in signal["effective_target_weights"].items()}
+                monthly_signal_ledger.append(signal)
+            elif allocation_mode == "new_money_trend_rs":
                 raw_signal_parameters = allocation_engine.get("signal_parameters", {})
                 assert isinstance(raw_signal_parameters, Mapping)
                 signal = build_new_money_trend_signal(
@@ -1211,6 +1309,10 @@ def run_local_dca_research(
                 monthly_signal_ledger.append(signal)
             else:
                 weights = profile_weights
+            if allocation_mode == "broker_core_residual" and allocation_engine.get("satellite_mode", "static") == "static":
+                weights = dict(profile_weights)
+                for sleeve in allocation_engine.get("satellite_funds", {}):
+                    weights[sleeve] *= Decimal(str(allocation_engine.get("satellite_multiplier", "1")))
             if executions or contributions:
                 _prior_subscriptions, prior_valuations = _run_event_state(
                     end_date=planned - timedelta(days=1),
@@ -1276,7 +1378,22 @@ def run_local_dca_research(
             )
             contributions.append(contribution)
             incremental_routing: dict[str, str] | None = None
-            if allocation_mode in {"new_money_trend_rs", "fixed_weights"}:
+            if allocation_mode == "broker_core_residual":
+                allocation = build_broker_core_allocation(
+                    planned_date=planned, pre_contribution_portfolio_value_cny=pre_value,
+                    monthly_contribution_cny=contribution.amount_cny,
+                    current_position_values_cny=current_values,
+                    prior_available_cash_cny=prior_available_cash,
+                    nondeployable_cash_cny=nondeployable_cash,
+                    effective_target_weights=weights, strategic_weights=profile_weights,
+                    core_sleeves=allocation_engine["core_sleeves"],
+                    broker_core_amount_cny=Decimal(str(allocation_engine.get("broker_core_schedule_cny", {}).get(
+                        planned.isoformat(), allocation_engine["broker_core_amount_cny"]))),
+                    strategy_spec_sha256=strategy_hash,
+                    allocation_priority=str(allocation_engine.get("allocation_priority", "proportional_gap")),
+                    satellite_sleeves=tuple(allocation_engine.get("satellite_funds", {}).keys()),
+                )
+            elif allocation_mode in {"new_money_trend_rs", "fixed_weights"}:
                 allocation = build_direct_new_money_allocation(
                     planned_date=planned,
                     pre_contribution_portfolio_value_cny=pre_value,

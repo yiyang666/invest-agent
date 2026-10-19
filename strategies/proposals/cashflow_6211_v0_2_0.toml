@@ -1,0 +1,105 @@
+schema_version = 1
+strategy_id = "cashflow_6211"
+strategy_version = "0.2.0"
+title = "6211：渠道核心定投与0～2000可用资金管理"
+status = "frozen"
+mode = "research_only"
+hypothesis = "核心渠道定投与用户明确的可用资金分开管理；测试红利替换部分核心、卫星仓位和RSI新增资金规则的收益风险代价。"
+allocation_anchor = "allocation_anchor_631"
+comparison_benchmark = "dca_baseline@1.5.0"
+scope = "new_money_only"
+allow_selling = false
+allow_leverage = false
+
+[capital]
+monthly_committed_cny = 3000
+monthly_discretionary_max_cny = 2000
+monthly_hard_cap_cny = 5000
+uninvested_cash_action = "remain_cash"
+research_wallet_funding_cny = 5000
+policy_fields_interpretation = "前三个金额是既有政策校验兼容字段；本研究核心固定3000仅对照，管理可用资金0/1000/2000；外部入金相应3000/4000/5000。不复现实际核心浮动。"
+
+[stable]
+enabled = true
+base_amount_cny = 3000
+allocation_method = "external_broker_core_dca"
+schedule_calendar_days = [5, 15, 25]
+
+[flexible]
+enabled = true
+base_amount_cny = 0
+discretionary_max_cny = 2000
+allocation_method = "available_budget_target_gap"
+decision_frequency = "monthly"
+decision_calendar_day = 1
+untriggered_action = "remain_cash"
+actual_budget_source = "user_supplied_available_budget_0_to_2000"
+
+[data]
+provider_id = "akshare_eastmoney"
+signal_nav_field = "accumulated_nav"
+execution_nav_field = "unit_nav"
+visibility = "historical_visibility_assumed"
+forward_fill = false
+missing_signal_action = "no_signal"
+
+[discovery]
+status = "research_ready"
+report_path = "strategies/proposals/cashflow_6211_discovery_v0_2_0.toml"
+report_sha256 = "b265e01d7de76ed7ac648b1455fe8f86153fb9a8425860b98cc8250bf609f578"
+new_fund_routes = []
+new_sleeves = []
+novel_data_inputs = []
+
+[risk]
+maximum_single_fund_weight_pct = 25
+maximum_theme_weight_pct = 30
+portfolio_drawdown_review_pct = 15
+portfolio_drawdown_veto_pct = 20
+maximum_active_rebalances_per_month = 2
+
+[comparators]
+fixed_cashflow = "dca_baseline@1.5.0:monthly_3000"
+matched_cashflow = "dca_baseline@1.5.0:same_month_same_total_cashflow"
+require_identical_monthly_cashflows = true
+
+[acceptance]
+primary_return_metric = "xirr_pct"
+minimum_return_delta_pp = 0.0
+maximum_drawdown_worsening_pp = 0.0
+automatic_winner_selection = false
+parameter_changes_create_new_version = true
+interpretation = "收益与回撤同时不劣才标签dominates，否则tradeoff；绝不据单窗自动晋级。"
+
+[[signals]]
+signal_id = "available_cash"
+primitive = "available_budget_residual"
+scope = "wallet"
+threshold = 0
+on_missing = "hold_cash"
+
+[[signals]]
+signal_id = "satellite_entry"
+primitive = "rsi_low_positive_trend"
+scope = "satellite"
+threshold = 30
+lookback_observations = 13
+slow_average_observations = 200
+on_missing = "no_signal"
+
+[[actions]]
+action_id = "allocate_managed"
+when_signal = "available_cash"
+priority = 1
+action_type = "allocate_new_cash"
+amount_source = "user_supplied_available_budget"
+maximum_amount_cny = 2000
+target_sleeves = ["defensive_bond", "gold", "satellite"]
+target_weights = [0.5, 0.25, 0.25]
+cooldown_calendar_days = 30
+interpretation = "这里只表达20:10:10经济结构；实际申购用总资产目标缺口，未达条件的卫星份额留现金。"
+
+[notes]
+reason_for_thresholds = "用户授权自主制定研究候选；RSI30沿用现有网页低位区，MA200是既有慢趋势原语；不是优化参数或已批准实盘阈值。"
+known_limitations = "不复现真实高级定投/节假日/多基金路由历史；现有引擎不卖出；核心3000仅研究输入；不修改政策或Web。"
+protocol = "strategies/proposals/cashflow_6211_protocol_v0_2_0.md"
