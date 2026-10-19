@@ -246,6 +246,53 @@ class WebBoundaryTests(unittest.TestCase):
 
 
 class FundWatchCatalogTests(unittest.TestCase):
+    def test_satellite_watchlist_keeps_original_industries_and_adds_agriculture(self):
+        config = json.loads(Path('config/satellite_industry_watchlist_v1.json').read_text())
+        codes = [item['code'] for item in config['industries']]
+        self.assertEqual(len(codes), 31)
+        self.assertEqual(len(set(codes)), 31)
+        self.assertIn('110000', codes)
+        self.assertIn('490000', codes)
+        self.assertIn('330000', codes)
+        agriculture = next(item for item in config['focus_themes'] if item['id'] == 'el_nino_agriculture')
+        self.assertEqual(agriculture['industry_codes'], ['110000'])
+        self.assertEqual(agriculture['local_proxy_funds'], ['016077'])
+        route = next(item for item in config['candidate_routes'] if item['fund_code'] == '016077')
+        self.assertIn('农业产业代理', route['theme'])
+        route_codes = {item['fund_code'] for item in config['candidate_routes']}
+        self.assertTrue({'007300', '014880', '016077', '004069', '007817', '012862', '012321', '003017', '009067', '005063', '001631'} <= route_codes)
+
+    def test_satellite_watchlist_reads_only_published_local_context(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'config').mkdir()
+            (root / 'config/satellite_industry_watchlist_v1.json').write_text(json.dumps({
+                'status': 'research_only_observation',
+                'focus_themes': [{'id': 'ai_hardware', 'name': 'AI 硬件',
+                                  'industry_codes': ['270000'], 'local_proxy_funds': ['007300'],
+                                  'proxy_scope': '部分代理', 'route_status': 'partial_proxy_only'}],
+                'industries': [{'code': '270000', 'name': '电子',
+                                'exposure_group': 'technology', 'route_status': 'unreviewed'}],
+            }))
+            model = Dashboard(root)
+            model.database.parent.mkdir(parents=True)
+            with sqlite3.connect(model.database) as con:
+                con.execute('CREATE TABLE market_data_batches (batch_id TEXT, quality_status TEXT)')
+                con.execute('CREATE TABLE market_numeric_observations '
+                            '(batch_id TEXT, series_id TEXT, observation_date TEXT, value REAL, first_seen_at TEXT)')
+                con.executemany('INSERT INTO market_data_batches VALUES (?,?)',
+                                [('good', 'pass'), ('bad', 'fail')])
+                con.executemany('INSERT INTO market_numeric_observations VALUES (?,?,?,?,?)', [
+                    ('good', 'industry_crowding:270000:composite', '2026-10-08', 59.82, '2026-10-09T23:00:00+08:00'),
+                    ('bad', 'industry_crowding:270000:composite', '2026-10-15', 99, '2026-10-16T01:00:00+08:00'),
+                ])
+            watch = model.satellite_industries()
+            item = watch['items'][0]
+            self.assertEqual(item['crowding'], 59.82)
+            self.assertEqual(item['observation_date'], '2026-10-08')
+            self.assertEqual(item['route_status'], 'unreviewed')
+            self.assertEqual(watch['focus_themes'][0]['local_proxy_funds'], ['007300'])
+
     def test_dashboard_revision_changes_only_when_local_inputs_change(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -310,10 +357,15 @@ class FundWatchCatalogTests(unittest.TestCase):
         self.assertIsNotNone(series[13]['rsi_13'])
 
     def test_nav_rsi_matches_reviewed_tonghuashun_examples(self):
-        expected = {'110020': 32.46, '000043': 58.97, '018966': 66.10, '017641': 56.62}
-        for code, value in expected.items():
+        # These are reviewed historical observations, not the moving latest NAV.
+        expected = {'110020': ('2026-10-09', 32.46),
+                    '000043': ('2026-10-08', 58.97),
+                    '018966': ('2026-10-08', 66.10),
+                    '017641': ('2026-10-08', 56.62)}
+        for code, (nav_date, value) in expected.items():
             with self.subTest(code=code):
-                self.assertAlmostEqual(Dashboard(Path('.')).series(code)[-1]['rsi_13'], value, places=2)
+                observation = next(row for row in Dashboard(Path('.')).series(code) if row['nav_date'] == nav_date)
+                self.assertAlmostEqual(observation['rsi_13'], value, places=2)
 
     def test_latest_fund_income_excludes_cash_and_reports_missing_date(self):
         snapshot = sample()

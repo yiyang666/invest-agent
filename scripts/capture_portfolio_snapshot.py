@@ -109,6 +109,240 @@ def fetch_overview() -> dict[str, object]:
     return envelope
 
 
+def fetch_monthly_trades(now: datetime) -> list[dict[str, object]]:
+    if version("aijijin-sdk") != "0.2.1":
+        raise RuntimeError("Read-only trade capture requires reviewed aijijin-sdk 0.2.1")
+    validate_endpoint_overrides(os.environ, approved_hosts=("trade.5ifund.com", "fund.10jqka.com.cn"))
+    executable = Path(sys.executable).parent / "aijijin"
+    start_date = now.replace(day=1).strftime("%Y%m%d")
+    end_date = now.strftime("%Y%m%d")
+    all_records: list[dict[str, object]] = []
+    last_accept_time: str | None = None
+    last_order_id: str | None = None
+
+    for page in range(1, 4):
+        cmd = [
+            str(executable),
+            "trade",
+            "list",
+            "--offset",
+            str(page),
+            "--limit",
+            "200",
+            "--start-date",
+            start_date,
+            "--end-date",
+            end_date,
+            "--business-code",
+            "all",
+            "--product-type",
+            "all",
+            "--no-query-processing",
+        ]
+        if page > 1:
+            if not last_accept_time or not last_order_id:
+                break
+            cmd.extend(["--last-accept-time", last_accept_time, "--last-order-id", last_order_id])
+        result = subprocess.run(
+            cmd,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=120,
+        )
+        if result.returncode != 0:
+            raise RuntimeError("The read-only trade list request failed")
+        envelope = json.loads(result.stdout)
+        if envelope.get("ok") is not True or not isinstance(envelope.get("data"), dict):
+            raise RuntimeError("The read-only trade list returned an invalid response")
+        outer = envelope["data"]
+        page_items = outer.get("data") if isinstance(outer.get("data"), list) else []
+        if not page_items:
+            break
+        valid_items = [item for item in page_items if isinstance(item, dict)]
+        all_records.extend(valid_items)
+        if len(valid_items) < 200:
+            break
+        tail = valid_items[-1]
+        last_accept_time = str(outer.get("lastAcceptTime") or tail.get("acceptTime") or "").strip() or None
+        last_order_id = str(outer.get("lastAppSheetSerialNo") or tail.get("appSheetSerialNo") or "").strip() or None
+    return all_records
+
+
+def summarize_monthly_trades(
+    records: list[dict[str, object]], *, now: datetime
+) -> dict[str, object]:
+    month_prefix = now.strftime("%Y-%m")
+    aip_total = Decimal("0")
+    buy_total = Decimal("0")
+    sell_total = Decimal("0")
+    pending_total = Decimal("0")
+    active_count = 0
+    pending_count = 0
+    confirmed_count = 0
+    by_fund: dict[str, dict[str, object]] = {}
+    recent_orders: list[dict[str, object]] = []
+
+    internal_subtypes = {
+        "redemption_for_buying",
+        "income",
+        "award",
+        "refund",
+        "fund_sold",
+    }
+    type_labels = {
+        "aip": "定投扣款",
+        "buy": "主动申购",
+        "sell": "赎回",
+        "change": "基金转换",
+        "dividend": "分红",
+    }
+
+    for item in records:
+        if not isinstance(item, dict):
+            continue
+        fund_code = str(item.get("fundCode", "")).strip()
+        if len(fund_code) != 6 or not fund_code.isdigit():
+            continue
+        confirm_flag = str(item.get("confirmFlag", "")).strip()
+        pay_flag = str(item.get("payFlag", "0")).strip()
+        end_flag = str(item.get("endFlag", "")).strip()
+        if confirm_flag in {"1", "4", "6"} or pay_flag in {"1", "2"}:
+            continue
+        first_type = str(item.get("firstBusinessType", "")).strip().lower()
+        sub_type = str(item.get("subBusinessType", "")).strip().lower()
+        sub_type_msg = str(item.get("subBusinessTypeMsg") or "").strip()
+        business_code = str(item.get("businessCode", "")).strip()
+        if sub_type in internal_subtypes or business_code == "098":
+            continue
+        if first_type == "aip" or "aip" in sub_type or "定投" in sub_type_msg:
+            effective_type = "aip"
+        else:
+            effective_type = first_type
+        accept_time = str(item.get("acceptTime", "")).strip()
+        accept_date = accept_time[:10] if len(accept_time) >= 10 else now.strftime("%Y-%m-%d")
+        if not accept_date.startswith(month_prefix):
+            continue
+
+        gross = (
+            optional_decimal(item.get("totalFee"))
+            or optional_decimal(item.get("ndConfirmedamount"))
+            or Decimal("0")
+        )
+        fail = optional_decimal(item.get("failFee")) or Decimal("0")
+        net_amount = max(Decimal("0"), gross - fail).quantize(Decimal("0.01"))
+        units_gross = (
+            optional_decimal(item.get("ndConfirmedvol"))
+            or optional_decimal(item.get("totalFundUnits"))
+            or Decimal("0")
+        )
+        units_fail = optional_decimal(item.get("failFundUnits")) or Decimal("0")
+        net_shares = max(Decimal("0"), units_gross - units_fail).quantize(Decimal("0.01"))
+
+        is_pending = confirm_flag == "0" or end_flag == "0"
+        status = "pending_confirmation" if is_pending else "confirmed"
+        active_count += 1
+        if is_pending:
+            pending_count += 1
+            if effective_type in {"aip", "buy"}:
+                pending_total += net_amount
+        else:
+            confirmed_count += 1
+
+        if effective_type == "aip":
+            aip_total += net_amount
+        elif effective_type == "buy":
+            buy_total += net_amount
+        elif effective_type == "sell":
+            sell_total += net_amount
+
+        fund_name = str(item.get("fundName", "")).strip() or None
+        entry = by_fund.setdefault(
+            fund_code,
+            {
+                "fund_code": fund_code,
+                "fund_name": fund_name,
+                "aip_cny": Decimal("0"),
+                "buy_cny": Decimal("0"),
+                "sell_cny": Decimal("0"),
+                "pending_cny": Decimal("0"),
+                "order_count": 0,
+                "latest_accept_date": accept_date,
+                "latest_status": status,
+            },
+        )
+        if not entry["fund_name"] and fund_name:
+            entry["fund_name"] = fund_name
+        entry["order_count"] = int(entry["order_count"]) + 1
+        if effective_type == "aip":
+            entry["aip_cny"] = Decimal(str(entry["aip_cny"])) + net_amount
+        elif effective_type == "buy":
+            entry["buy_cny"] = Decimal(str(entry["buy_cny"])) + net_amount
+        elif effective_type == "sell":
+            entry["sell_cny"] = Decimal(str(entry["sell_cny"])) + net_amount
+        if is_pending and effective_type in {"aip", "buy"}:
+            entry["pending_cny"] = Decimal(str(entry["pending_cny"])) + net_amount
+        if accept_date >= str(entry["latest_accept_date"]):
+            entry["latest_accept_date"] = accept_date
+            entry["latest_status"] = status
+
+        if len(recent_orders) < 100:
+            cfm_date_raw = (
+                item.get("transactionCfmDate")
+                or item.get("vcTransactioncfmdate")
+                or item.get("exceptConfirmTime")
+            )
+            cfm_date = optional_date(cfm_date_raw)
+            recent_orders.append(
+                {
+                    "accept_date": accept_date,
+                    "fund_code": fund_code,
+                    "fund_name": fund_name,
+                    "trade_type": effective_type or "other",
+                    "trade_type_label": type_labels.get(
+                        effective_type, str(item.get("firstBusinessTypeMsg") or "其他")
+                    ),
+                    "sub_type_label": sub_type_msg,
+                    "amount_cny": str(net_amount),
+                    "shares": str(net_shares) if net_shares > 0 else None,
+                    "status": status,
+                    "confirm_date": cfm_date.isoformat() if cfm_date else None,
+                }
+            )
+
+    serialized_funds = [
+        {
+            "fund_code": f_code,
+            "fund_name": data["fund_name"],
+            "aip_cny": str(Decimal(str(data["aip_cny"])).quantize(Decimal("0.01"))),
+            "buy_cny": str(Decimal(str(data["buy_cny"])).quantize(Decimal("0.01"))),
+            "sell_cny": str(Decimal(str(data["sell_cny"])).quantize(Decimal("0.01"))),
+            "pending_cny": str(Decimal(str(data["pending_cny"])).quantize(Decimal("0.01"))),
+            "order_count": data["order_count"],
+            "latest_accept_date": data["latest_accept_date"],
+            "latest_status": data["latest_status"],
+        }
+        for f_code, data in sorted(by_fund.items())
+    ]
+
+    return {
+        "month": month_prefix,
+        "start_date": now.replace(day=1).strftime("%Y-%m-%d"),
+        "end_date": now.strftime("%Y-%m-%d"),
+        "source": "thsfund_trade_list_read_only",
+        "active_order_count": active_count,
+        "pending_order_count": pending_count,
+        "confirmed_order_count": confirmed_count,
+        "aip_cny": str(aip_total.quantize(Decimal("0.01"))),
+        "buy_cny": str(buy_total.quantize(Decimal("0.01"))),
+        "sell_cny": str(sell_total.quantize(Decimal("0.01"))),
+        "pending_cny": str(pending_total.quantize(Decimal("0.01"))),
+        "by_fund": serialized_funds,
+        "recent_orders": recent_orders,
+    }
+
+
 def optional_decimal(value: object) -> Decimal | None:
     try:
         result = Decimal(str(value))
@@ -125,11 +359,16 @@ def optional_date(value: object) -> date | None:
         return None
 
 
-def build_snapshot(envelope: dict[str, object]) -> PortfolioSnapshot:
+def build_snapshot(
+    envelope: dict[str, object],
+    *,
+    trade_records: list[dict[str, object]] | None = None,
+    now: datetime | None = None,
+) -> PortfolioSnapshot:
     payload = envelope["data"]
     assert isinstance(payload, dict)
     issues: list[QualityIssue] = []
-    now = datetime.now(ZoneInfo("Asia/Shanghai"))
+    now = now or datetime.now(ZoneInfo("Asia/Shanghai"))
 
     wallet = payload.get("wallet")
     if not isinstance(wallet, dict) or wallet.get("ok") is not True:
@@ -202,6 +441,12 @@ def build_snapshot(envelope: dict[str, object]) -> PortfolioSnapshot:
             )
         )
 
+    trade_reconciliation = (
+        summarize_monthly_trades(trade_records, now=now)
+        if trade_records is not None
+        else None
+    )
+
     return PortfolioSnapshot(
         as_of=now,
         source="thsfund_read_only",
@@ -209,6 +454,7 @@ def build_snapshot(envelope: dict[str, object]) -> PortfolioSnapshot:
         cash=cash,
         positions=tuple(positions),
         source_issues=tuple(issues),
+        trade_reconciliation=trade_reconciliation,
     )
 
 
@@ -234,8 +480,13 @@ def main() -> int:
     parser.add_argument("--database", type=Path, default=PROJECT_ROOT / "data/private/invest_agent.sqlite3")
     args = parser.parse_args()
     try:
+        now = datetime.now(ZoneInfo("Asia/Shanghai"))
         envelope = fetch_overview()
-        snapshot = build_snapshot(envelope)
+        try:
+            trade_records: list[dict[str, object]] | None = fetch_monthly_trades(now)
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError, json.JSONDecodeError):
+            trade_records = None
+        snapshot = build_snapshot(envelope, trade_records=trade_records, now=now)
         target = persist(snapshot, database=args.database)
     except (OSError, RuntimeError, ValueError, subprocess.SubprocessError, json.JSONDecodeError):
         print("Read-only portfolio capture failed; no raw response was saved.", file=sys.stderr)

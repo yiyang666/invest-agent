@@ -38,8 +38,9 @@ CORE_SLEEVES = {
     "us_large_sp100_equal_weight", "us_growth_active", "us_nasdaq_style_active",
     "global_growth_nasdaq_style_active", "europe_equity_active", "germany_broad_dax",
     "japan_broad_nikkei225", "japan_equity_active", "global_equity_active",
+    "dividend_stabilizer", "dividend_low_volatility_stabilizer",
 }
-DEFENSIVE_SLEEVES = {"defensive", "gold_stabilizer", "dividend_stabilizer"}
+DEFENSIVE_SLEEVES = {"defensive", "gold_stabilizer", "gold_precious_metals", "bond_defensive"}
 
 
 def position_bucket(sleeve: object) -> str:
@@ -63,13 +64,22 @@ JOB_NAMES = {
     "market_context_bootstrap": "历史数据初始化",
 }
 MARKET_INDEX_SPECS = (
-    ("000300", "沪深300", "中国"),
-    ("HSI", "恒生指数", "中国香港"),
-    ("SPX", "标普500", "美国"),
-    ("FTSE", "富时100", "英国"),
-    ("GDAXI", "德国DAX", "德国"),
-    ("N225", "日经225", "日本"),
+    ("000001", "上证指数", "中国", ("sse",)),
+    ("399006", "创业板指", "中国", ("cnindex",)),
+    ("000680", "科创综指", "中国", ("sse",)),
+    ("000300", "沪深300", "中国", ("jin10",)),
+    ("HSI", "恒生指数", "中国香港", ("jin10",)),
+    ("SPX", "标普500", "美国", ("jin10",)),
+    ("IXIC", "纳斯达克综合指数", "美国", ("fred",)),
+    ("NDX", "纳斯达克100", "美国", ("fred",)),
+    ("FTSE", "富时100", "英国", ("jin10",)),
+    ("GDAXI", "德国DAX", "德国", ("jin10",)),
+    ("N225", "日经225", "日本", ("jin10",)),
 )
+MARKET_SOURCE_LABELS = {
+    "jin10": "金十 / 本地校验仓", "cnindex": "国证指数 / 本地校验仓",
+    "sse": "上交所 / 本地校验仓", "fred": "Nasdaq 经 FRED / 本地校验仓",
+}
 
 
 class Dashboard:
@@ -83,7 +93,12 @@ class Dashboard:
 
     def source_revision(self) -> str:
         """Return a cheap version for every local input used by the dashboard."""
-        paths = [self.database, Path(str(self.database) + "-wal")]
+        paths = [
+            self.database,
+            Path(str(self.database) + "-wal"),
+            self.root / "data/private/web_core_dca.sqlite3",
+            Path(__file__),
+        ]
         paths.extend((self.root / "config").glob("*.json"))
         paths.append(self.root / "strategies/registry.json")
         paths.extend((self.root / "strategies/specs").glob("*.json"))
@@ -93,9 +108,11 @@ class Dashboard:
         for path in sorted(set(paths), key=lambda value: str(value)):
             try:
                 stat = path.stat()
-                marker = f"{path.relative_to(self.root)}:{stat.st_mtime_ns}:{stat.st_size}\n"
+                rel = path.relative_to(self.root) if path.is_relative_to(self.root) else path.name
+                marker = f"{rel}:{stat.st_mtime_ns}:{stat.st_size}\n"
             except FileNotFoundError:
-                marker = f"{path.relative_to(self.root)}:missing\n"
+                rel = path.relative_to(self.root) if path.is_relative_to(self.root) else path.name
+                marker = f"{rel}:missing\n"
             digest.update(marker.encode())
         return digest.hexdigest()[:16]
 
@@ -307,35 +324,251 @@ class Dashboard:
 
     def market_indices(self):
         rows = self.rows("""
-            SELECT series_id,observation_date,value,unit,first_seen_at FROM (
+            WITH revisions AS (
               SELECT o.series_id,o.observation_date,o.value,o.unit,o.first_seen_at,
                      ROW_NUMBER() OVER (
+                       PARTITION BY o.series_id,o.observation_date
+                       ORDER BY o.first_seen_at DESC,o.batch_id DESC
+                     ) AS version_rank
+              FROM market_numeric_observations o
+              JOIN market_data_batches b USING(batch_id)
+              WHERE (o.series_id LIKE 'jin10_quote:%' OR o.series_id LIKE 'index_quote:%')
+                AND b.quality_status IN ('pass','partial')
+            ), ranked AS (
+              SELECT series_id,observation_date,value,unit,first_seen_at,
+                     ROW_NUMBER() OVER (PARTITION BY series_id ORDER BY observation_date DESC) AS rn
+              FROM revisions WHERE version_rank=1
+            )
+            SELECT series_id,observation_date,value,unit,first_seen_at,rn
+            FROM ranked WHERE rn<=2 ORDER BY series_id,rn
+        """)
+        latest = {}
+        for row in rows:
+            latest.setdefault(row["series_id"], []).append(row)
+        result = []
+        for code, label, region, sources in MARKET_INDEX_SPECS:
+            candidates = []
+            for source in sources:
+                prefix = f"jin10_quote:{code}" if source == "jin10" else f"index_quote:{source}:{code}"
+                closes = latest.get(f"{prefix}:close", [])
+                if not closes:
+                    continue
+                close = closes[0]
+                changes = latest.get(f"{prefix}:change_pct", [])
+                if changes and changes[0]["observation_date"] == close["observation_date"]:
+                    value = float(close["value"])
+                    pct = float(changes[0]["value"])
+                    previous = value / (1 + pct / 100) if pct != -100 else None
+                    change = None if previous is None else value - previous
+                elif source == "fred" and len(closes) > 1:
+                    value = float(close["value"])
+                    previous = float(closes[1]["value"])
+                    if previous <= 0:
+                        continue
+                    change, pct = value - previous, (value / previous - 1) * 100
+                else:
+                    continue
+                candidates.append({
+                    "code": code, "label": label, "region": region,
+                    "value": value, "change": change, "change_pct": pct,
+                    "observation_date": close["observation_date"],
+                    "collected_at": close["first_seen_at"],
+                    "source": MARKET_SOURCE_LABELS[source],
+                })
+            if candidates:
+                result.append(max(candidates, key=lambda item: item["observation_date"]))
+        return result
+
+    def satellite_industries(self):
+        """Show the 31-industry radar, candidate routes, and deterministic 6211 signal states."""
+        config = self.json("config/satellite_industry_watchlist_v1.json", {})
+        industries = config.get("industries", [])
+        rows = self.rows("""
+            WITH ranked AS (
+              SELECT o.series_id, o.observation_date, o.value, o.first_seen_at,
+                     ROW_NUMBER() OVER (
                        PARTITION BY o.series_id
-                       ORDER BY o.observation_date DESC,o.first_seen_at DESC,o.batch_id DESC
+                       ORDER BY o.observation_date DESC, o.first_seen_at DESC, o.batch_id DESC
                      ) AS rn
               FROM market_numeric_observations o
               JOIN market_data_batches b USING(batch_id)
-              WHERE o.series_id LIKE 'jin10_quote:%'
-                AND b.quality_status IN ('pass','partial')
-            ) WHERE rn=1
-        """)
+              WHERE (
+                o.series_id LIKE 'industry_crowding:%'
+                OR o.series_id LIKE 'index_valuation:%'
+                OR o.series_id = 'market_series:bond_yield:CN_10Y'
+              )
+                AND b.quality_status IN ('pass', 'partial')
+            )
+            SELECT series_id, observation_date, value, first_seen_at
+            FROM ranked WHERE rn = 1
+        """) if industries else []
         latest = {row["series_id"]: row for row in rows}
-        result = []
-        for code, label, region in MARKET_INDEX_SPECS:
-            close = latest.get(f"jin10_quote:{code}:close")
-            change_pct = latest.get(f"jin10_quote:{code}:change_pct")
-            if not close or not change_pct or close["observation_date"] != change_pct["observation_date"]:
-                continue
-            value = float(close["value"])
-            pct = float(change_pct["value"])
-            previous = value / (1 + pct / 100) if pct != -100 else None
-            result.append({
-                "code": code, "label": label, "region": region,
-                "value": value, "change": None if previous is None else value - previous,
-                "change_pct": pct, "observation_date": close["observation_date"],
-                "collected_at": close["first_seen_at"], "source": "金十 / 本地校验仓",
-            })
-        return result
+
+        def eval_fund_signal(code: str) -> dict:
+            pts = self.series(code)
+            if len(pts) < 20:
+                return {"fund_code": code, "status": "pending_bootstrap", "observations": len(pts)}
+            window = pts[-60:] if len(pts) >= 60 else pts
+            navs = [float(p["display_nav"]) for p in window]
+            rsis = [float(p["rsi_13"]) for p in window if p.get("rsi_13") is not None]
+            cur_nav = navs[-1]
+            peak_60 = max(navs)
+            peak_idx = navs.index(peak_60)
+            post_peak_navs = navs[peak_idx:]
+            trough_after_peak = min(post_peak_navs)
+            all_navs = [float(p["display_nav"]) for p in pts]
+            all_peak = max(all_navs)
+            ma_200 = sum(all_navs[-200:]) / 200.0 if len(all_navs) >= 200 else sum(all_navs) / len(all_navs)
+            above_ma200 = cur_nav >= ma_200
+            dd_60 = (cur_nav / peak_60 - 1.0) * 100.0 if peak_60 > 0 else 0.0
+            max_dd_60 = (trough_after_peak / peak_60 - 1.0) * 100.0 if peak_60 > 0 else 0.0
+            total_dd = (cur_nav / all_peak - 1.0) * 100.0 if all_peak > 0 else 0.0
+            rebound_60 = (cur_nav / trough_after_peak - 1.0) * 100.0 if trough_after_peak > 0 else 0.0
+            post_peak_rsis = [
+                float(p["rsi_13"]) for p in window[peak_idx:] if p.get("rsi_13") is not None
+            ]
+            cur_rsi = rsis[-1] if rsis else 50.0
+            min_rsi = min(post_peak_rsis) if post_peak_rsis else cur_rsi
+
+            # Composite Odds & Exhaustion Score (0..100)
+            dd_ref = max(abs(max_dd_60), abs(total_dd) * 0.8) / 100.0
+            dd_score = min(100.0, (dd_ref / 0.35) * 100.0)
+            exh_score = min(100.0, max(0.0, (40.0 - min_rsi) / 35.0 * 100.0))
+            reb_ratio = rebound_60 / 100.0
+            if reb_ratio <= 0.12:
+                rec_score = min(100.0, max(0.0, (reb_ratio / 0.10) * 100.0))
+            else:
+                rec_score = max(15.0, 100.0 - (reb_ratio - 0.12) * 500.0)
+            odds_score = round(0.40 * dd_score + 0.35 * exh_score + 0.25 * rec_score, 1)
+
+            trough_60_global = min(navs)
+            runup_60 = (peak_60 / trough_60_global - 1.0) * 100.0 if trough_60_global > 0 else 0.0
+            trailing_profit_lock = bool(runup_60 >= 18.0 and abs(dd_60) >= 3.0)
+
+            is_trough = (abs(max_dd_60) >= 15.0 or abs(total_dd) >= 20.0) and (min_rsi <= 30.0)
+            is_rebound = rebound_60 >= 3.0 and cur_rsi <= 70.0 and rebound_60 <= 18.0 and not trailing_profit_lock
+            if is_trough and is_rebound:
+                stage = "stage2_entry_confirmed"
+            elif is_trough:
+                stage = "stage1_trough_watch"
+            elif trailing_profit_lock or cur_rsi >= 70.0:
+                stage = "overbought_alert"
+            else:
+                stage = "neutral"
+            return {
+                "fund_code": code,
+                "status": "ready",
+                "observations": len(pts),
+                "nav_date": pts[-1]["nav_date"],
+                "nav": round(cur_nav, 4),
+                "ma_200": round(ma_200, 4),
+                "above_ma200": above_ma200,
+                "rsi_13": round(cur_rsi, 1),
+                "min_rsi_60d": round(min_rsi, 1),
+                "dd_60d_pct": round(dd_60, 1),
+                "total_dd_pct": round(total_dd, 1),
+                "rebound_from_trough_pct": round(rebound_60, 1),
+                "odds_score": odds_score,
+                "trailing_profit_lock": trailing_profit_lock,
+                "stage": stage,
+            }
+
+        fee_catalog = self.json("config/fund_fee_rules_v1.json", {})
+        fee_by_code = {item["fund_code"]: item for item in fee_catalog.get("funds", [])}
+
+        route_signals = {}
+        for code in ("006932", "000216"):
+            route_signals[code] = eval_fund_signal(code)
+        for route in config.get("candidate_routes", []):
+            code = route.get("fund_code")
+            if code:
+                route_signals[code] = eval_fund_signal(code)
+
+        pe_300_raw = latest.get("index_valuation:000300:pe_ttm", {}).get("value")
+        cn_10y_raw = latest.get("market_series:bond_yield:CN_10Y", {}).get("value")
+        pe_300 = float(pe_300_raw) if pe_300_raw is not None else None
+        cn_10y = float(cn_10y_raw) if cn_10y_raw is not None else None
+        erp_pct = round(100.0 / pe_300 - cn_10y, 2) if (pe_300 and pe_300 > 0 and cn_10y is not None) else None
+
+        return {
+            "status": config.get("status", "unavailable"),
+            "source": "股叉叉 / 本地校验仓",
+            "focus_themes": [
+                {key: theme[key] for key in ("id", "name", "industry_codes", "local_proxy_funds", "proxy_scope", "route_status")}
+                for theme in config.get("focus_themes", [])
+            ],
+            "candidate_routes": [
+                {
+                    **{key: route[key] for key in ("fund_code", "fund_name", "theme", "evidence_status", "limitation")},
+                    "signal": route_signals.get(route["fund_code"], {}),
+                    "fee_rule": fee_by_code.get(route["fund_code"], {}),
+                }
+                for route in config.get("candidate_routes", [])
+            ],
+            "defensive_signals": {
+                "bond_006932": {**route_signals.get("006932", {}), "fee_rule": fee_by_code.get("006932", {})},
+                "gold_000216": {**route_signals.get("000216", {}), "fee_rule": fee_by_code.get("000216", {})},
+            },
+            "valuation_highlights": {
+                "000300_pe_ttm": pe_300_raw,
+                "cn_10y_yield": cn_10y_raw,
+                "csi300_erp_pct": erp_pct,
+                "399975_pe_pct": latest.get("index_valuation:399975:pe_pct", {}).get("value"),
+                "399975_pb_pct": latest.get("index_valuation:399975:pb_pct", {}).get("value"),
+                "000300_pb_pct": latest.get("index_valuation:000300:pb_pct", {}).get("value"),
+                "399006_pe_pct": latest.get("index_valuation:399006:pe_pct", {}).get("value"),
+                "H30184_pe_pct": latest.get("index_valuation:H30184:pe_pct", {}).get("value"),
+            },
+            "items": [
+                {
+                    "code": item["code"], "name": item["name"],
+                    "exposure_group": item["exposure_group"],
+                    "route_status": item["route_status"],
+                    "proxy_funds": item.get("proxy_funds", []),
+                    "crowding": latest.get(f"industry_crowding:{item['code']}:composite", {}).get("value"),
+                    "momentum_pct": latest.get(f"industry_crowding:{item['code']}:momentum_pct", {}).get("value"),
+                    "turnover_pct": latest.get(f"industry_crowding:{item['code']}:turnover_pct", {}).get("value"),
+                    "ta_share_pct": latest.get(f"industry_crowding:{item['code']}:ta_share_pct", {}).get("value"),
+                    "observation_date": latest.get(f"industry_crowding:{item['code']}:composite", {}).get("observation_date"),
+                }
+                for item in industries
+            ],
+        }
+
+    def trade_reconciliation(self, portfolios, now: datetime):
+        month_prefix = now.strftime("%Y-%m")
+        latest_snap = portfolios[0] if portfolios else {}
+        raw_tr = None
+        for snap in portfolios:
+            tr = snap.get("trade_reconciliation")
+            if isinstance(tr, dict) and tr.get("month") == month_prefix:
+                raw_tr = tr
+                break
+        if raw_tr is None and portfolios and isinstance(portfolios[0].get("trade_reconciliation"), dict):
+            raw_tr = portfolios[0]["trade_reconciliation"]
+
+        if isinstance(raw_tr, dict):
+            return {
+                "status": "connected",
+                "snapshot_as_of": latest_snap.get("as_of"),
+                "wallet_cash_cny": latest_snap.get("cash", "0.00"),
+                **raw_tr,
+            }
+        return {
+            "status": "pending_capture",
+            "month": month_prefix,
+            "snapshot_as_of": latest_snap.get("as_of"),
+            "wallet_cash_cny": latest_snap.get("cash", "0.00"),
+            "active_order_count": 0,
+            "pending_order_count": 0,
+            "confirmed_order_count": 0,
+            "aip_cny": "0.00",
+            "buy_cny": "0.00",
+            "sell_cny": "0.00",
+            "pending_cny": "0.00",
+            "by_fund": [],
+            "recent_orders": [],
+        }
 
     def payload(self):
         now = datetime.now(TZ)
@@ -343,7 +576,9 @@ class Dashboard:
         return {"generated_at": now.isoformat(), "database_available": self.database.is_file(),
                 "funds": self.funds(now), "portfolios": portfolios,
                 "latest_fund_income": self.latest_fund_income(portfolios),
+                "trade_reconciliation": self.trade_reconciliation(portfolios, now),
                 "market_indices": self.market_indices(),
+                "satellite_industries": self.satellite_industries(),
                 "strategies": self.strategies(), "maintenance": self.maintenance(),
                 "local_only": True, "readonly": True,
                 "manual_market_refresh_enabled": True,

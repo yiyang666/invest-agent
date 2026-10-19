@@ -57,7 +57,7 @@ def clean_snapshot(payload: dict) -> dict:
         raise ValueError("negative snapshot total")
     if abs(Decimal(total) - Decimal(cash) - sum(Decimal(p["market_value"]) for p in positions)) > Decimal("0.01"):
         raise ValueError("snapshot values do not reconcile")
-    return {
+    result = {
         "as_of": captured.isoformat(), "source": "thsfund_read_only",
         "quality_status": payload["quality_status"],
         "cash": cash, "total_assets": total,
@@ -66,6 +66,55 @@ def clean_snapshot(payload: dict) -> dict:
         "quality_issues": [{"code": str(x.get("code", "unknown")), "severity": str(x.get("severity", "warning"))}
                            for x in payload.get("quality_issues", [])],
     }
+    raw_tr = payload.get("trade_reconciliation")
+    if isinstance(raw_tr, dict):
+        by_fund = []
+        for f in raw_tr.get("by_fund", []):
+            if not isinstance(f, dict) or not re.fullmatch(r"\d{6}", str(f.get("fund_code", ""))):
+                continue
+            by_fund.append({
+                "fund_code": str(f["fund_code"]),
+                "fund_name": str(f["fund_name"]) if f.get("fund_name") else None,
+                "aip_cny": _number(f.get("aip_cny", "0")),
+                "buy_cny": _number(f.get("buy_cny", "0")),
+                "sell_cny": _number(f.get("sell_cny", "0")),
+                "pending_cny": _number(f.get("pending_cny", "0")),
+                "order_count": int(f.get("order_count", 0)),
+                "latest_accept_date": str(f.get("latest_accept_date", ""))[:10],
+                "latest_status": "pending_confirmation" if f.get("latest_status") == "pending_confirmation" else "confirmed",
+            })
+        recent_orders = []
+        for o in raw_tr.get("recent_orders", [])[:100]:
+            if not isinstance(o, dict) or not re.fullmatch(r"\d{6}", str(o.get("fund_code", ""))):
+                continue
+            recent_orders.append({
+                "accept_date": str(o.get("accept_date", ""))[:10],
+                "fund_code": str(o["fund_code"]),
+                "fund_name": str(o["fund_name"]) if o.get("fund_name") else None,
+                "trade_type": str(o.get("trade_type", "other")),
+                "trade_type_label": str(o.get("trade_type_label", "")),
+                "sub_type_label": str(o.get("sub_type_label", "")),
+                "amount_cny": _number(o.get("amount_cny", "0")),
+                "shares": _number(o.get("shares"), optional=True),
+                "status": "pending_confirmation" if o.get("status") == "pending_confirmation" else "confirmed",
+                "confirm_date": date.fromisoformat(o["confirm_date"]).isoformat() if o.get("confirm_date") else None,
+            })
+        result["trade_reconciliation"] = {
+            "month": str(raw_tr.get("month", captured.strftime("%Y-%m")))[:7],
+            "start_date": str(raw_tr.get("start_date", ""))[:10],
+            "end_date": str(raw_tr.get("end_date", ""))[:10],
+            "source": "thsfund_trade_list_read_only",
+            "active_order_count": int(raw_tr.get("active_order_count", 0)),
+            "pending_order_count": int(raw_tr.get("pending_order_count", 0)),
+            "confirmed_order_count": int(raw_tr.get("confirmed_order_count", 0)),
+            "aip_cny": _number(raw_tr.get("aip_cny", "0")),
+            "buy_cny": _number(raw_tr.get("buy_cny", "0")),
+            "sell_cny": _number(raw_tr.get("sell_cny", "0")),
+            "pending_cny": _number(raw_tr.get("pending_cny", "0")),
+            "by_fund": by_fund,
+            "recent_orders": recent_orders,
+        }
+    return result
 
 
 def save_snapshot(database: Path, payload: dict) -> str:

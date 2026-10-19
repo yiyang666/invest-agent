@@ -10,3 +10,56 @@
 .bt-config td input{min-width:0;width:90px}.bt-fields input,.bt-fields select{min-width:0}.bt-holdings .table-wrap{min-width:0}
 .bt-row-actions{display:flex;flex-wrap:wrap;gap:6px}.bt-row-actions button{white-space:nowrap}.bt-row-actions .bt-danger{color:#a25343;border-color:#d9b3aa;background:#fff}.bt-row-actions .bt-danger:hover{background:#fbefec}
 .bt-delete-confirm{display:grid;gap:7px;color:#a25343;font-size:12px}.bt-delete-confirm .bt-danger-solid{border-color:#a25343;background:#a25343;color:#fff}
+.dca-actions{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.dca-actions .dca-primary{background:var(--green);border-color:var(--green);color:#fff}#core-dca-root td select{min-width:120px}#core-dca-root td input{min-width:0;width:105px}#core-dca-root td:first-child select{min-width:220px}
+.dca-lock-status{display:inline-block;padding:9px 12px;border-radius:7px;background:#eef3f1;color:#365550;font-size:12px}#core-dca-root select:disabled,#core-dca-root input:disabled{background:#f6f8f7;color:#60736e;opacity:1}#core-dca-root button:disabled{cursor:default}
+@media(max-width:750px){nav{overflow-x:auto;justify-content:flex-start}nav button{flex:0 0 86px}#core-dca-root .metrics{grid-template-columns:1fr}}
+
+/* Compact, glanceable index quotes. In this market convention red is up, green is down. */
+.market-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+.market-card{min-width:0;min-height:124px;padding:11px 12px;border-radius:8px;box-shadow:inset 3px 0 0 var(--market-accent);background:linear-gradient(135deg,#fff 18%,var(--market-tint) 100%);border-color:var(--market-border)}
+.market-card.market-up{--market-accent:#bf695f;--market-tint:#fcece8;--market-border:#f1dcd7}
+.market-card.market-down{--market-accent:#4e9b7c;--market-tint:#e7f4eb;--market-border:#d8ebe1}
+.market-card h3{font-size:13px;font-weight:600;line-height:1.3;margin:5px 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.market-card strong{font-size:19px;line-height:1.1;white-space:nowrap}
+.market-card p{font-size:11px;line-height:1.3;margin:6px 0 4px;white-space:nowrap}
+.market-card small{font-size:9px;line-height:1.25}
+.market-card-source{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1200px){.market-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:1000px){.market-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:800px){.market-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 6211 Collapsible Modules & Converged Two-Track Workflow */
+.dca-view-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;background:#fff;border:1px solid var(--line);border-radius:10px;margin:0 0 18px}
+.dca-view-pills{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dca-view-pills button,.dca-view-actions button{font-size:12px;padding:6px 11px;border-radius:6px;background:#f7faf8;border:1px solid #dce6e2;color:#355950}
+.dca-view-pills button.is-open{background:#e5f3eb;border-color:#9bcab7;color:#175f4a;font-weight:600}
+.dca-view-actions{display:flex;gap:8px;flex-wrap:wrap}
+.collapsible-panel{padding:0;overflow:hidden;transition:border-color .15s ease}
+.collapsible-panel:hover{border-color:#c6d8d1}
+.collapsible-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 24px;cursor:pointer;user-select:none;background:#fff;transition:background .15s ease}
+.collapsible-head:hover{background:#f9fbfa}
+.collapsible-title-wrap{display:flex;align-items:center;gap:11px;min-width:0;flex:1}
+.collapsible-chevron{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:#eef4f1;color:#286655;font-size:12px;font-weight:700;flex-shrink:0;transition:transform .2s ease,background .15s ease}
+.collapsible-panel.is-collapsed .collapsible-chevron{transform:rotate(-90deg);background:#f3f6f5;color:#6c807c}
+.collapsible-title-text h2{margin:0;font-size:16px;line-height:1.35}
+.collapsible-title-text small{display:block;color:var(--muted);font-size:11px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.collapsible-badges{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.collapsible-toggle-hint{font-size:11px;color:#2c6e5c;padding:4px 9px;border-radius:5px;background:#edf5f1;white-space:nowrap}
+.collapsible-body{padding:0 24px 22px;border-top:1px solid #eef2f0}
+.collapsible-panel.is-collapsed .collapsible-body{display:none}
+.two-track-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 18px}
+.two-track-card{padding:14px 16px;border-radius:9px;background:#f7faf8;border:1px solid #e3ece8;position:relative}
+.two-track-card.active-track{background:#edf7f2;border-color:#8dc2ae;box-shadow:inset 3px 0 0 var(--green)}
+.two-track-card h3{margin:0 0 6px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.two-track-card p{margin:0;font-size:12px;color:#516863;line-height:1.65}
+.sub-drawer-btn{display:inline-flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;padding:7px 13px;background:#f5f9f7;border:1px solid #d5e3dd;color:#255f50;border-radius:7px}
+.sub-drawer-btn:hover{background:#eaf3ef}
+.recon-mini-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0 16px}
+.recon-mini-card{padding:13px 15px;border-radius:8px;background:#f7faf8;border:1px solid #e4ede9}
+.recon-mini-card small{display:block;color:var(--muted);font-size:11px}
+.recon-mini-card strong{display:block;font-size:19px;margin:7px 0 4px;font-variant-numeric:tabular-nums;color:#1f3d38}
+.recon-mini-card span{display:block;font-size:11px;color:#627873;line-height:1.45}
+@media(max-width:1000px){.two-track-grid{grid-template-columns:1fr}.recon-mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.recon-mini-grid{grid-template-columns:1fr}.collapsible-head{padding:15px 16px;flex-direction:column;align-items:flex-start}.collapsible-body{padding:0 16px 16px}.collapsible-badges{justify-content:flex-start}}
+

@@ -195,6 +195,20 @@ def _run_job(
                     "--raw-root",
                     raw_root,
                 ]
+            elif operation == "collect_sse_indices":
+                if arguments not in ({}, None):
+                    raise ValueError("collect_sse_indices does not accept arguments")
+                tool = "sse_public_eod_index_quotes"
+                argv = [sys.executable, "-m", "invest_agent.market_data.cli",
+                        "collect-sse-indices", "--as-of", as_of.isoformat(),
+                        "--db", database, "--raw-root", raw_root]
+            elif operation == "collect_cnindex_indices":
+                if arguments not in ({}, None):
+                    raise ValueError("collect_cnindex_indices does not accept arguments")
+                tool = "cnindex_public_daily_index_quotes"
+                argv = [sys.executable, "-m", "invest_agent.market_data.cli",
+                        "collect-cnindex-indices", "--as-of", as_of.isoformat(),
+                        "--db", database, "--raw-root", raw_root]
             elif operation == "collect_guchacha_breadth":
                 if arguments not in ({}, None):
                     raise ValueError("collect_guchacha_breadth does not accept arguments")

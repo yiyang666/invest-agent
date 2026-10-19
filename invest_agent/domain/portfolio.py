@@ -14,6 +14,7 @@ FUND_CODE_PATTERN = re.compile(r"^\d{6}$")
 _FORBIDDEN_PUBLIC_KEYS = {
     "accountid",
     "accountnumber",
+    "appsheetserialno",
     "bankaccount",
     "bankcard",
     "customerid",
@@ -25,6 +26,8 @@ _FORBIDDEN_PUBLIC_KEYS = {
     "phone",
     "secret",
     "token",
+    "transactionaccountid",
+    "vccustid",
 }
 
 
@@ -117,6 +120,7 @@ class PortfolioSnapshot:
     cash: Decimal
     positions: Sequence[PositionSnapshot]
     source_issues: Sequence[QualityIssue] = field(default_factory=tuple)
+    trade_reconciliation: Mapping[str, Any] | None = None
 
     @property
     def total_fund_value(self) -> Decimal:
@@ -223,6 +227,8 @@ class PortfolioSnapshot:
             ],
             "quality_issues": [issue.to_dict() for issue in self.validation_issues()],
         }
+        if self.trade_reconciliation is not None:
+            payload["trade_reconciliation"] = dict(self.trade_reconciliation)
         ensure_public_payload(payload)
         return payload
 

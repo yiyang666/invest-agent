@@ -63,7 +63,8 @@
 - `collect`：原始先归档，再标准化、质量门禁并写入隔离市场数据表；
 - `replay`：从不可变批次重放；
 - `publish-fund-proxies`、`replay-fund-proxies`：把本地已校验指数基金净值发布为显式趋势代理；
-- `collect-fred`、`replay-fred`：采集和重放允许列表内的FRED个人研究序列（当前NFCI）；
+- `collect-fred`、`replay-fred`：采集和重放允许列表内的FRED个人研究序列（NFCI、NASDAQCOM、NASDAQ100）；
+- `collect-sse-indices`、`collect-cnindex-indices`及其`replay-*`：上交所上证指数/科创综指、国证指数创业板指的日终原始归档、校验与入库；
 - `collect-guchacha-breadth`、`replay-guchacha-breadth`：采集和重放股叉叉公开总览页的全A股聚合宽度，显式保留未分类证券与分母口径；
 - `collect-jin10-quotes`：采集精选跨资产报价，只发布价格与涨跌幅，不发布单位不明的成交量；
 - `collect-jin10-calendar`、`replay-jin10`：归档本周财经日历，只发布映射明确的欧日关键宏观值与预期差，并支持重放；
@@ -104,6 +105,8 @@
 - 公平比较：`pair-cashflow-compare`、`same-universe-compare`。
 
 引擎显式模拟申购费、T+确认、在途现金、份额、单位净值估值、分红、限额、共享额度、多路由和跨月队列。它没有通用高频、杠杆、衍生品或任意卖出择时引擎。
+
+`scripts/research_cashflow_6211.py` 是独立离线研究入口：核心每月3000元仅作对照假设，管理预算0/1000/2000；比较核心红利、卫星5%/10%与RSI新增资金准入。复用事件引擎，预算只进入防御与卫星缺口；不预测实际高级定投金额，不包含赎回，不接入Web或真实执行。规格与证据见 `strategies/proposals/cashflow_6211_protocol_v0_2_0.md`，结果保持 `research_only`。
 
 ### 2.4 风控、决策与报告CLI
 
@@ -197,5 +200,7 @@ Codex自身提供的浏览器、网页、文档等通用工具属于运行环境
 ## 7. 本机 Web 工作台
 
 “策略回测”提供搜索基金、月供与权重配置、新增资金补低配/固定比例分配、离线执行、保存加载实验与最多六组净值叠加。直接复用既有事件回测引擎和净值质量门禁，所有实验保持 `research_only`；实验独立保存到私有 SQLite，不改变真实持仓或登记策略。规则与限制见 [使用说明](local-web.md#策略回测-v10) 和 [ADR-0039](decisions/ADR-0039-web-backtest-experiments.md)。
+
+“6211 试运行”目前仅有核心定投计划的本机人工登记：逐基金记录同花顺设置的频率、日期与每次金额，追加修订保存在私有 SQLite，并对照最新持仓快照。它不能从爱基金读取计划设置或修改同花顺计划；交易记录归档与实际扣款核对尚未接入，页面如实显示缺口。详见 [使用说明](local-web.md#6211-试运行核心定投登记) 与 [ADR-0041](decisions/ADR-0041-manual-core-dca-web-registry.md)。
 
 `scripts/run_local_web.sh` 启动仅监听 `127.0.0.1:8765` 的本机看板：监控基金、分类、带区间收益率的业绩走势、基于本地已发布净值确定性计算并与同花顺多基金样本核对的13期简单RSI、每日持仓快照、策略库、宏观市场、更新状态与接口配置。数据视图只读本地仓和已有配置；远程数据动作仍限定为已审查采集链。“接口配置”只负责首次部署或换 token 时把股叉叉和金十令牌写入 macOS 钥匙串，状态接口不取回密文，不改变原有采集、维护或调度流程。网页没有交易、账户写入或模型接口。RSI与跟踪指数PE TTM五年估值分位是两类指标；当前网页只提供前者。持仓由统一维护的 `portfolio_daily` 作业调用已审查只读 CLI，脱敏后写入 SQLite。详见 [使用说明](local-web.md)、[ADR-0034](decisions/ADR-0034-local-readonly-investment-web.md)、[ADR-0036](decisions/ADR-0036-manual-market-quote-refresh.md) 与 [ADR-0037](decisions/ADR-0037-local-keychain-integration-configuration.md)。

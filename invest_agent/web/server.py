@@ -19,18 +19,23 @@ from invest_agent.credentials import (
     KeychainCredentialStore,
     integration_status,
 )
+from . import read_model as _read_model_mod
 from .read_model import Dashboard
 from .backtest_service import BacktestService
+from .core_dca_service import CoreDcaService
+import importlib
 
 STATIC = Path(__file__).parent / "static"
+READ_MODEL_FILE = Path(__file__).parent / "read_model.py"
 
 
 def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
     root = root.resolve()
     model = Dashboard(root)
     backtests = BacktestService(root)
+    core_dca = CoreDcaService(root)
     backtest_lock = threading.Lock()
-    cached = {"revision": None, "data": None}
+    cached = {"revision": None, "data": None, "rm_mtime": READ_MODEL_FILE.stat().st_mtime_ns}
     lock = threading.Lock()
     refresh_lock = threading.Lock()
     credential_lock = threading.Lock()
@@ -55,6 +60,7 @@ def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
             return True
 
         def do_GET(self):
+            nonlocal model
             if not self.allowed_request():
                 return
             url = urlsplit(self.path)
@@ -70,14 +76,22 @@ def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
                         return
                     self.reply(json.dumps(payload, ensure_ascii=False).encode(), "application/json", 404 if payload is None else 200)
                 elif url.path == "/api/dashboard":
-                    revision = model.source_revision()
                     force = parse_qs(url.query).get("refresh", [""])[0] == "1"
                     with lock:
+                        cur_mtime = READ_MODEL_FILE.stat().st_mtime_ns
+                        if cur_mtime != cached["rm_mtime"]:
+                            importlib.reload(_read_model_mod)
+                            model = _read_model_mod.Dashboard(root)
+                            cached["rm_mtime"] = cur_mtime
+                            cached["revision"] = None
+                        revision = model.source_revision()
                         if force or cached["revision"] != revision or cached["data"] is None:
                             payload = model.payload()
                             payload["revision"] = revision
                             cached.update(revision=revision, data=payload)
                         self.reply(json.dumps(cached["data"], ensure_ascii=False).encode(), "application/json")
+                elif url.path == "/api/core-dca":
+                    self.reply(json.dumps(core_dca.current(), ensure_ascii=False).encode(), "application/json")
                 elif url.path == "/api/dashboard-version":
                     self.reply(
                         json.dumps({"revision": model.source_revision()}).encode(),
@@ -97,9 +111,9 @@ def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
                         self.send_error(400)
                         return
                     self.reply(json.dumps(model.series(code)).encode(), "application/json")
-                elif url.path in {"/", "/app.js", "/backtests.js", "/style.css"}:
+                elif url.path in {"/", "/app.js", "/backtests.js", "/core-dca.js", "/style.css"}:
                     name = "index.html" if url.path == "/" else url.path[1:]
-                    kind = {"index.html": "text/html", "app.js": "text/javascript", "backtests.js": "text/javascript", "style.css": "text/css"}[name]
+                    kind = {"index.html": "text/html", "app.js": "text/javascript", "backtests.js": "text/javascript", "core-dca.js": "text/javascript", "style.css": "text/css"}[name]
                     self.reply((STATIC / name).read_bytes(), kind)
                 else:
                     self.send_error(404)
@@ -112,6 +126,10 @@ def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
             url = urlsplit(self.path)
             if url.path in {"/api/backtests/run", "/api/backtests/save"}:
                 self.backtest_action(url.path)
+            elif url.path == "/api/core-dca":
+                self.save_core_dca(False)
+            elif url.path == "/api/core-dca/lock":
+                self.save_core_dca(True)
             elif url.path == "/api/market-refresh":
                 self.refresh_market()
             elif url.path == "/api/integrations":
@@ -172,6 +190,22 @@ def make_handler(root: Path, credential_store=None, aijijin_onboarding=None):
                 self.reply('{"error":"本地回测暂时无法完成，请检查已发布净值数据后重试"}'.encode(), "application/json", 503)
             finally:
                 backtest_lock.release()
+
+        def save_core_dca(self, change_lock=False):
+            length = self.content_length(16384)
+            if length is None:
+                return
+            if not length or self.headers.get("Content-Type", "").split(";", 1)[0].strip() != "application/json":
+                self.send_error(400)
+                return
+            try:
+                payload = json.loads(self.rfile.read(length))
+                result = core_dca.set_lock(payload) if change_lock else core_dca.save(payload)
+                self.reply(json.dumps(result, ensure_ascii=False).encode(), "application/json")
+            except (ValueError, TypeError) as error:
+                self.reply(json.dumps({"error": str(error)}, ensure_ascii=False).encode(), "application/json", 400)
+            except Exception:
+                self.reply(json.dumps({"error": "本地计划保存失败"}, ensure_ascii=False).encode(), "application/json", 503)
 
         def save_integration(self):
             content_length = self.content_length(8192)

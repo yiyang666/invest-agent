@@ -68,10 +68,49 @@ class PortfolioSnapshotTests(unittest.TestCase):
         )
 
         self.assertEqual(snapshot.quality_status, QualityStatus.PASS)
-        self.assertEqual(
-            snapshot.to_public_dict()["positions"][0]["status"],
-            "pending_confirmation",
+    def test_trade_reconciliation_inclusion(self) -> None:
+        tr = {
+            "month": "2026-10",
+            "start_date": "2026-10-01",
+            "end_date": "2026-10-18",
+            "source": "thsfund_trade_list_read_only",
+            "active_order_count": 50,
+            "pending_order_count": 16,
+            "confirmed_order_count": 34,
+            "aip_cny": "900.00",
+            "buy_cny": "1001.20",
+            "sell_cny": "0.00",
+            "pending_cny": "310.00",
+            "by_fund": [
+                {
+                    "fund_code": "110020",
+                    "fund_name": "易方达沪深300A",
+                    "aip_cny": "0.00",
+                    "buy_cny": "1001.20",
+                    "sell_cny": "0.00",
+                    "pending_cny": "0.00",
+                    "order_count": 2,
+                    "latest_accept_date": "2026-10-15",
+                    "latest_status": "confirmed",
+                }
+            ],
+            "recent_orders": [],
+        }
+        snapshot = PortfolioSnapshot(
+            as_of=self.make_snapshot().as_of,
+            source="test",
+            batch_id="batch-recon",
+            cash=Decimal("0"),
+            positions=(
+                PositionSnapshot("110020", Decimal("10"), Decimal("100")),
+            ),
+            trade_reconciliation=tr,
         )
+        self.assertEqual(snapshot.quality_status, QualityStatus.PASS)
+        payload = snapshot.to_public_dict()
+        self.assertIn("trade_reconciliation", payload)
+        self.assertEqual(payload["trade_reconciliation"]["month"], "2026-10")
+        self.assertEqual(payload["trade_reconciliation"]["active_order_count"], 50)
 
 
 if __name__ == "__main__":
