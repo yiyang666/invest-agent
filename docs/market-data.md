@@ -18,7 +18,10 @@
 
 | 数据族 | 工具 | 本地形态 | 计划频率 |
 |---|---|---|---|
-| 指数估值 | `get_index_valuation` | 数值时间序列；保留指标、窗口和计算口径 | 周频、月末 |
+| 指数估值 | `get_index_valuation` | 数值时间序列；保留指标、窗口和计算口径；其中 `change_pct` 不当作日涨跌幅 | 日频取当期估值；月末另取权重 |
+| 上交所日终指数 | `collect-sse-indices` | 上证指数、科创综指点位与日涨跌幅；固定官方页面来源 | 工作日收盘后 |
+| 国证指数日线 | `collect-cnindex-indices` | 创业板指点位与日涨跌幅；固定官方页面来源 | 工作日收盘后 |
+| 纳斯达克指数收盘 | `collect-fred --series NASDAQCOM/NASDAQ100` | Nasdaq 原始指数点位经 FRED 发布；从两个相邻有效收盘日计算涨跌 | 工作日 |
 | 指数权重 | `get_index_weight` | 成分权重快照；显式保留`is_estimated` | 月末T+1 |
 | 指数前瞻 | `get_index_forward_pe` | 带覆盖率和预测年度的版本化快照 | 周频、月末 |
 | 行业拥挤 | `get_industry_crowding` | 行业×角度周频观察 | 周频 |

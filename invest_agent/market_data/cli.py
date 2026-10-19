@@ -14,6 +14,13 @@ import requests
 
 from invest_agent.data.archive import archive_raw_payload, load_raw_payload
 
+from .cnindex_indices import (
+    PROVIDER_ID as CNINDEX_PROVIDER_ID,
+    ENDPOINT as CNINDEX_ENDPOINT,
+    SOURCE_PAGE as CNINDEX_SOURCE_PAGE,
+    fetch_cnindex_index_quotes,
+    normalize_cnindex_index_quotes,
+)
 from .fred import (
     FRED_GRAPH_CSV_ENDPOINT,
     PROVIDER_ID as FRED_PROVIDER_ID,
@@ -48,6 +55,13 @@ from .sse_breadth import (
     SseBreadthClient,
     load_sse_breadth_policy,
     normalize_sse_breadth,
+)
+from .sse_indices import (
+    PROVIDER_ID as SSE_INDEX_PROVIDER_ID,
+    ENDPOINT as SSE_INDEX_ENDPOINT,
+    SOURCE_PAGE as SSE_INDEX_SOURCE_PAGE,
+    fetch_sse_index_quotes,
+    normalize_sse_index_quotes,
 )
 from .store import MarketDataStore
 
@@ -174,6 +188,26 @@ def build_parser() -> argparse.ArgumentParser:
     replay_sse_breadth.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     replay_sse_breadth.add_argument("--raw-root", type=Path, default=DEFAULT_RAW_ROOT)
     replay_sse_breadth.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
+
+    for name in ("collect-sse-indices", "replay-sse-indices"):
+        command = subparsers.add_parser(name, help="Publish reviewed SSE end-of-day index quotes")
+        command.add_argument("--as-of")
+        command.add_argument("--raw-root", type=Path, default=DEFAULT_RAW_ROOT)
+        command.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
+        if name.startswith("replay"):
+            command.add_argument("--batch-id", required=True)
+        else:
+            command.add_argument("--timeout-seconds", type=float, default=20.0)
+
+    for name in ("collect-cnindex-indices", "replay-cnindex-indices"):
+        command = subparsers.add_parser(name, help="Publish reviewed CNIndex daily ChiNext quotes")
+        command.add_argument("--as-of")
+        command.add_argument("--raw-root", type=Path, default=DEFAULT_RAW_ROOT)
+        command.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
+        if name.startswith("replay"):
+            command.add_argument("--batch-id", required=True)
+        else:
+            command.add_argument("--timeout-seconds", type=float, default=20.0)
 
     guchacha_breadth = subparsers.add_parser(
         "collect-guchacha-breadth",
@@ -692,6 +726,63 @@ def main(argv: list[str] | None = None) -> int:
             )
             summary, code = _published_summary(
                 MarketDataStore(args.db).publish(batch), source="SSE public market"
+            )
+            print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
+            return code
+        if args.command in {"collect-cnindex-indices", "replay-cnindex-indices"}:
+            as_of = _as_of(args.as_of)
+            if args.command == "collect-cnindex-indices":
+                fetched_at = datetime.now(ZoneInfo("Asia/Shanghai"))
+                payload, request_url = fetch_cnindex_index_quotes(
+                    as_of=as_of, timeout_seconds=args.timeout_seconds)
+                suffix = hashlib.sha256(payload).hexdigest()[:12]
+                batch_id = f"cnindex-{fetched_at:%Y%m%dT%H%M%S}-{suffix}"
+                receipt = archive_raw_payload(
+                    root=args.raw_root, provider_id=CNINDEX_PROVIDER_ID, batch_id=batch_id,
+                    payload=payload, content_type="application/json", observed_at=fetched_at,
+                    request_parameters={"endpoint": CNINDEX_ENDPOINT, "source_page": CNINDEX_SOURCE_PAGE,
+                                        "request_url": request_url, "as_of": as_of.isoformat()},
+                )
+                raw_payload, raw_sha = payload, receipt.content_sha256
+            else:
+                archived = load_raw_payload(root=args.raw_root, provider_id=CNINDEX_PROVIDER_ID,
+                                            batch_id=args.batch_id)
+                fetched_at, batch_id = archived.observed_at, archived.batch_id
+                raw_payload, raw_sha = archived.payload, archived.content_sha256
+            batch = normalize_cnindex_index_quotes(
+                batch_id=batch_id, payload=raw_payload, fetched_at=fetched_at,
+                as_of=as_of, raw_content_sha256=raw_sha,
+            )
+            summary, code = _published_summary(
+                MarketDataStore(args.db).publish(batch), source="CNIndex public daily index quotes"
+            )
+            print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
+            return code
+        if args.command in {"collect-sse-indices", "replay-sse-indices"}:
+            as_of = _as_of(args.as_of)
+            if args.command == "collect-sse-indices":
+                fetched_at = datetime.now(ZoneInfo("Asia/Shanghai"))
+                payload, request_url = fetch_sse_index_quotes(timeout_seconds=args.timeout_seconds)
+                suffix = hashlib.sha256(payload).hexdigest()[:12]
+                batch_id = f"sse-indices-{fetched_at:%Y%m%dT%H%M%S}-{suffix}"
+                receipt = archive_raw_payload(
+                    root=args.raw_root, provider_id=SSE_INDEX_PROVIDER_ID, batch_id=batch_id,
+                    payload=payload, content_type="application/javascript", observed_at=fetched_at,
+                    request_parameters={"endpoint": SSE_INDEX_ENDPOINT, "source_page": SSE_INDEX_SOURCE_PAGE,
+                                        "request_url": request_url, "as_of": as_of.isoformat()},
+                )
+                raw_payload, raw_sha = payload, receipt.content_sha256
+            else:
+                archived = load_raw_payload(root=args.raw_root, provider_id=SSE_INDEX_PROVIDER_ID,
+                                            batch_id=args.batch_id)
+                fetched_at, batch_id = archived.observed_at, archived.batch_id
+                raw_payload, raw_sha = archived.payload, archived.content_sha256
+            batch = normalize_sse_index_quotes(
+                batch_id=batch_id, payload=raw_payload, fetched_at=fetched_at,
+                as_of=as_of, raw_content_sha256=raw_sha,
+            )
+            summary, code = _published_summary(
+                MarketDataStore(args.db).publish(batch), source="SSE public index quotes"
             )
             print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
             return code

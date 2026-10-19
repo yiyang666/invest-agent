@@ -109,6 +109,24 @@
         "source_owner": "Federal Reserve Bank of Chicago",
         "citation_url": "https://fred.stlouisfed.org/series/NFCI",
         "usage_scope": "personal_research_local_only"
+      },
+      "NASDAQCOM": {
+        "local_series_id": "index_quote:fred:IXIC:close",
+        "label": "纳斯达克综合指数日收盘",
+        "unit": "index_point",
+        "frequency": "business_daily",
+        "source_owner": "Nasdaq, Inc. via FRED",
+        "citation_url": "https://fred.stlouisfed.org/series/NASDAQCOM",
+        "usage_scope": "personal_research_local_only"
+      },
+      "NASDAQ100": {
+        "local_series_id": "index_quote:fred:NDX:close",
+        "label": "纳斯达克100指数日收盘",
+        "unit": "index_point",
+        "frequency": "business_daily",
+        "source_owner": "Nasdaq, Inc. via FRED",
+        "citation_url": "https://fred.stlouisfed.org/series/NASDAQ100",
+        "usage_scope": "personal_research_local_only"
       }
     }
   },
@@ -200,6 +218,8 @@
       "commands": [
         {"operation": "publish_fund_proxies", "arguments": {"history": false}},
         {"operation": "collect_guchacha_breadth"},
+        {"operation": "collect_sse_indices"},
+        {"operation": "collect_cnindex_indices"},
         {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "CN_2Y", "limit": 10}},
         {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "CN_10Y", "limit": 10}},
         {"tool": "get_market_series", "arguments": {"dataset": "bond_yield", "key": "US_2Y", "limit": 10}},
@@ -213,6 +233,9 @@
         {"tool": "get_market_series", "arguments": {"dataset": "forex", "key": "dxy", "limit": 10}},
         {"tool": "get_market_series", "arguments": {"dataset": "margin", "key": "margin_bal", "limit": 10}},
         {"tool": "get_market_series", "arguments": {"dataset": "margin", "key": "leverage_pct", "limit": 10}},
+        {"tool": "get_index_valuation", "arguments": {}},
+        {"operation": "collect_fred", "arguments": {"series": "NASDAQCOM", "lookback_days": 14}},
+        {"operation": "collect_fred", "arguments": {"series": "NASDAQ100", "lookback_days": 14}},
         {"operation": "collect_jin10_quotes"},
         {"operation": "collect_jin10_calendar"}
       ]
@@ -226,7 +249,6 @@
         {"operation": "audit_schema"},
         {"operation": "collect_fred", "arguments": {"series": "NFCI", "lookback_days": 120}},
         {"tool": "list_datasets", "arguments": {}},
-        {"tool": "get_index_valuation", "arguments": {}},
         {"tool": "get_index_forward_pe", "arguments": {}},
         {"tool": "get_industry_crowding", "arguments": {"angle": "composite", "history": false}}
       ]
