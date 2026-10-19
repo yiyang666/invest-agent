@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "watchlist_id": "satellite_industry_observation_v1",
+  "status": "research_only_observation",
+  "scope": "china_a_share_primary_industries_full_31",
+  "selection_policy": "Full 31 Shenwan Level-1 industry crowding panel mapped to 16 actionable off-exchange index fund routes; fund routes and strategy eligibility require separate review.",
+  "source": {
+    "provider_id": "guchacha_mcp",
+    "tool": "get_industry_crowding",
+    "observation_date": "2026-10-08",
+    "published_batch_id": "gcc-20261009T235756-get-industry-crowding-4cca9b55ab85",
+    "published_batch_sha256": "73f35c3c9342929699bacedb52d873971dc31be8e23fbebd0828ec9186fd8ff6",
+    "quality_status": "pass",
+    "industry_count_in_source": 31
+  },
+  "focus_themes": [
+    {
+      "id": "ai_hardware", "name": "AI 硬件与算力芯片", "industry_codes": ["270000", "730000"],
+      "local_proxy_funds": ["007300", "007817"], "proxy_scope": "007300 覆盖半导体芯片与设备，007817 补齐光模块与通信算力基础设施",
+      "route_status": "existing_research_proxy"
+    },
+    {
+      "id": "ai_software", "name": "AI 软件与计算机应用", "industry_codes": ["710000", "720000"],
+      "local_proxy_funds": ["012636", "160646", "100055"], "proxy_scope": "012636 覆盖国内全指软件，160646/100055 覆盖港股与海外科技互联网巨头",
+      "route_status": "existing_research_proxy"
+    },
+    {
+      "id": "robotics", "name": "机器人", "industry_codes": ["640000", "270000"],
+      "local_proxy_funds": ["014880"], "proxy_scope": "中证机器人指数覆盖自动化与机器人产业链，不等于纯人形机器人",
+      "route_status": "existing_research_proxy"
+    },
+    {
+      "id": "physical_ai", "name": "物理 AI / 具身智能", "industry_codes": ["640000", "270000", "710000"],
+      "local_proxy_funds": ["014880", "019861"], "proxy_scope": "机器人与科创100硬科技共用部分风险暴露，不作为两份独立分散仓位",
+      "route_status": "partial_proxy_only"
+    },
+    {
+      "id": "space_computing", "name": "军工航天与太空算力", "industry_codes": ["650000", "730000", "270000"],
+      "local_proxy_funds": ["003017"], "proxy_scope": "003017 覆盖国防军工与航空航天产业链；028777 卫星产业刚成立仅作前瞻观察",
+      "route_status": "candidate_proxy_added"
+    },
+    {
+      "id": "el_nino_agriculture", "name": "厄尔尼诺相关农业", "industry_codes": ["110000"],
+      "local_proxy_funds": ["016077"], "proxy_scope": "016077跟踪中证农业主题，近三年本基金净值已归档；它是农业产业代理，不等于厄尔尼诺或粮价敞口",
+      "route_status": "research_proxy_data_only"
+    },
+    {
+      "id": "securities_fintech", "name": "券商与资本市场贝塔", "industry_codes": ["490000"],
+      "local_proxy_funds": ["004069"], "proxy_scope": "对应库内 399975 证券公司指数（当前PE分位2.35%、PB分位6.46%、拥挤度25.38%）",
+      "route_status": "candidate_proxy_added"
+    },
+    {
+      "id": "new_energy_ev", "name": "新能源电池与智能电车", "industry_codes": ["630000", "280000"],
+      "local_proxy_funds": ["012862", "009067"], "proxy_scope": "结合碳酸锂价格与汽车产销宏观序列，覆盖动力电池、储能与智能电车",
+      "route_status": "candidate_proxy_added"
+    },
+    {
+      "id": "strategic_metals", "name": "稀土与战略稀有金属", "industry_codes": ["240000"],
+      "local_proxy_funds": ["011035", "019087"], "proxy_scope": "覆盖稀土及锂钴钨钼等战略小金属（有色20周动量分位仅7.56%）",
+      "route_status": "existing_research_proxy"
+    },
+    {
+      "id": "healthcare_biotech", "name": "医疗器械与创新生物科技", "industry_codes": ["370000"],
+      "local_proxy_funds": ["012321", "017894"], "proxy_scope": "012321 覆盖国内医疗器械与服务，017894 覆盖纳斯达克生物科技",
+      "route_status": "existing_research_proxy"
+    },
+    {
+      "id": "appliances_consumption", "name": "家电出海与必选消费龙头", "industry_codes": ["330000", "340000"],
+      "local_proxy_funds": ["005063", "001631"], "proxy_scope": "结合茅台批价与消费复苏，当前家电拥挤度27.21%、食品饮料32.56%",
+      "route_status": "candidate_proxy_added"
+    }
+  ],
+  "candidate_routes": [
+    {"fund_code": "007300", "fund_name": "国联安中证全指半导体产品与设备ETF联接A", "theme": "AI硬件与半导体芯片", "evidence_status": "本地净值1775日；当前RSI13=0.0处于第1阶段超卖坑", "limitation": "不覆盖全部光模块或服务器；当前渠道规则待刷新"},
+    {"fund_code": "014880", "fund_name": "天弘中证机器人ETF发起联接A", "theme": "机器人/物理AI的部分代理", "evidence_status": "本地净值790日；当前RSI13=2.2处于第1阶段超卖坑", "limitation": "机器人与物理AI不能算两份独立分散；当前渠道规则待刷新"},
+    {"fund_code": "019861", "fund_name": "鹏华上证科创100ETF联接A", "theme": "科创硬科技弹性宽基", "evidence_status": "本地净值695日；当前RSI13=0.0处于第1阶段超卖坑", "limitation": "与半导体/医药存在部分持仓重叠"},
+    {"fund_code": "011035", "fund_name": "嘉实中证稀土产业ETF联接A", "theme": "稀土战略金属代理", "evidence_status": "本地净值756日；当前RSI13=8.7处于第1阶段超卖坑", "limitation": "强周期资源波动大，需严格执行止盈"},
+    {"fund_code": "019087", "fund_name": "工银中证稀有金属主题ETF发起式联接A", "theme": "稀有金属与锂矿资源代理", "evidence_status": "本地净值699日；已恢复日常增量同步", "limitation": "与稀土同属有色金属周期暴露"},
+    {"fund_code": "160646", "fund_name": "鹏华中证沪港深科技龙头指数(LOF)A", "theme": "跨市场A+H科技龙头", "evidence_status": "本地净值1178日；当前RSI13=9.2处于第1阶段超卖坑", "limitation": "含港股科技权重，受离岸流动性影响"},
+    {"fund_code": "100055", "fund_name": "富国全球科技互联网股票(QDII)A", "theme": "全球与港美科技互联网", "evidence_status": "本地净值3691日；单日限额1000元；当前RSI13=5.6", "limitation": "主动QDII受外汇额度及T+2确认约束"},
+    {"fund_code": "012636", "fund_name": "国泰中证全指软件ETF联接A", "theme": "AI软件与计算机应用", "evidence_status": "本地净值756日；计算机综合拥挤度25.71%", "limitation": "业绩弹性高但估值波动剧烈"},
+    {"fund_code": "016077", "fund_name": "华夏中证农业主题ETF发起式联接A", "theme": "农业产业代理（猪周期与粮食）", "evidence_status": "本地净值729日；2026-10-16爱基金只读预检", "limitation": "不直接跟踪厄尔尼诺、特定作物或粮价"},
+    {"fund_code": "017894", "fund_name": "汇添富纳斯达克生物科技ETF发起式联接(QDII)人民币A", "theme": "全球生物科技与创新药", "evidence_status": "本地净值868日；单日限额100元", "limitation": "受美股生科利率敏感度与QDII限额约束"},
+    {"fund_code": "004069", "fund_name": "南方中证全指证券公司ETF联接A", "theme": "券商与资本市场高贝塔代理", "evidence_status": "新增纳入同步；对应399975指数PE分位2.35%、PB分位6.46%", "limitation": "首轮3年净值回填与爱基金只读规则预检待执行"},
+    {"fund_code": "007817", "fund_name": "国泰中证全指通信设备ETF联接A", "theme": "AI算力光模块与通信设备", "evidence_status": "新增纳入同步；补齐007300之外的算力基础设施", "limitation": "首轮3年净值回填与渠道预检待执行"},
+    {"fund_code": "012862", "fund_name": "汇添富中证电池主题ETF发起式联接A", "theme": "新能源动力电池与储能", "evidence_status": "新增纳入同步；对应申万电力设备630000", "limitation": "首轮3年净值回填与渠道预检待执行"},
+    {"fund_code": "012321", "fund_name": "华宝中证医疗ETF联接A", "theme": "国内医疗器械与医疗服务", "evidence_status": "新增纳入同步；对应申万医药生物370000", "limitation": "首轮3年净值回填与渠道预检待执行"},
+    {"fund_code": "003017", "fund_name": "广发中证军工ETF联接A", "theme": "国防军工与商业航天成熟代理", "evidence_status": "新增纳入同步；对应申万国防军工650000（动量分位8.96%）", "limitation": "首轮3年净值回填与渠道预检待执行"},
+    {"fund_code": "009067", "fund_name": "华夏中证新能源汽车ETF发起式联接A", "theme": "智能电车与汽车产业链", "evidence_status": "新增纳入同步；对应申万汽车280000（拥挤度38.10%）", "limitation": "首轮3年净值回填与渠道预检待执行"},
+    {"fund_code": "005063", "fund_name": "广发中证全指家用电器ETF联接A", "theme": "家电龙头与出海代理", "evidence_status": "新增纳入同步；对应申万家用电器330000（拥挤度27.21%）", "limitation": "首轮3年净值回填与渠道预检待执行"},
+    {"fund_code": "001631", "fund_name": "天弘中证食品饮料ETF联接A", "theme": "食品饮料与白酒消费代理", "evidence_status": "新增纳入同步；对应申万食品饮料340000（拥挤度32.56%）", "limitation": "首轮3年净值回填与渠道预检待执行"},
+    {"fund_code": "028777", "fund_name": "招商中证卫星产业ETF发起式联接A", "theme": "卫星产业前瞻观察", "evidence_status": "管理人产品身份已核对；仅前瞻观察", "limitation": "2026-09-29才成立，无足够历史净值；不等于太空算力"}
+  ],
+  "industries": [
+    {"code": "270000", "name": "电子", "exposure_group": "technology", "route_status": "local_proxy_ready", "proxy_funds": ["007300", "019861"]},
+    {"code": "710000", "name": "计算机", "exposure_group": "technology", "route_status": "local_proxy_ready", "proxy_funds": ["012636", "160646"]},
+    {"code": "730000", "name": "通信", "exposure_group": "technology", "route_status": "candidate_proxy_added", "proxy_funds": ["007817"]},
+    {"code": "720000", "name": "传媒", "exposure_group": "technology", "route_status": "partial_proxy_only", "proxy_funds": ["100055", "160646"]},
+    {"code": "630000", "name": "电力设备", "exposure_group": "advanced_manufacturing", "route_status": "candidate_proxy_added", "proxy_funds": ["012862"]},
+    {"code": "640000", "name": "机械设备", "exposure_group": "advanced_manufacturing", "route_status": "local_proxy_ready", "proxy_funds": ["014880"]},
+    {"code": "280000", "name": "汽车", "exposure_group": "advanced_manufacturing", "route_status": "candidate_proxy_added", "proxy_funds": ["009067"]},
+    {"code": "650000", "name": "国防军工", "exposure_group": "industrial_security", "route_status": "candidate_proxy_added", "proxy_funds": ["003017"]},
+    {"code": "370000", "name": "医药生物", "exposure_group": "healthcare", "route_status": "local_proxy_ready", "proxy_funds": ["012321", "017894"]},
+    {"code": "340000", "name": "食品饮料", "exposure_group": "consumption", "route_status": "candidate_proxy_added", "proxy_funds": ["001631"]},
+    {"code": "330000", "name": "家用电器", "exposure_group": "consumption", "route_status": "candidate_proxy_added", "proxy_funds": ["005063"]},
+    {"code": "240000", "name": "有色金属", "exposure_group": "cyclical_resources", "route_status": "local_proxy_ready", "proxy_funds": ["011035", "019087"]},
+    {"code": "110000", "name": "农林牧渔", "exposure_group": "agriculture", "route_status": "local_proxy_ready", "proxy_funds": ["016077"]},
+    {"code": "490000", "name": "非银金融", "exposure_group": "financials_real_estate", "route_status": "candidate_proxy_added", "proxy_funds": ["004069"]},
+    {"code": "480000", "name": "银行", "exposure_group": "financials_real_estate", "route_status": "core_dividend_covered", "proxy_funds": ["009051"]},
+    {"code": "740000", "name": "煤炭", "exposure_group": "cyclical_resources", "route_status": "core_dividend_covered", "proxy_funds": ["009051", "378546"]},
+    {"code": "750000", "name": "石油石化", "exposure_group": "cyclical_resources", "route_status": "local_proxy_ready", "proxy_funds": ["160723", "378546"]},
+    {"code": "220000", "name": "基础化工", "exposure_group": "cyclical_resources", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "230000", "name": "钢铁", "exposure_group": "cyclical_resources", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "410000", "name": "公用事业", "exposure_group": "utilities_infrastructure", "route_status": "core_dividend_covered", "proxy_funds": ["009051"]},
+    {"code": "420000", "name": "交通运输", "exposure_group": "utilities_infrastructure", "route_status": "core_dividend_covered", "proxy_funds": ["009051"]},
+    {"code": "610000", "name": "建筑材料", "exposure_group": "utilities_infrastructure", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "620000", "name": "建筑装饰", "exposure_group": "utilities_infrastructure", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "430000", "name": "房地产", "exposure_group": "financials_real_estate", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "450000", "name": "商贸零售", "exposure_group": "consumption", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "460000", "name": "社会服务", "exposure_group": "consumption", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "770000", "name": "美容护理", "exposure_group": "consumption", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "350000", "name": "纺织服饰", "exposure_group": "consumption", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "360000", "name": "轻工制造", "exposure_group": "consumption", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "760000", "name": "环保", "exposure_group": "utilities_infrastructure", "route_status": "crowding_context_only", "proxy_funds": []},
+    {"code": "510000", "name": "综合", "exposure_group": "utilities_infrastructure", "route_status": "crowding_context_only", "proxy_funds": []}
+  ]
+}

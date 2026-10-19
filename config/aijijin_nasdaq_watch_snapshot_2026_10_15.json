@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "snapshot_id": "aijijin-nasdaq-watch-2026-10-15-v1",
+  "observed_at": "2026-10-15T16:00:00+08:00",
+  "channel": "aijijin_thsfund_current_channel",
+  "mode": "sanitized_read_only_research_evidence",
+  "source_commands": [
+    "aijijin fund subscribe-init --fund-code <code>",
+    "aijijin fund fee-rule --fund-code <code>"
+  ],
+  "privacy_filter": {
+    "raw_protected_response_persisted": false,
+    "account_fields_persisted": false,
+    "customer_fields_persisted": false
+  },
+  "research_semantics": {
+    "current_state_only": true,
+    "automatic_purchase_route_admission": false,
+    "real_order_submission_allowed": false,
+    "a_c_shared_limit_assumed": false
+  },
+  "routes": [
+    {
+      "fund_code": "019441",
+      "fund_name": "万家纳斯达克100指数发起式(QDII)A",
+      "purchase_status": "limited",
+      "minimum_purchase_cny": "1",
+      "minimum_additional_purchase_cny": "1",
+      "maximum_single_purchase_cny": "10",
+      "observed_remaining_daily_capacity_cny": "10",
+      "fund_risk_level": 4,
+      "statutory_first_tier_purchase_fee_rate": "0.0100",
+      "bank_channel_purchase_fee_rate": "0.0010",
+      "wallet_channel_purchase_fee_rate": "0.0010",
+      "management_fee_rate_annual": "0.0050",
+      "custodian_fee_rate_annual": "0.0015",
+      "sales_service_fee_rate_annual": null,
+      "next_subscription_application_date": "2026-10-16",
+      "platform_displayed_confirmation_date": "2026-10-20"
+    },
+    {
+      "fund_code": "019172",
+      "fund_name": "摩根纳斯达克100指数(QDII)人民币A",
+      "purchase_status": "limited",
+      "minimum_purchase_cny": "1",
+      "minimum_additional_purchase_cny": "1",
+      "maximum_single_purchase_cny": "10",
+      "observed_remaining_daily_capacity_cny": "10",
+      "fund_risk_level": 3,
+      "statutory_first_tier_purchase_fee_rate": "0.0120",
+      "bank_channel_purchase_fee_rate": "0.0012",
+      "wallet_channel_purchase_fee_rate": "0.0012",
+      "management_fee_rate_annual": "0.0050",
+      "custodian_fee_rate_annual": "0.0010",
+      "sales_service_fee_rate_annual": null,
+      "next_subscription_application_date": "2026-10-16",
+      "platform_displayed_confirmation_date": "2026-10-20"
+    },
+    {
+      "fund_code": "016452",
+      "fund_name": "南方纳斯达克100指数发起(QDII)A",
+      "purchase_status": "limited",
+      "minimum_purchase_cny": "1",
+      "minimum_additional_purchase_cny": "1",
+      "maximum_single_purchase_cny": "10",
+      "observed_remaining_daily_capacity_cny": "10",
+      "fund_risk_level": 4,
+      "statutory_first_tier_purchase_fee_rate": "0.0120",
+      "bank_channel_purchase_fee_rate": "0.0012",
+      "wallet_channel_purchase_fee_rate": "0.0012",
+      "management_fee_rate_annual": "0.0050",
+      "custodian_fee_rate_annual": "0.0015",
+      "sales_service_fee_rate_annual": null,
+      "next_subscription_application_date": "2026-10-16",
+      "platform_displayed_confirmation_date": "2026-10-20"
+    },
+    {
+      "fund_code": "019736",
+      "fund_name": "宝盈纳斯达克100指数发起(QDII)A",
+      "purchase_status": "limited",
+      "minimum_purchase_cny": "1",
+      "minimum_additional_purchase_cny": "1",
+      "maximum_single_purchase_cny": "10",
+      "observed_remaining_daily_capacity_cny": "10",
+      "fund_risk_level": 4,
+      "statutory_first_tier_purchase_fee_rate": "0.0120",
+      "bank_channel_purchase_fee_rate": "0.0012",
+      "wallet_channel_purchase_fee_rate": "0.0012",
+      "management_fee_rate_annual": "0.0050",
+      "custodian_fee_rate_annual": "0.0015",
+      "sales_service_fee_rate_annual": null,
+      "next_subscription_application_date": "2026-10-16",
+      "platform_displayed_confirmation_date": "2026-10-20"
+    }
+  ]
+}

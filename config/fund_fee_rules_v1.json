@@ -1,0 +1,1590 @@
+{
+  "schema_version": 1,
+  "catalog_id": "fund_fee_rules_v1",
+  "observed_at": "2026-10-17T13:30:28+08:00",
+  "channel": "aijijin_thsfund_current_channel",
+  "mode": "sanitized_read_only_fee_rule_evidence",
+  "source_command": "aijijin fund fee-rule --fund-code <code>",
+  "privacy_filter": {
+    "raw_protected_response_persisted": false,
+    "account_fields_persisted": false,
+    "customer_fields_persisted": false
+  },
+  "funds": [
+    {
+      "fund_code": "000043",
+      "fund_name": "嘉实美国成长股票(QDII)人民币",
+      "position_bucket": "核心仓",
+      "sleeve": "us_nasdaq_style_active",
+      "fund_type": "纳指风格主动",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.015,
+      "discounted_first_tier_purchase_fee_rate": 0.0015,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "1.20%",
+      "custodian_fee_rate_display": "0.20%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-1年",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 365
+        },
+        {
+          "label": "1年(包含)-2年",
+          "rate_display": "0.30%",
+          "rate": 0.003,
+          "minimum_holding_days_inclusive": 365,
+          "maximum_holding_days_exclusive": 730
+        },
+        {
+          "label": "2年以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 730,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 730,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 730,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+7日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "000071",
+      "fund_name": "华夏恒生ETF联接A",
+      "position_bucket": "核心仓",
+      "sleeve": "hong_kong_broad_core",
+      "fund_type": "恒生指数",
+      "minimum_purchase_cny": "10",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.60%",
+      "custodian_fee_rate_display": "0.15%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": null,
+      "lowest_redemption_fee_rate": 0.005,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "000216",
+      "fund_name": "华安黄金ETF联接A",
+      "position_bucket": "防御仓",
+      "sleeve": "gold_stabilizer",
+      "fund_type": "黄金ETF联接",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "其他",
+      "statutory_first_tier_purchase_fee_rate": 0.006,
+      "discounted_first_tier_purchase_fee_rate": 0.0006,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-1年",
+          "rate_display": "0.10%",
+          "rate": 0.001,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 365
+        },
+        {
+          "label": "1年以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 365,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 365,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 365,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+2日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "006932",
+      "fund_name": "平安0-3年期政策性金融债债券A",
+      "position_bucket": "防御仓",
+      "sleeve": "defensive",
+      "fund_type": "政策性金融债",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "债券型",
+      "statutory_first_tier_purchase_fee_rate": 0.003,
+      "discounted_first_tier_purchase_fee_rate": 0.0003,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.30%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.10%",
+          "rate": 0.001,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 30,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+2日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "008114",
+      "fund_name": "天弘中证红利低波动100ETF联接A",
+      "position_bucket": "核心仓",
+      "sleeve": "dividend_stabilizer",
+      "fund_type": "红利低波100",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.30%",
+          "rate": 0.003,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.05%",
+          "rate": 0.0005,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": null,
+      "lowest_redemption_fee_rate": 0.0005,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "008163",
+      "fund_name": "南方标普红利低波50ETF联接A",
+      "position_bucket": "核心仓",
+      "sleeve": "dividend_low_volatility_stabilizer",
+      "fund_type": "标普红利低波50",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "008401",
+      "fund_name": "大成标普500等权重指数(QDII)C人民币",
+      "position_bucket": "核心仓",
+      "sleeve": "us_broad_sp500_equal_weight",
+      "fund_type": "标普500等权",
+      "minimum_purchase_cny": "10",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.0,
+      "discounted_first_tier_purchase_fee_rate": 0.0,
+      "channel_purchase_discount": "1.0",
+      "management_fee_rate_display": "1.00%",
+      "custodian_fee_rate_display": "0.20%",
+      "sales_service_fee_rate_display": "0.30%",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+6日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "008706",
+      "fund_name": "建信富时100指数C（QDII）（人民币）",
+      "position_bucket": "核心仓",
+      "sleeve": "uk_broad_ftse100",
+      "fund_type": "富时100",
+      "minimum_purchase_cny": "1",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.0,
+      "discounted_first_tier_purchase_fee_rate": 0.0,
+      "channel_purchase_discount": "1.0",
+      "management_fee_rate_display": "0.80%",
+      "custodian_fee_rate_display": "0.20%",
+      "sales_service_fee_rate_display": "0.40%",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 30,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+6日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "539003",
+      "fund_name": "建信富时100指数(QDII)A人民币",
+      "position_bucket": "核心仓",
+      "sleeve": "uk_broad_core",
+      "fund_type": "富时100",
+      "minimum_purchase_cny": "1",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.80%",
+      "custodian_fee_rate_display": "0.20%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.75%",
+          "rate": 0.0075,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天(包含)-180天",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": 180
+        },
+        {
+          "label": "180天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 180,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 180,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 180,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+6日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "009051",
+      "fund_name": "易方达中证红利ETF联接A",
+      "position_bucket": "核心仓",
+      "sleeve": "dividend_stabilizer",
+      "fund_type": "中证红利",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.006,
+      "discounted_first_tier_purchase_fee_rate": 0.0006,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.15%",
+      "custodian_fee_rate_display": "0.05%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天(包含)-180天",
+          "rate_display": "0.10%",
+          "rate": 0.001,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": 180
+        },
+        {
+          "label": "180天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 180,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 180,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 180,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+2日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "016452",
+      "fund_name": "南方纳斯达克100指数发起(QDII)A",
+      "position_bucket": "核心仓",
+      "sleeve": "us_nasdaq_core",
+      "fund_type": "纳斯达克100",
+      "minimum_purchase_cny": "1",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.15%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+5日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "016453",
+      "fund_name": "南方纳斯达克100指数发起(QDII)C",
+      "position_bucket": "核心仓",
+      "sleeve": "us_nasdaq_core",
+      "fund_type": "纳斯达克100",
+      "minimum_purchase_cny": "1",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.0,
+      "discounted_first_tier_purchase_fee_rate": 0.0,
+      "channel_purchase_discount": "1.0",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.15%",
+      "sales_service_fee_rate_display": "0.10%",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+5日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "017437",
+      "fund_name": "华宝纳斯达克精选股票发起式(QDII)C",
+      "position_bucket": "核心仓",
+      "sleeve": "us_nasdaq_style_active",
+      "fund_type": "纳指风格主动",
+      "minimum_purchase_cny": "10",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.0,
+      "discounted_first_tier_purchase_fee_rate": 0.0,
+      "channel_purchase_discount": "1.0",
+      "management_fee_rate_display": "1.20%",
+      "custodian_fee_rate_display": "0.20%",
+      "sales_service_fee_rate_display": "0.40%",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 30,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+5日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "019172",
+      "fund_name": "摩根纳斯达克100指数(QDII)人民币A",
+      "position_bucket": "核心仓",
+      "sleeve": "us_nasdaq_core",
+      "fund_type": "纳斯达克100",
+      "minimum_purchase_cny": "1",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+6日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "019441",
+      "fund_name": "万家纳斯达克100指数发起式(QDII)A",
+      "position_bucket": "核心仓",
+      "sleeve": "us_nasdaq_core",
+      "fund_type": "纳斯达克100",
+      "minimum_purchase_cny": "1",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.15%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.10%",
+          "rate": 0.001,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 30,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+7日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "019736",
+      "fund_name": "宝盈纳斯达克100指数发起(QDII)A",
+      "position_bucket": "核心仓",
+      "sleeve": "us_nasdaq_core",
+      "fund_type": "纳斯达克100",
+      "minimum_purchase_cny": "1",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.15%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+6日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "007300",
+      "fund_name": "国联安中证全指半导体产品与设备ETF联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "semiconductor_satellite",
+      "fund_type": "半导体芯片",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.008,
+      "discounted_first_tier_purchase_fee_rate": 0.0008,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-1年",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 365
+        },
+        {
+          "label": "1年以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 365,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 365,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 365,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "014880",
+      "fund_name": "天弘中证机器人ETF发起联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "robotics_satellite",
+      "fund_type": "机器人与具身智能",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.30%",
+          "rate": 0.003,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.05%",
+          "rate": 0.0005,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": null,
+      "lowest_redemption_fee_rate": 0.0005,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "012636",
+      "fund_name": "国泰中证全指软件ETF联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "software_satellite",
+      "fund_type": "AI软件与计算机",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.75%",
+          "rate": 0.0075,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天(包含)-180天",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": 180
+        },
+        {
+          "label": "180天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 180,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 180,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 180,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "007817",
+      "fund_name": "国泰中证全指通信设备ETF联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "telecom_computing_satellite",
+      "fund_type": "算力光模块与通信",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.75%",
+          "rate": 0.0075,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天(包含)-180天",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": 180
+        },
+        {
+          "label": "180天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 180,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 180,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 180,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "019861",
+      "fund_name": "鹏华上证科创100ETF联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "star100_satellite",
+      "fund_type": "科创100硬科技",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.15%",
+      "custodian_fee_rate_display": "0.05%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 30,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "160646",
+      "fund_name": "鹏华中证沪港深科技龙头指数(LOF)A",
+      "position_bucket": "卫星仓",
+      "sleeve": "sh_hk_sz_passive_technology_satellite",
+      "fund_type": "沪港深科技龙头",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.60%",
+      "custodian_fee_rate_display": "0.15%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+4日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "011035",
+      "fund_name": "嘉实中证稀土产业ETF联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "rare_earth_satellite",
+      "fund_type": "稀土战略资源",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.10%",
+          "rate": 0.001,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 30,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "019087",
+      "fund_name": "工银中证稀有金属主题ETF发起式联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "rare_metals_satellite",
+      "fund_type": "有色与稀有金属",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.45%",
+      "custodian_fee_rate_display": "0.07%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "016077",
+      "fund_name": "华夏中证农业主题ETF发起式联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "agriculture_satellite",
+      "fund_type": "农业与猪粮周期",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 30,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "004069",
+      "fund_name": "南方中证全指证券公司ETF联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "securities_satellite",
+      "fund_type": "券商与非银金融",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-1年",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 365
+        },
+        {
+          "label": "1年(包含)-2年",
+          "rate_display": "0.25%",
+          "rate": 0.0025,
+          "minimum_holding_days_inclusive": 365,
+          "maximum_holding_days_exclusive": 730
+        },
+        {
+          "label": "2年以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 730,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 730,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 730,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "012862",
+      "fund_name": "汇添富中证电池主题ETF发起式联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "battery_new_energy_satellite",
+      "fund_type": "新能源电池与储能",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.15%",
+      "custodian_fee_rate_display": "0.05%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "012321",
+      "fund_name": "华宝中证医疗ETF联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "healthcare_medical_satellite",
+      "fund_type": "医疗与创新药",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.015,
+      "discounted_first_tier_purchase_fee_rate": 0.0015,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "1.20%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.75%",
+          "rate": 0.0075,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天(包含)-1年",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": 365
+        },
+        {
+          "label": "1年(包含)-2年",
+          "rate_display": "0.25%",
+          "rate": 0.0025,
+          "minimum_holding_days_inclusive": 365,
+          "maximum_holding_days_exclusive": 730
+        },
+        {
+          "label": "2年以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 730,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 730,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 730,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "003017",
+      "fund_name": "广发中证军工ETF联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "defense_aerospace_satellite",
+      "fund_type": "国防军工与航天",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-1年",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 365
+        },
+        {
+          "label": "1年(包含)-2年",
+          "rate_display": "0.30%",
+          "rate": 0.003,
+          "minimum_holding_days_inclusive": 365,
+          "maximum_holding_days_exclusive": 730
+        },
+        {
+          "label": "2年以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 730,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 730,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 730,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "009067",
+      "fund_name": "华夏中证新能源汽车ETF发起式联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "smart_ev_satellite",
+      "fund_type": "智能电车与汽车",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.75%",
+          "rate": 0.0075,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天(包含)-180天",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": 180
+        },
+        {
+          "label": "180天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 180,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 180,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 180,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "005063",
+      "fund_name": "广发中证全指家用电器ETF联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "home_appliance_satellite",
+      "fund_type": "家用电器龙头",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.10%",
+          "rate": 0.001,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 30,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "001631",
+      "fund_name": "天弘中证食品饮料ETF联接A",
+      "position_bucket": "卫星仓",
+      "sleeve": "food_beverage_satellite",
+      "fund_type": "食品饮料消费",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "股票型",
+      "statutory_first_tier_purchase_fee_rate": 0.01,
+      "discounted_first_tier_purchase_fee_rate": 0.001,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "0.50%",
+      "custodian_fee_rate_display": "0.10%",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "7天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.30%",
+          "rate": 0.003,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天以上(包含)",
+          "rate_display": "0.05%",
+          "rate": 0.0005,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": null,
+      "lowest_redemption_fee_rate": 0.0005,
+      "lowest_redemption_fee_min_holding_days": 30,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+3日",
+      "observed_at": "2026-10-17T13:30:28+08:00"
+    },
+    {
+      "fund_code": "020712",
+      "fund_name": "华安三菱日联日经225ETF发起式联接（QDII）A",
+      "position_bucket": "卫星仓",
+      "sleeve": "qdii_satellite",
+      "fund_type": "QDII卫星",
+      "minimum_purchase_cny": "1",
+      "channel_fund_type": "QDII",
+      "statutory_first_tier_purchase_fee_rate": 0.006,
+      "discounted_first_tier_purchase_fee_rate": 0.0006,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "--",
+      "custodian_fee_rate_display": "--",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "0天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+1日",
+      "sell_confirm_timing": "T+1日",
+      "sell_arrival_timing": "T+4日",
+      "observed_at": "2026-08-26T20:07:39+08:00"
+    },
+    {
+      "fund_code": "100055",
+      "fund_name": "富国全球科技互联网股票（QDII）A",
+      "position_bucket": "卫星仓",
+      "sleeve": "qdii_satellite",
+      "fund_type": "QDII卫星",
+      "minimum_purchase_cny": "100",
+      "channel_fund_type": "QDII",
+      "statutory_first_tier_purchase_fee_rate": 0.015,
+      "discounted_first_tier_purchase_fee_rate": 0.0015,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "--",
+      "custodian_fee_rate_display": "--",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "0天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天(包含)-30天",
+          "rate_display": "0.75%",
+          "rate": 0.0075,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": 30
+        },
+        {
+          "label": "30天(包含)-365天",
+          "rate_display": "0.50%",
+          "rate": 0.005,
+          "minimum_holding_days_inclusive": 30,
+          "maximum_holding_days_exclusive": 365
+        },
+        {
+          "label": "365天(包含)-730天",
+          "rate_display": "0.30%",
+          "rate": 0.003,
+          "minimum_holding_days_inclusive": 365,
+          "maximum_holding_days_exclusive": 730
+        },
+        {
+          "label": "730天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 730,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 730,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 730,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+7日",
+      "observed_at": "2026-08-26T20:07:39+08:00"
+    },
+    {
+      "fund_code": "017894",
+      "fund_name": "汇添富纳斯达克生物科技ETF发起式联接指数（QDII）人民币A",
+      "position_bucket": "卫星仓",
+      "sleeve": "qdii_satellite",
+      "fund_type": "QDII卫星",
+      "minimum_purchase_cny": "1",
+      "channel_fund_type": "QDII",
+      "statutory_first_tier_purchase_fee_rate": 0.012,
+      "discounted_first_tier_purchase_fee_rate": 0.0012,
+      "channel_purchase_discount": "0.1",
+      "management_fee_rate_display": "--",
+      "custodian_fee_rate_display": "--",
+      "sales_service_fee_rate_display": "--",
+      "redemption_fee_tiers": [
+        {
+          "label": "0天以下",
+          "rate_display": "1.50%",
+          "rate": 0.015,
+          "minimum_holding_days_inclusive": 0,
+          "maximum_holding_days_exclusive": 7
+        },
+        {
+          "label": "7天以上(包含)",
+          "rate_display": "0.00%",
+          "rate": 0.0,
+          "minimum_holding_days_inclusive": 7,
+          "maximum_holding_days_exclusive": null
+        }
+      ],
+      "zero_redemption_fee_min_holding_days": 7,
+      "lowest_redemption_fee_rate": 0.0,
+      "lowest_redemption_fee_min_holding_days": 7,
+      "buy_confirm_timing": "T+2日",
+      "sell_confirm_timing": "T+2日",
+      "sell_arrival_timing": "T+4日",
+      "observed_at": "2026-08-26T20:07:39+08:00"
+    }
+  ]
+}

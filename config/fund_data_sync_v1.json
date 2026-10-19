@@ -21,7 +21,17 @@
       {"fund_code": "008114", "reason": "hierarchical_strategy_research_candidate"},
       {"fund_code": "014880", "reason": "hierarchical_strategy_research_candidate"},
       {"fund_code": "011035", "reason": "satellite_theme_observation_candidate"},
-      {"fund_code": "012636", "reason": "satellite_theme_observation_candidate"}
+      {"fund_code": "019087", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "012636", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "016077", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "004069", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "012862", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "012321", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "003017", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "007817", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "009067", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "005063", "reason": "satellite_theme_observation_candidate"},
+      {"fund_code": "001631", "reason": "satellite_theme_observation_candidate"}
     ],
     "research_candidate_funds": [
       {"fund_code": "018966", "current_channel_availability": "limited", "channel_checked_at": "2026-09-02T15:00:00+08:00"},
